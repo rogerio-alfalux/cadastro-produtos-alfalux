@@ -1,0 +1,1 @@
+ALTER TABLE `products` MODIFY COLUMN `temperaturasCor` text NOT NULL;

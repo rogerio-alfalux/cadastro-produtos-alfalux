@@ -1,28 +1,225 @@
+import { TRPCError } from "@trpc/server";
+import { z } from "zod";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
+import {
+  bulkInsertProducts,
+  countProducts,
+  createProduct,
+  deleteProduct,
+  getProductById,
+  listProducts,
+  updateProduct,
+} from "./db";
+
+// ─── Validation schema ────────────────────────────────────────────────────────
+
+const productSchema = z.object({
+  categoria: z.string().optional(),
+  instalacao: z.string().min(1, "INSTALAÇÃO é obrigatório"),
+  familia: z.string().min(1, "FAMÍLIA é obrigatório"),
+  sku: z.string().min(1, "SKU é obrigatório"),
+  produto: z.string().min(1, "PRODUTO é obrigatório"),
+  moduloLed: z.string().min(1, "MÓDULO LED é obrigatório"),
+  // Ótica: obrigatório a menos que NaoAplicavel=true
+  otica: z.string().optional().default(""),
+  oticaNaoAplicavel: z.boolean().default(false),
+  // Holder: obrigatório a menos que NaoAplicavel=true
+  holder: z.string().optional().default(""),
+  holderNaoAplicavel: z.boolean().default(false),
+  // Dissipador: obrigatório a menos que NaoAplicavel=true
+  dissipador: z.string().optional().default(""),
+  dissipadorNaoAplicavel: z.boolean().default(false),
+  driverOnoff220: z.string().min(1, "ON/OFF DRIVER 220Vac é obrigatório"),
+  driverOnoffBivolt: z.string().min(1, "ON/OFF DRIVER BIVOLT é obrigatório"),
+  driverDim110v: z.string().optional(),
+  driverDimDali: z.string().optional(),
+  temperaturasCor: z.string().default('["2700","3000","4000","5000"]'),
+  fotoUrl: z.string().optional(),
+  fotoKey: z.string().optional(),
+  custoLuminaria: z.string().optional(),
+  custoDriver: z.string().optional(),
+}).superRefine((data, ctx) => {
+  // Validar Ótica: obrigatório se não for NaoAplicavel
+  if (!data.oticaNaoAplicavel && (!data.otica || data.otica.trim() === "")) {
+    ctx.addIssue({ code: "custom", path: ["otica"], message: "ÓTICA é obrigatório" });
+  }
+  // Validar Holder: obrigatório se não for NaoAplicavel
+  if (!data.holderNaoAplicavel && (!data.holder || data.holder.trim() === "")) {
+    ctx.addIssue({ code: "custom", path: ["holder"], message: "HOLDER é obrigatório" });
+  }
+  // Validar Dissipador: obrigatório se não for NaoAplicavel
+  if (!data.dissipadorNaoAplicavel && (!data.dissipador || data.dissipador.trim() === "")) {
+    ctx.addIssue({ code: "custom", path: ["dissipador"], message: "DISSIPADOR é obrigatório" });
+  }
+});
+
+const bulkProductSchema = z.object({
+  categoria: z.string().optional().default(""),
+  instalacao: z.string().default(""),
+  familia: z.string().default(""),
+  sku: z.string().default(""),
+  produto: z.string().default(""),
+  moduloLed: z.string().default(""),
+  otica: z.string().default(""),
+  oticaNaoAplicavel: z.boolean().default(false),
+  holder: z.string().default(""),
+  holderNaoAplicavel: z.boolean().default(false),
+  dissipador: z.string().default(""),
+  dissipadorNaoAplicavel: z.boolean().default(false),
+  driverOnoff220: z.string().default(""),
+  driverOnoffBivolt: z.string().default(""),
+  driverDim110v: z.string().optional(),
+  driverDimDali: z.string().optional(),
+  temperaturasCor: z.string().default('["2700","3000","4000","5000"]'),
+  fotoUrl: z.string().optional(),
+  fotoKey: z.string().optional(),
+  custoLuminaria: z.string().optional(),
+  custoDriver: z.string().optional(),
+});
+
+// ─── Router ───────────────────────────────────────────────────────────────────
 
 export const appRouter = router({
-    // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
   auth: router({
-    me: publicProcedure.query(opts => opts.ctx.user),
+    me: publicProcedure.query((opts) => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
-      return {
-        success: true,
-      } as const;
+      return { success: true } as const;
     }),
   }),
 
-  // TODO: add feature routers here, e.g.
-  // todo: router({
-  //   list: protectedProcedure.query(({ ctx }) =>
-  //     db.getUserTodos(ctx.user.id)
-  //   ),
-  // }),
+  products: router({
+    list: publicProcedure
+      .input(
+        z.object({
+          search: z.string().optional(),
+          categoria: z.string().optional(),
+          instalacao: z.string().optional(),
+          familia: z.string().optional(),
+          limit: z.number().min(1).max(200).default(50),
+          offset: z.number().min(0).default(0),
+        })
+      )
+      .query(async ({ input }) => {
+        return await listProducts(input);
+      }),
+
+    getById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const product = await getProductById(input.id);
+        if (!product) throw new TRPCError({ code: "NOT_FOUND", message: "Produto não encontrado" });
+        return product;
+      }),
+
+    create: publicProcedure
+      .input(productSchema)
+      .mutation(async ({ input }) => {
+        const data = {
+          ...input,
+          familia: input.familia.toUpperCase(),
+          sku: input.sku.toUpperCase(),
+          produto: input.produto.toUpperCase(),
+          moduloLed: input.moduloLed.toUpperCase(),
+          otica: input.oticaNaoAplicavel ? "NÃO APLICÁVEL" : input.otica.toUpperCase(),
+          holder: input.holderNaoAplicavel ? "NÃO APLICÁVEL" : input.holder.toUpperCase(),
+          dissipador: input.dissipadorNaoAplicavel ? "NÃO APLICÁVEL" : input.dissipador.toUpperCase(),
+          driverOnoff220: input.driverOnoff220.toUpperCase(),
+          driverOnoffBivolt: input.driverOnoffBivolt.toUpperCase(),
+          driverDim110v: input.driverDim110v?.toUpperCase() || null,
+          driverDimDali: input.driverDimDali?.toUpperCase() || null,
+          temperaturasCor: input.temperaturasCor || '["2700","3000","4000","5000"]',
+          custoLuminaria: input.custoLuminaria || null,
+          custoDriver: input.custoDriver || null,
+          fotoUrl: input.fotoUrl || null,
+          fotoKey: input.fotoKey || null,
+        };
+        await createProduct(data);
+        return { success: true };
+      }),
+
+    update: publicProcedure
+      .input(z.object({ id: z.number(), data: productSchema.partial() }))
+      .mutation(async ({ input }) => {
+        const existing = await getProductById(input.id);
+        if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Produto não encontrado" });
+
+        const d = input.data;
+        const update: Record<string, unknown> = {};
+
+        if (d.categoria !== undefined) update.categoria = d.categoria;
+        if (d.instalacao !== undefined) update.instalacao = d.instalacao;
+        if (d.familia !== undefined) update.familia = d.familia.toUpperCase();
+        if (d.sku !== undefined) update.sku = d.sku.toUpperCase();
+        if (d.produto !== undefined) update.produto = d.produto.toUpperCase();
+        if (d.moduloLed !== undefined) update.moduloLed = d.moduloLed.toUpperCase();
+        if (d.otica !== undefined) update.otica = d.oticaNaoAplicavel ? "NÃO APLICÁVEL" : d.otica.toUpperCase();
+        if (d.oticaNaoAplicavel !== undefined) update.oticaNaoAplicavel = d.oticaNaoAplicavel;
+        if (d.holder !== undefined) update.holder = d.holderNaoAplicavel ? "NÃO APLICÁVEL" : d.holder.toUpperCase();
+        if (d.holderNaoAplicavel !== undefined) update.holderNaoAplicavel = d.holderNaoAplicavel;
+        if (d.dissipador !== undefined) update.dissipador = d.dissipadorNaoAplicavel ? "NÃO APLICÁVEL" : d.dissipador.toUpperCase();
+        if (d.dissipadorNaoAplicavel !== undefined) update.dissipadorNaoAplicavel = d.dissipadorNaoAplicavel;
+        if (d.driverOnoff220 !== undefined) update.driverOnoff220 = d.driverOnoff220.toUpperCase();
+        if (d.driverOnoffBivolt !== undefined) update.driverOnoffBivolt = d.driverOnoffBivolt.toUpperCase();
+        if (d.driverDim110v !== undefined) update.driverDim110v = d.driverDim110v?.toUpperCase() || null;
+        if (d.driverDimDali !== undefined) update.driverDimDali = d.driverDimDali?.toUpperCase() || null;
+        if (d.temperaturasCor !== undefined) update.temperaturasCor = d.temperaturasCor;
+        if (d.fotoUrl !== undefined) update.fotoUrl = d.fotoUrl || null;
+        if (d.fotoKey !== undefined) update.fotoKey = d.fotoKey || null;
+        if (d.custoLuminaria !== undefined) update.custoLuminaria = d.custoLuminaria || null;
+        if (d.custoDriver !== undefined) update.custoDriver = d.custoDriver || null;
+
+        await updateProduct(input.id, update as any);
+        return { success: true };
+      }),
+
+    delete: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteProduct(input.id);
+        return { success: true };
+      }),
+
+    bulkCreate: publicProcedure
+      .input(z.array(bulkProductSchema))
+      .mutation(async ({ input }) => {
+        const items = input.map((p) => ({
+          ...p,
+          familia: p.familia.toUpperCase(),
+          sku: p.sku.toUpperCase(),
+          produto: p.produto.toUpperCase(),
+          moduloLed: p.moduloLed.toUpperCase(),
+          otica: p.oticaNaoAplicavel || p.otica.toUpperCase() === "NÃO APLICÁVEL" ? "NÃO APLICÁVEL" : p.otica.toUpperCase(),
+          holder: p.holderNaoAplicavel || p.holder.toUpperCase() === "NÃO APLICÁVEL" ? "NÃO APLICÁVEL" : p.holder.toUpperCase(),
+          dissipador: p.dissipadorNaoAplicavel || p.dissipador.toUpperCase() === "NÃO APLICÁVEL" ? "NÃO APLICÁVEL" : p.dissipador.toUpperCase(),
+          driverOnoff220: p.driverOnoff220.toUpperCase(),
+          driverOnoffBivolt: p.driverOnoffBivolt.toUpperCase(),
+          driverDim110v: p.driverDim110v?.toUpperCase() || null,
+          driverDimDali: p.driverDimDali?.toUpperCase() || null,
+          temperaturasCor: p.temperaturasCor || '["2700","3000","4000","5000"]',
+          custoLuminaria: p.custoLuminaria || null,
+          custoDriver: p.custoDriver || null,
+          fotoUrl: null,
+          fotoKey: null,
+        }));
+        const inserted = await bulkInsertProducts(items as any);
+        return { success: true, inserted };
+      }),
+
+    count: publicProcedure.query(async () => {
+      return { count: await countProducts() };
+    }),
+
+    getAll: publicProcedure.query(async () => {
+      const result = await listProducts({ limit: 2000, offset: 0 });
+      return result.items;
+    }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
