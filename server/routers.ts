@@ -40,7 +40,10 @@ const productSchema = z.object({
   fotoUrl: z.string().optional(),
   fotoKey: z.string().optional(),
   custoLuminaria: z.string().optional(),
-  custoDriver: z.string().optional(),
+  custoDriverOnoff220: z.string().optional(),
+  custoDriverOnoffBivolt: z.string().optional(),
+  custoDriverDim110v: z.string().optional(),
+  custoDriverDimDali: z.string().optional(),
 }).superRefine((data, ctx) => {
   // Validar Ótica: obrigatório se não for NaoAplicavel
   if (!data.oticaNaoAplicavel && (!data.otica || data.otica.trim() === "")) {
@@ -77,7 +80,10 @@ const bulkProductSchema = z.object({
   fotoUrl: z.string().optional(),
   fotoKey: z.string().optional(),
   custoLuminaria: z.string().optional(),
-  custoDriver: z.string().optional(),
+  custoDriverOnoff220: z.string().optional(),
+  custoDriverOnoffBivolt: z.string().optional(),
+  custoDriverDim110v: z.string().optional(),
+  custoDriverDimDali: z.string().optional(),
 });
 
 // ─── Router ───────────────────────────────────────────────────────────────────
@@ -135,7 +141,10 @@ export const appRouter = router({
           driverDimDali: input.driverDimDali?.toUpperCase() || null,
           temperaturasCor: input.temperaturasCor || '["2700","3000","4000","5000"]',
           custoLuminaria: input.custoLuminaria || null,
-          custoDriver: input.custoDriver || null,
+          custoDriverOnoff220: input.custoDriverOnoff220 || null,
+          custoDriverOnoffBivolt: input.custoDriverOnoffBivolt || null,
+          custoDriverDim110v: input.custoDriverDim110v || null,
+          custoDriverDimDali: input.custoDriverDimDali || null,
           fotoUrl: input.fotoUrl || null,
           fotoKey: input.fotoKey || null,
         };
@@ -172,7 +181,10 @@ export const appRouter = router({
         if (d.fotoUrl !== undefined) update.fotoUrl = d.fotoUrl || null;
         if (d.fotoKey !== undefined) update.fotoKey = d.fotoKey || null;
         if (d.custoLuminaria !== undefined) update.custoLuminaria = d.custoLuminaria || null;
-        if (d.custoDriver !== undefined) update.custoDriver = d.custoDriver || null;
+        if (d.custoDriverOnoff220 !== undefined) update.custoDriverOnoff220 = d.custoDriverOnoff220 || null;
+        if (d.custoDriverOnoffBivolt !== undefined) update.custoDriverOnoffBivolt = d.custoDriverOnoffBivolt || null;
+        if (d.custoDriverDim110v !== undefined) update.custoDriverDim110v = d.custoDriverDim110v || null;
+        if (d.custoDriverDimDali !== undefined) update.custoDriverDimDali = d.custoDriverDimDali || null;
 
         await updateProduct(input.id, update as any);
         return { success: true };
@@ -203,7 +215,10 @@ export const appRouter = router({
           driverDimDali: p.driverDimDali?.toUpperCase() || null,
           temperaturasCor: p.temperaturasCor || '["2700","3000","4000","5000"]',
           custoLuminaria: p.custoLuminaria || null,
-          custoDriver: p.custoDriver || null,
+          custoDriverOnoff220: p.custoDriverOnoff220 || null,
+          custoDriverOnoffBivolt: p.custoDriverOnoffBivolt || null,
+          custoDriverDim110v: p.custoDriverDim110v || null,
+          custoDriverDimDali: p.custoDriverDimDali || null,
           fotoUrl: null,
           fotoKey: null,
         }));

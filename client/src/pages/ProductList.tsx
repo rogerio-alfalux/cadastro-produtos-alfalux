@@ -580,10 +580,50 @@ function ProductDetail({ id }: { id: number }) {
 
       <div className="alfalux-card p-4">
         <p className="section-header mb-3">DRIVERS</p>
-        <Row label="ON/OFF 220Vac" value={product.driverOnoff220} />
-        <Row label="ON/OFF BIVOLT" value={product.driverOnoffBivolt} />
-        <Row label="DIM 1-10V" value={product.driverDim110v} />
-        <Row label="DIM DALI" value={product.driverDimDali} />
+        {/* ON/OFF 220Vac */}
+        <div className="flex items-start justify-between py-1.5 border-b border-border/30 last:border-0">
+          <span className="text-xs text-muted-foreground uppercase tracking-wide">ON/OFF 220Vac</span>
+          <div className="text-right">
+            <span className="text-xs font-medium text-foreground">{product.driverOnoff220 || "—"}</span>
+            {(product as any).custoDriverOnoff220 && (
+              <span className="block text-[10px] text-primary/80 mt-0.5">R$ {Number((product as any).custoDriverOnoff220).toFixed(2).replace(".", ",")}</span>
+            )}
+          </div>
+        </div>
+        {/* ON/OFF BIVOLT */}
+        <div className="flex items-start justify-between py-1.5 border-b border-border/30 last:border-0">
+          <span className="text-xs text-muted-foreground uppercase tracking-wide">ON/OFF BIVOLT</span>
+          <div className="text-right">
+            <span className="text-xs font-medium text-foreground">{product.driverOnoffBivolt || "—"}</span>
+            {(product as any).custoDriverOnoffBivolt && (
+              <span className="block text-[10px] text-primary/80 mt-0.5">R$ {Number((product as any).custoDriverOnoffBivolt).toFixed(2).replace(".", ",")}</span>
+            )}
+          </div>
+        </div>
+        {/* DIM 1-10V */}
+        {product.driverDim110v && (
+          <div className="flex items-start justify-between py-1.5 border-b border-border/30 last:border-0">
+            <span className="text-xs text-muted-foreground uppercase tracking-wide">DIM 1-10V</span>
+            <div className="text-right">
+              <span className="text-xs font-medium text-foreground">{product.driverDim110v}</span>
+              {(product as any).custoDriverDim110v && (
+                <span className="block text-[10px] text-primary/80 mt-0.5">R$ {Number((product as any).custoDriverDim110v).toFixed(2).replace(".", ",")}</span>
+              )}
+            </div>
+          </div>
+        )}
+        {/* DIM DALI */}
+        {product.driverDimDali && (
+          <div className="flex items-start justify-between py-1.5 last:border-0">
+            <span className="text-xs text-muted-foreground uppercase tracking-wide">DIM DALI</span>
+            <div className="text-right">
+              <span className="text-xs font-medium text-foreground">{product.driverDimDali}</span>
+              {(product as any).custoDriverDimDali && (
+                <span className="block text-[10px] text-primary/80 mt-0.5">R$ {Number((product as any).custoDriverDimDali).toFixed(2).replace(".", ",")}</span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="alfalux-card p-4">
@@ -597,11 +637,10 @@ function ProductDetail({ id }: { id: number }) {
         </div>
       </div>
 
-      {(product.custoLuminaria || product.custoDriver) && (
+      {product.custoLuminaria && (
         <div className="alfalux-card p-4">
-          <p className="section-header mb-3">CUSTOS</p>
-          {product.custoLuminaria && <Row label="CUSTO LUMINÁRIA" value={`R$ ${Number(product.custoLuminaria).toFixed(2).replace(".", ",")}`} />}
-          {product.custoDriver && <Row label="CUSTO DRIVER" value={`R$ ${Number(product.custoDriver).toFixed(2).replace(".", ",")}`} />}
+          <p className="section-header mb-3">CUSTO DA LUMINÁRIA</p>
+          <Row label="CUSTO DO CORPO" value={`R$ ${Number(product.custoLuminaria).toFixed(2).replace(".", ",")}`} />
         </div>
       )}
     </div>

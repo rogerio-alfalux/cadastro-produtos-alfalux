@@ -47,3 +47,21 @@
 - [x] Testes vitest para routers de produtos (9 testes passando)
 - [x] Testes de validação dos campos obrigatórios
 - [x] Teste de logout (existente)
+
+## Melhorias v2 (solicitadas)
+- [x] Reestruturar custo: cada driver deve ter seu próprio campo de custo ao lado
+- [x] Atualizar schema do banco: adicionar colunas custoOnoff220, custoOnoffBivolt, custoDim110v, custoDimDali
+- [x] Atualizar frontend: custo embutido inline ao lado de cada campo de driver
+- [x] Atualizar exportação Excel para incluir custo por driver
+- [x] Analisar planilha Excel para extrair dados de perfis
+- [ ] Cadastrar produtos de perfis (aguardando definição da lógica de drivers)
+
+## Melhorias v2 — Custo por Driver
+- [x] Schema: adicionar custoOnoff220, custoOnoffBivolt, custoDim110v, custoDimDali (decimal, nullable)
+- [x] Schema: remover custoDriver genérico, mantendo custoLuminaria
+- [x] DB helpers: atualizar createProduct, updateProduct para novos campos
+- [x] Router: atualizar schema Zod para novos campos de custo
+- [x] Exportação Excel: incluir colunas de custo por driver
+- [x] Importação Excel: mapear colunas de custo por driver
+- [x] Frontend: custo embutido inline ao lado de cada campo de driver
+- [x] Remover seção separada de "Custo" do formulário

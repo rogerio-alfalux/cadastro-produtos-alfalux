@@ -57,9 +57,14 @@ export const products = mysqlTable("products", {
   fotoUrl: text("fotoUrl"),
   fotoKey: text("fotoKey"),
 
-  // Custos
+  // Custo da luminária (corpo)
   custoLuminaria: decimal("custoLuminaria", { precision: 10, scale: 2 }),
-  custoDriver: decimal("custoDriver", { precision: 10, scale: 2 }),
+
+  // Custo por driver (cada driver tem seu próprio custo)
+  custoDriverOnoff220: decimal("custoDriverOnoff220", { precision: 10, scale: 2 }),
+  custoDriverOnoffBivolt: decimal("custoDriverOnoffBivolt", { precision: 10, scale: 2 }),
+  custoDriverDim110v: decimal("custoDriverDim110v", { precision: 10, scale: 2 }),
+  custoDriverDimDali: decimal("custoDriverDimDali", { precision: 10, scale: 2 }),
 
   // Metadados
   createdAt: timestamp("createdAt").defaultNow().notNull(),

@@ -19,12 +19,9 @@ import {
   X,
   CheckCircle2,
   AlertCircle,
-  ChevronDown,
-  ChevronUp,
   Image as ImageIcon,
   DollarSign,
   Cpu,
-  Lightbulb,
   Settings,
   Tag,
   Thermometer,
@@ -52,14 +49,17 @@ interface FormData {
   dissipador: string;
   dissipadorNaoAplicavel: boolean;
   driverOnoff220: string;
+  custoDriverOnoff220: string;
   driverOnoffBivolt: string;
+  custoDriverOnoffBivolt: string;
   driverDim110v: string;
+  custoDriverDim110v: string;
   driverDimDali: string;
+  custoDriverDimDali: string;
   temperaturasCor: string[];
   fotoUrl: string;
   fotoKey: string;
   custoLuminaria: string;
-  custoDriver: string;
 }
 
 const defaultForm: FormData = {
@@ -76,14 +76,17 @@ const defaultForm: FormData = {
   dissipador: "",
   dissipadorNaoAplicavel: false,
   driverOnoff220: "",
+  custoDriverOnoff220: "",
   driverOnoffBivolt: "",
+  custoDriverOnoffBivolt: "",
   driverDim110v: "",
+  custoDriverDim110v: "",
   driverDimDali: "",
+  custoDriverDimDali: "",
   temperaturasCor: ["2700", "3000", "4000", "5000"],
   fotoUrl: "",
   fotoKey: "",
   custoLuminaria: "",
-  custoDriver: "",
 };
 
 // Required fields
@@ -132,6 +135,7 @@ export default function ProductForm({ editId, onSuccess }: ProductFormProps) {
         try { return JSON.parse(existingProduct.temperaturasCor || "[]"); }
         catch { return ["2700", "3000", "4000", "5000"]; }
       })();
+      const p = existingProduct as any;
       setForm({
         categoria: existingProduct.categoria || "",
         instalacao: existingProduct.instalacao || "",
@@ -146,14 +150,17 @@ export default function ProductForm({ editId, onSuccess }: ProductFormProps) {
         dissipador: existingProduct.dissipadorNaoAplicavel ? "" : (existingProduct.dissipador || ""),
         dissipadorNaoAplicavel: existingProduct.dissipadorNaoAplicavel || false,
         driverOnoff220: existingProduct.driverOnoff220 || "",
+        custoDriverOnoff220: p.custoDriverOnoff220 ? String(p.custoDriverOnoff220) : "",
         driverOnoffBivolt: existingProduct.driverOnoffBivolt || "",
+        custoDriverOnoffBivolt: p.custoDriverOnoffBivolt ? String(p.custoDriverOnoffBivolt) : "",
         driverDim110v: existingProduct.driverDim110v || "",
+        custoDriverDim110v: p.custoDriverDim110v ? String(p.custoDriverDim110v) : "",
         driverDimDali: existingProduct.driverDimDali || "",
+        custoDriverDimDali: p.custoDriverDimDali ? String(p.custoDriverDimDali) : "",
         temperaturasCor: temps,
         fotoUrl: existingProduct.fotoUrl || "",
         fotoKey: existingProduct.fotoKey || "",
         custoLuminaria: existingProduct.custoLuminaria ? String(existingProduct.custoLuminaria) : "",
-        custoDriver: existingProduct.custoDriver ? String(existingProduct.custoDriver) : "",
       });
       if (existingProduct.fotoUrl) setPhotoPreview(existingProduct.fotoUrl);
     }
@@ -198,7 +205,6 @@ export default function ProductForm({ editId, onSuccess }: ProductFormProps) {
     }
 
     setErrors(newErrors);
-    // Mark all required fields as touched
     const allTouched: Partial<Record<keyof FormData, boolean>> = {};
     REQUIRED_FIELDS.forEach((f) => (allTouched[f] = true));
     setTouched(allTouched);
@@ -265,7 +271,6 @@ export default function ProductForm({ editId, onSuccess }: ProductFormProps) {
   const handleSubmit = () => {
     if (!validate()) {
       toast.error("Preencha todos os campos obrigatórios");
-      // Scroll to first error
       setTimeout(() => {
         const el = document.querySelector(".field-error");
         el?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -277,7 +282,10 @@ export default function ProductForm({ editId, onSuccess }: ProductFormProps) {
       ...form,
       temperaturasCor: JSON.stringify(form.temperaturasCor),
       custoLuminaria: form.custoLuminaria || undefined,
-      custoDriver: form.custoDriver || undefined,
+      custoDriverOnoff220: form.custoDriverOnoff220 || undefined,
+      custoDriverOnoffBivolt: form.custoDriverOnoffBivolt || undefined,
+      custoDriverDim110v: form.custoDriverDim110v || undefined,
+      custoDriverDimDali: form.custoDriverDimDali || undefined,
       fotoUrl: form.fotoUrl || undefined,
       fotoKey: form.fotoKey || undefined,
       driverDim110v: form.driverDim110v || undefined,
@@ -321,6 +329,75 @@ export default function ProductForm({ editId, onSuccess }: ProductFormProps) {
           <p className="field-error-msg">
             <AlertCircle className="w-3 h-3" />
             {errors[field]}
+          </p>
+        )}
+      </div>
+    );
+  };
+
+  // ─── Driver Row: driver field + custo inline ──────────────────────────────
+
+  const DriverRow = ({
+    driverField,
+    custoField,
+    label,
+    required,
+    placeholder,
+    optional,
+  }: {
+    driverField: keyof FormData;
+    custoField: keyof FormData;
+    label: string;
+    required?: boolean;
+    placeholder: string;
+    optional?: boolean;
+  }) => {
+    const hasError = touched[driverField] && errors[driverField];
+    return (
+      <div className={cn("space-y-1.5", hasError && "field-error")}>
+        <div className="flex items-center gap-2">
+          <Label className="field-label flex-1">
+            {label}
+            {required && <span className="required-star">*</span>}
+          </Label>
+          {optional && (
+            <span className="text-[10px] text-muted-foreground/60 font-medium tracking-wider">OPCIONAL</span>
+          )}
+        </div>
+        <div className="flex gap-2 items-start">
+          {/* Driver name input */}
+          <div className="flex-1">
+            <Input
+              className={cn(
+                "input-dark",
+                hasError && "border-destructive ring-1 ring-destructive"
+              )}
+              value={form[driverField] as string}
+              onChange={(e) => handleTextUpper(driverField, e.target.value)}
+              placeholder={placeholder}
+            />
+          </div>
+          {/* Cost input inline */}
+          <div className="relative w-36 flex-shrink-0">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-medium pointer-events-none z-10">
+              R$
+            </span>
+            <Input
+              className="input-dark pl-8 text-sm"
+              type="number"
+              step="0.01"
+              min="0"
+              value={form[custoField] as string}
+              onChange={(e) => setField(custoField, e.target.value)}
+              placeholder="Custo"
+              title="Custo deste driver (R$)"
+            />
+          </div>
+        </div>
+        {hasError && (
+          <p className="field-error-msg">
+            <AlertCircle className="w-3 h-3" />
+            {errors[driverField]}
           </p>
         )}
       </div>
@@ -527,61 +604,68 @@ export default function ProductForm({ editId, onSuccess }: ProductFormProps) {
 
         {/* ─── Seção 3: Drivers / Controle ─────────────────────────────── */}
         <section className="alfalux-card p-6">
-          <div className="flex items-center gap-2 mb-5">
+          <div className="flex items-center gap-2 mb-2">
             <Settings className="w-4 h-4 text-primary" />
             <h2 className="section-header mb-0">DRIVERS / CONTROLE</h2>
           </div>
+          <p className="text-xs text-muted-foreground mb-5">
+            Para cada driver, informe o modelo e o custo unitário em R$ (opcional)
+          </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* ON/OFF 220Vac */}
-            <FieldWrapper field="driverOnoff220" label="ON/OFF DRIVER 220Vac" required>
-              <Input
-                className={cn("input-dark", touched.driverOnoff220 && errors.driverOnoff220 && "border-destructive ring-1 ring-destructive")}
-                value={form.driverOnoff220}
-                onChange={(e) => handleTextUpper("driverOnoff220", e.target.value)}
-                placeholder="Ex: PHILIPS XITANIUM 19W 350MA (EQ00346)"
-              />
-            </FieldWrapper>
+          <div className="space-y-5">
+            {/* Cabeçalho das colunas */}
+            <div className="flex gap-2 items-center">
+              <div className="flex-1 text-[10px] text-muted-foreground/60 uppercase tracking-wider font-medium">
+                Modelo do driver
+              </div>
+              <div className="w-36 flex-shrink-0 text-[10px] text-muted-foreground/60 uppercase tracking-wider font-medium text-center">
+                Custo (R$)
+              </div>
+            </div>
 
-            {/* ON/OFF BIVOLT */}
-            <FieldWrapper field="driverOnoffBivolt" label="ON/OFF DRIVER BIVOLT" required>
-              <Input
-                className={cn("input-dark", touched.driverOnoffBivolt && errors.driverOnoffBivolt && "border-destructive ring-1 ring-destructive")}
-                value={form.driverOnoffBivolt}
-                onChange={(e) => handleTextUpper("driverOnoffBivolt", e.target.value)}
-                placeholder="Ex: LIFUD 13W 350MA BIVOLT (EQ00236)"
-              />
-            </FieldWrapper>
+            {/* ON/OFF 220Vac — obrigatório */}
+            <DriverRow
+              driverField="driverOnoff220"
+              custoField="custoDriverOnoff220"
+              label="ON/OFF DRIVER 220Vac"
+              required
+              placeholder="Ex: PHILIPS XITANIUM 19W 350MA (EQ00346)"
+            />
 
-            {/* DIM 1-10V */}
-            <FieldWrapper label="DIM 1-10V">
-              <div className="relative">
-                <Input
-                  className="input-dark"
-                  value={form.driverDim110v}
-                  onChange={(e) => handleTextUpper("driverDim110v", e.target.value)}
+            {/* ON/OFF BIVOLT — obrigatório */}
+            <DriverRow
+              driverField="driverOnoffBivolt"
+              custoField="custoDriverOnoffBivolt"
+              label="ON/OFF DRIVER BIVOLT"
+              required
+              placeholder="Ex: LIFUD 13W 350MA BIVOLT (EQ00236)"
+            />
+
+            <div className="border-t border-border/40 pt-4">
+              <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider font-medium mb-4">
+                Drivers opcionais (preencha se disponível)
+              </p>
+
+              {/* DIM 1-10V — opcional */}
+              <div className="space-y-4">
+                <DriverRow
+                  driverField="driverDim110v"
+                  custoField="custoDriverDim110v"
+                  label="DIM 1-10V"
+                  optional
                   placeholder="Driver DIM 1-10V (opcional)"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground/60 font-medium tracking-wider">
-                  OPCIONAL
-                </span>
-              </div>
-            </FieldWrapper>
 
-            {/* DIM DALI */}
-            <FieldWrapper label="DIM DALI">
-              <div className="relative">
-                <Input
-                  className="input-dark"
-                  value={form.driverDimDali}
-                  onChange={(e) => handleTextUpper("driverDimDali", e.target.value)}
+                {/* DIM DALI — opcional */}
+                <DriverRow
+                  driverField="driverDimDali"
+                  custoField="custoDriverDimDali"
+                  label="DIM DALI"
+                  optional
                   placeholder="Driver DIM DALI (opcional)"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground/60 font-medium tracking-wider">
-                  OPCIONAL
-                </span>
               </div>
-            </FieldWrapper>
+            </div>
           </div>
         </section>
 
@@ -692,16 +776,16 @@ export default function ProductForm({ editId, onSuccess }: ProductFormProps) {
           />
         </section>
 
-        {/* ─── Seção 6: Custos ─────────────────────────────────────────── */}
+        {/* ─── Seção 6: Custo da Luminária ─────────────────────────────── */}
         <section className="alfalux-card p-6">
           <div className="flex items-center gap-2 mb-5">
             <DollarSign className="w-4 h-4 text-primary" />
-            <h2 className="section-header mb-0">CUSTOS</h2>
-            <span className="text-[10px] text-muted-foreground ml-auto">OPCIONAL — VALORES EM R$</span>
+            <h2 className="section-header mb-0">CUSTO DA LUMINÁRIA</h2>
+            <span className="text-[10px] text-muted-foreground ml-auto">OPCIONAL — VALOR EM R$</span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <FieldWrapper label="CUSTO DA LUMINÁRIA (R$)">
+          <div className="max-w-xs">
+            <FieldWrapper label="CUSTO DO CORPO DA LUMINÁRIA (R$)">
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
                 <Input
@@ -711,21 +795,6 @@ export default function ProductForm({ editId, onSuccess }: ProductFormProps) {
                   min="0"
                   value={form.custoLuminaria}
                   onChange={(e) => setField("custoLuminaria", e.target.value)}
-                  placeholder="0,00"
-                />
-              </div>
-            </FieldWrapper>
-
-            <FieldWrapper label="CUSTO DO DRIVER (R$)">
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
-                <Input
-                  className="input-dark pl-9"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={form.custoDriver}
-                  onChange={(e) => setField("custoDriver", e.target.value)}
                   placeholder="0,00"
                 />
               </div>

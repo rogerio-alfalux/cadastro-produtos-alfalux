@@ -74,7 +74,10 @@ router.get("/export-excel", async (_req, res) => {
       "DIM DALI": p.driverDimDali || "",
       "TEMPERATURAS COR": p.temperaturasCor,
       "CUSTO LUMINÁRIA (R$)": p.custoLuminaria || "",
-      "CUSTO DRIVER (R$)": p.custoDriver || "",
+      "CUSTO DRIVER ON/OFF 220Vac (R$)": (p as any).custoDriverOnoff220 || "",
+      "CUSTO DRIVER ON/OFF BIVOLT (R$)": (p as any).custoDriverOnoffBivolt || "",
+      "CUSTO DRIVER DIM 1-10V (R$)": (p as any).custoDriverDim110v || "",
+      "CUSTO DRIVER DIM DALI (R$)": (p as any).custoDriverDimDali || "",
       "FOTO URL": p.fotoUrl || "",
     }));
 
@@ -163,8 +166,11 @@ router.post("/import-excel", uploadExcel.single("file"), async (req, res) => {
           temperaturasCor: '["2700","3000","4000","5000"]',
           fotoUrl: null,
           fotoKey: null,
-          custoLuminaria: null,
-          custoDriver: null,
+          custoLuminaria: String(row["CUSTO LUMINÁRIA (R$)"] || "").trim() || null,
+          custoDriverOnoff220: String(row["CUSTO DRIVER ON/OFF 220Vac (R$)"] || "").trim() || null,
+          custoDriverOnoffBivolt: String(row["CUSTO DRIVER ON/OFF BIVOLT (R$)"] || "").trim() || null,
+          custoDriverDim110v: String(row["CUSTO DRIVER DIM 1-10V (R$)"] || "").trim() || null,
+          custoDriverDimDali: String(row["CUSTO DRIVER DIM DALI (R$)"] || "").trim() || null,
         });
       }
     }
