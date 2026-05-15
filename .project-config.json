@@ -1,0 +1,43 @@
+{
+  "build_command": "pnpm run build",
+  "capabilities": [
+    "server",
+    "db",
+    "user"
+  ],
+  "dev_command": "pnpm run dev",
+  "env_vars": {
+    "DATABASE_URL": "mysql://4QE1i3LPsxu4CUm.64578e57c3e7:LBR1Et02u0PZQW8E9INu@gateway05.us-east-1.prod.aws.tidbcloud.com:4000/c8ZMg2fnQHfcAMKPDCkQRJ?ssl={\"rejectUnauthorized\":true}"
+  },
+  "experiments": [
+    "no_db_push"
+  ],
+  "git_remote": {
+    "repo_url": "s3://vida-prod-gitrepo/webdev-git/310419663032619542/c8ZMg2fnQHfcAMKPDCkQRJ",
+    "access_key_id": "ASIAZV3A2ECZNB7WW4Q3",
+    "secret_access_key": "hgDa/RkNm6+4gvZsAC4qfAsIKdgApvuS+xMMhjzs",
+    "session_token": "IQoJb3JpZ2luX2VjELX//////////wEaCXVzLWVhc3QtMSJHMEUCIQDxGw8n0MlKd+5PJXYnuYWtuPDchaVSTUQC5yYKnsEv9wIgK2eGrI64wbRRPANWM9JjgIRpcBjVJbqM+htHUbnD/Xkq9gMIfRAEGgw2NjUzODYwOTg4NjYiDMpP8FqhcmWerDhaByrTAzLfY87SYujuiqZm5ORz7DLrFnuL2IXhsms0XpZCwznmY0TMu8NPg9tGgm9LjOIyyAP4DZPi6BojRQThiogQxVAR+vkM2WO3s5yAPIu6iiY2MZQ7DycfrvRbnKeM3jgN2o0zGMnkQT9/+1WDsbMCFTOl+vvVxFLNHZYuYyUxiPzIs6lzFkWBv06mriGF4Cx/lbJsbUEvw3jS4ZB/Vu5TyQwt+cw6BFESLCxNfjy/ZZKWgNEKrEsu2uh5uWcNRjDufhhOKS0J+czUoNkZfJH8xxElgHz4+grtvmkShzTNUjhFvTJnHZWuWBEO30rWQq/g8CWs9m1vhib6snz3+YrpAJ73ds7CxzgATA0ra5vcVJ9e4tc73kXX4p3WTdoNwXN6a+6kxHMzjbbWgC9wF9w2aHp4ankMnIpKRlE4g4Pi2lW6E/Y3QJSFjJpVHXEl9DAhLA3baWi1heehZrhG3cu5U0ccPWuU0DrnV6Yei5nfvGq1UVK7kmp0wvE+3u9HLungX98XpSiINlLUEp1+OqnX1RiXZVkOjDHz0Qs4+oFLmAkjpfTY2wOu7NNDmFRKZUI3LkmIjdg/vmvmsleI7TkTKHVJqz543sWrk8mQOxHcCQ9MoPkkMNX5ndAGOp0BxX7Lc2NlzExTBdcvXYG5cABYFsDMa9thxywTiKboY8r6Te50uHRjvSFJsO8N0pqU1a5/6kKKdH3B7/ESsDQQ/lI2li8598vTxsbWW+mx7/QG9XIk/ikBGdQ9Qy3TQNOFvNQ+qRdnN2QnAn4fB06/GvlkhHNvlM2l2mqEjBJnaq3dkYO2lEXlt+Zl9CvBkiVucBvmxtr0Yismv26VRA==",
+    "expiration": "2026-05-16T08:06:45.000Z"
+  },
+  "name": "cadastro-produtos-alfalux",
+  "path": "/home/ubuntu/cadastro-produtos-alfalux",
+  "port": 3000,
+  "secrets": {
+    "BUILT_IN_FORGE_API_KEY": "XWdAgPkqVpLfroRJu3efcA",
+    "BUILT_IN_FORGE_API_URL": "https://forge.manus.ai",
+    "JWT_SECRET": "WTB3tvKwuiTxXpaVkVfiNH",
+    "OAUTH_SERVER_URL": "https://api.manus.im",
+    "OWNER_NAME": "Cosmos Band",
+    "OWNER_OPEN_ID": "nToMgCAAiFEDf5qbQYPto2",
+    "VITE_ANALYTICS_ENDPOINT": "https://manus-analytics.com",
+    "VITE_ANALYTICS_WEBSITE_ID": "38a0ec73-9086-4b68-bd94-4dca651b1f5c",
+    "VITE_APP_ID": "c8ZMg2fnQHfcAMKPDCkQRJ",
+    "VITE_APP_LOGO": "",
+    "VITE_APP_TITLE": "Cadastro de Produtos Alfalux",
+    "VITE_FRONTEND_FORGE_API_KEY": "EA5hFEhmfAAAtUvJfVQxp6",
+    "VITE_FRONTEND_FORGE_API_URL": "https://forge.manus.ai",
+    "VITE_OAUTH_PORTAL_URL": "https://manus.im"
+  },
+  "template_id": "web-db-user",
+  "test_command": "pnpm test"
+}
