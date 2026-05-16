@@ -210,7 +210,9 @@ function parseFormatoConfigurador(ws: any): any[] {
     if (!sku || sku.startsWith("▶") || sku === "Código (SKU)") continue;
 
     const nomeProduto = String(row[colIdx["Nome do Produto"] ?? 1] || "").trim().toUpperCase();
-    const categoria = String(row[colIdx["Categoria"] ?? 3] || "PERFIS LINEARES LED").trim().toUpperCase();
+    const rawCategoria = String(row[colIdx["Categoria"] ?? 3] || "PERFIS").trim().toUpperCase();
+    // Normalizar variantes do nome da categoria de perfis
+    const categoria = rawCategoria === "PERFIS LINEARES LED" ? "PERFIS" : rawCategoria;
     const familia = String(row[colIdx["Família"] ?? 5] || "").trim().toUpperCase();
     const tipoInstalacao = String(row[colIdx["Tipo de Instalação"] ?? 8] || "").trim().toUpperCase();
     const potencia = String(row[colIdx["Potência"] ?? 12] || "").trim();

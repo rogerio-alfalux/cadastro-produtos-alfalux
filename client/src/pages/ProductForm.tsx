@@ -33,7 +33,7 @@ import {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const CATEGORIAS = ["PERFIS LINEARES LED", "DOWNLIGHTS", "PAINÉIS", "SPOTS", "ARANDELAS", "ÁREA EXTERNA", "BALIZADORES", "DECORATIVAS"];
+const CATEGORIAS = ["PERFIS", "DOWNLIGHTS", "PAINÉIS", "SPOTS", "ARANDELAS", "ÁREA EXTERNA", "BALIZADORES", "DECORATIVAS"];
 const INSTALACOES = ["EMBUTIR", "SOBREPOR", "PENDENTE", "ARANDELA", "NO FRAME"];
 const TEMPERATURAS = ["2700", "3000", "4000", "5000"];
 
@@ -526,7 +526,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {/* Categoria */}
             <FieldWrapper field="categoria" label="CATEGORIA">
-              <Select value={form.categoria} onValueChange={(v) => setField("categoria", v)}>
+              <Select key={form.categoria || "_empty"} value={form.categoria} onValueChange={(v) => setField("categoria", v)}>
                 <SelectTrigger className="input-dark">
                   <SelectValue placeholder="Selecione..." />
                 </SelectTrigger>

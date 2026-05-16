@@ -123,3 +123,11 @@
 - [x] Limpar duplicatas reais do banco usando a nova chave composta
 - [x] Restaurar os 3 Spots com SKU correto LDS-2300.1CO.01B
 - [x] Atualizar testes para cobrir reimportação com variantes (mesmo SKU, óticas diferentes)
+
+## Correções v10 — Categoria e Fotos de Perfis
+- [x] Renomear categoria "PERFIS LINEARES LED" → "PERFIS" no banco (UPDATE)
+- [x] Atualizar constante CATEGORIAS no frontend (ProductList, ProductForm) para "PERFIS"
+- [x] Atualizar importador Excel para mapear "PERFIS LINEARES LED" → "PERFIS"
+- [x] Corrigir campo categoria vazio no formulário de edição de perfis
+- [ ] Investigar e buscar fotos dos perfis no Configurador
+- [ ] Associar fotos aos perfis no banco
