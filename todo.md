@@ -131,3 +131,7 @@
 - [x] Corrigir campo categoria vazio no formulário de edição de perfis
 - [x] Fazer upload das 33 fotos de perfis para o storage e associar ao banco (739 produtos)
 - [ ] Associar fotos das famílias FLOW (6), SMART MINI (120) e SOFT (26) — aguardando imagens do usuário
+
+## Fotos v11 — Downlights e Painéis
+- [x] Fazer upload das 87 fotos de Downlights e Painéis para o storage
+- [x] Mapear e associar fotos aos produtos no banco por SKU/nome do produto (65/65 DL, 36/38 Painéis, 3/3 Spots)
