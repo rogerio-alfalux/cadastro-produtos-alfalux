@@ -534,9 +534,14 @@ export default function ProductForm({ editId, onSuccess }: ProductFormProps) {
                     id="otica-na"
                     checked={form.oticaNaoAplicavel}
                     onCheckedChange={(v) => {
-                      setField("oticaNaoAplicavel", !!v);
-                      if (v) { setField("otica", "NÃO APLICÁVEL"); setErrors((p) => ({ ...p, otica: undefined })); }
-                      else setField("otica", "");
+                      const checked = !!v;
+                      setForm((prev) => ({
+                        ...prev,
+                        oticaNaoAplicavel: checked,
+                        otica: checked ? "NÃO APLICÁVEL" : "",
+                      }));
+                      setErrors((p) => ({ ...p, otica: undefined }));
+                      setTouched((p) => ({ ...p, otica: false }));
                     }}
                     className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                   />
@@ -567,9 +572,14 @@ export default function ProductForm({ editId, onSuccess }: ProductFormProps) {
                     id="holder-na"
                     checked={form.holderNaoAplicavel}
                     onCheckedChange={(v) => {
-                      setField("holderNaoAplicavel", !!v);
-                      if (v) { setField("holder", "NÃO APLICÁVEL"); setErrors((p) => ({ ...p, holder: undefined })); }
-                      else setField("holder", "");
+                      const checked = !!v;
+                      setForm((prev) => ({
+                        ...prev,
+                        holderNaoAplicavel: checked,
+                        holder: checked ? "NÃO APLICÁVEL" : "",
+                      }));
+                      setErrors((p) => ({ ...p, holder: undefined }));
+                      setTouched((p) => ({ ...p, holder: false }));
                     }}
                     className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                   />
@@ -600,9 +610,14 @@ export default function ProductForm({ editId, onSuccess }: ProductFormProps) {
                     id="dissipador-na"
                     checked={form.dissipadorNaoAplicavel}
                     onCheckedChange={(v) => {
-                      setField("dissipadorNaoAplicavel", !!v);
-                      if (v) { setField("dissipador", "NÃO APLICÁVEL"); setErrors((p) => ({ ...p, dissipador: undefined })); }
-                      else setField("dissipador", "");
+                      const checked = !!v;
+                      setForm((prev) => ({
+                        ...prev,
+                        dissipadorNaoAplicavel: checked,
+                        dissipador: checked ? "NÃO APLICÁVEL" : "",
+                      }));
+                      setErrors((p) => ({ ...p, dissipador: undefined }));
+                      setTouched((p) => ({ ...p, dissipador: false }));
                     }}
                     className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                   />

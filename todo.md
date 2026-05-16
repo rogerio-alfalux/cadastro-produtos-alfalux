@@ -67,7 +67,7 @@
 - [x] Remover seção separada de "Custo" do formulário
 
 ## Melhorias v3 — Formulário
-- [ ] Corrigir validação: campos com "Não Aplicável" marcado devem ser considerados preenchidos
-- [ ] Criar componente AutocompleteInput com sugestões dos valores já cadastrados
-- [ ] Aplicar autocomplete nos campos: Família, Produto, Módulo LED, Ótica, Holder, Dissipador, Drivers
-- [ ] Corrigir bug do cursor: Delete/Backspace não deve tirar o foco do campo
+- [x] Corrigir validação: campos com "Não Aplicável" marcado devem ser considerados preenchidos
+- [x] Criar componente AutocompleteInput com sugestões dos valores já cadastrados
+- [x] Aplicar autocomplete nos campos: Família, Produto, Módulo LED, Ótica, Holder, Dissipador, Drivers
+- [x] Corrigir bug do cursor: Delete/Backspace não deve tirar o foco do campo
