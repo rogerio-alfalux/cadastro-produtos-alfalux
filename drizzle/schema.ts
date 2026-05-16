@@ -6,6 +6,7 @@ import {
   mysqlTable,
   text,
   timestamp,
+  uniqueIndex,
   varchar,
 } from "drizzle-orm/mysql-core";
 
@@ -72,7 +73,10 @@ export const products = mysqlTable("products", {
   // Metadados
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => ({
+  // Um produto é único pela combinação de SKU + Ótica (variantes do mesmo SKU têm óticas diferentes)
+  skuOticaUnique: uniqueIndex("uq_products_sku_otica").on(table.sku, table.otica),
+}));
 
 export type Product = typeof products.$inferSelect;
 export type InsertProduct = typeof products.$inferInsert;

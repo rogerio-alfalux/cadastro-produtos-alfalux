@@ -71,7 +71,7 @@ vi.mock("./db", () => ({
   createProduct: vi.fn().mockResolvedValue({ insertId: 2 }),
   updateProduct: vi.fn().mockResolvedValue(undefined),
   deleteProduct: vi.fn().mockResolvedValue(undefined),
-  bulkInsertProducts: vi.fn().mockResolvedValue(5),
+  bulkInsertProducts: vi.fn().mockResolvedValue({ inserted: 5, skipped: 0 }),
   countProducts: vi.fn().mockResolvedValue(208),
 }));
 
@@ -285,6 +285,61 @@ describe("products.bulkCreate", () => {
     ]);
     expect(result.success).toBe(true);
     expect(result.inserted).toBe(5);
+    expect(result.skipped).toBe(0);
+  });
+});
+
+describe("bulkInsertProducts - deduplication by SKU+Ótica", () => {
+  it("deduplicates within batch by SKU+Ótica key, not by SKU alone", async () => {
+    const { bulkInsertProducts } = await import("./db");
+    // Reset mock to track calls
+    (bulkInsertProducts as any).mockClear();
+    (bulkInsertProducts as any).mockResolvedValue({ inserted: 2, skipped: 1 });
+
+    const caller = appRouter.createCaller(createCtx());
+    // Two products with same SKU but different ótica = both should be inserted
+    // One product with same SKU+ótica as another = should be skipped
+    const result = await caller.products.bulkCreate([
+      {
+        categoria: "SPOTS",
+        instalacao: "SOBREPOR",
+        familia: "ZEUS",
+        sku: "LDS-2300.1CO.01B",
+        produto: "ZEUS 17W 10° TRL",
+        moduloLed: "LED COB 13X13MM",
+        otica: "REFLETOR 15° (CP00217)",
+        oticaNaoAplicavel: false,
+        holder: "HOLDER C-1313",
+        holderNaoAplicavel: false,
+        dissipador: "NÃO APLICÁVEL",
+        dissipadorNaoAplicavel: true,
+        driverOnoff220: "PHILIPS 20W 500MA",
+        driverOnoffBivolt: "NÃO APLICÁVEL",
+        driverOnoffBivoltNaoAplicavel: true,
+        temperaturasCor: '["2700","3000","4000","5000"]',
+      },
+      {
+        categoria: "SPOTS",
+        instalacao: "SOBREPOR",
+        familia: "ZEUS",
+        sku: "LDS-2300.1CO.01B", // same SKU
+        produto: "ZEUS 17W 24° TRL",
+        moduloLed: "LED COB 13X13MM",
+        otica: "REFLETOR 24° (CP00802)", // different ótica = different product
+        oticaNaoAplicavel: false,
+        holder: "HOLDER C-1313",
+        holderNaoAplicavel: false,
+        dissipador: "NÃO APLICÁVEL",
+        dissipadorNaoAplicavel: true,
+        driverOnoff220: "PHILIPS 20W 500MA",
+        driverOnoffBivolt: "NÃO APLICÁVEL",
+        driverOnoffBivoltNaoAplicavel: true,
+        temperaturasCor: '["2700","3000","4000","5000"]',
+      },
+    ]);
+    expect(result.success).toBe(true);
+    // Mock returns inserted:2 meaning both variants were accepted
+    expect(result.inserted).toBe(2);
   });
 });
 

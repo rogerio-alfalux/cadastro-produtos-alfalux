@@ -133,18 +133,65 @@ export async function deleteProduct(id: number) {
   await db.delete(products).where(eq(products.id, id));
 }
 
-export async function bulkInsertProducts(items: InsertProduct[]) {
+export async function bulkInsertProducts(items: InsertProduct[]): Promise<{ inserted: number; skipped: number }> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  // Insert in batches of 50
-  const batchSize = 50;
-  let inserted = 0;
-  for (let i = 0; i < items.length; i += batchSize) {
-    const batch = items.slice(i, i + batchSize);
-    await db.insert(products).values(batch);
-    inserted += batch.length;
+
+  // Deduplicate within the batch itself (keep last occurrence per SKU+Ótica)
+  // A product is uniquely identified by its SKU + Ótica combination
+  // (same SKU can have multiple variants with different optical accessories)
+  const seen = new Map<string, InsertProduct>();
+  for (const item of items) {
+    const key = `${(item.sku ?? "").toUpperCase()}||${(item.otica ?? "").toUpperCase()}`;
+    seen.set(key, item);
   }
-  return inserted;
+  const deduped = Array.from(seen.values());
+  const skippedInBatch = items.length - deduped.length;
+
+  // Insert in batches of 50 using INSERT IGNORE to skip existing SKUs
+  const batchSize = 50;
+  let affectedRows = 0;
+  for (let i = 0; i < deduped.length; i += batchSize) {
+    const batch = deduped.slice(i, i + batchSize);
+    // Use raw SQL INSERT IGNORE to skip duplicate SKUs already in DB
+    const placeholders = batch.map(() => "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)").join(",");
+    const vals: unknown[] = [];
+    for (const p of batch) {
+      vals.push(
+        p.categoria ?? null, p.instalacao ?? "", p.familia ?? "", p.sku ?? "",
+        p.produto ?? "", p.moduloLed ?? "", p.otica ?? "", p.oticaNaoAplicavel ?? false,
+        p.holder ?? "", p.holderNaoAplicavel ?? false, p.dissipador ?? "", p.dissipadorNaoAplicavel ?? false,
+        p.driverOnoff220 ?? "", p.driverOnoffBivolt ?? "", p.driverOnoffBivoltNaoAplicavel ?? false,
+        p.driverDim110v ?? null, p.driverDim110vNaoAplicavel ?? false,
+        p.driverDimDali ?? null, p.driverDimDaliNaoAplicavel ?? false,
+        p.temperaturasCor ?? '["2700","3000","4000","5000"]',
+        p.fotoUrl ?? null, p.fotoKey ?? null,
+        p.custoLuminaria ?? null, p.custoDriverOnoff220 ?? null
+      );
+    }
+    // Build parameterized INSERT IGNORE using drizzle sql tag
+    const query = sql.raw(
+      `INSERT IGNORE INTO products (categoria, instalacao, familia, sku, produto, moduloLed, otica, oticaNaoAplicavel, holder, holderNaoAplicavel, dissipador, dissipadorNaoAplicavel, driverOnoff220, driverOnoffBivolt, driverOnoffBivoltNaoAplicavel, driverDim110v, driverDim110vNaoAplicavel, driverDimDali, driverDimDaliNaoAplicavel, temperaturasCor, fotoUrl, fotoKey, custoLuminaria, custoDriverOnoff220) VALUES ${placeholders}`
+    );
+    // Inject values via the underlying mysql2 connection
+    const rawDb = (db as any).session?.client ?? (db as any)._client;
+    let result: any;
+    if (rawDb) {
+      [result] = await rawDb.execute(
+        `INSERT IGNORE INTO products (categoria, instalacao, familia, sku, produto, moduloLed, otica, oticaNaoAplicavel, holder, holderNaoAplicavel, dissipador, dissipadorNaoAplicavel, driverOnoff220, driverOnoffBivolt, driverOnoffBivoltNaoAplicavel, driverDim110v, driverDim110vNaoAplicavel, driverDimDali, driverDimDaliNaoAplicavel, temperaturasCor, fotoUrl, fotoKey, custoLuminaria, custoDriverOnoff220) VALUES ${placeholders}`,
+        vals
+      );
+    } else {
+      // Fallback: use drizzle execute with raw sql (no params)
+      result = { affectedRows: batch.length };
+      await db.execute(query);
+    }
+    // mysql2 execute returns [ResultSetHeader, ...], affectedRows is on result directly
+    affectedRows += result?.affectedRows ?? batch.length;
+  }
+
+  const skipped = skippedInBatch + (deduped.length - affectedRows);
+  return { inserted: affectedRows, skipped };
 }
 
 export async function countProducts() {

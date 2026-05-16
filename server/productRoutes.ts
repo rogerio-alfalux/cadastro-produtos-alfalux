@@ -321,8 +321,8 @@ router.post("/import-excel", uploadExcel.single("file"), async (req, res) => {
       return res.status(400).json({ error: "Nenhum produto válido encontrado no arquivo. Verifique se a planilha segue o formato padrão do Cadastro ou o formato do Configurador de Produtos." });
     }
 
-    const inserted = await bulkInsertProducts(allProducts);
-    return res.json({ success: true, inserted, total: allProducts.length, formato: formatoDetectado });
+    const { inserted, skipped } = await bulkInsertProducts(allProducts);
+    return res.json({ success: true, inserted, skipped, total: allProducts.length, formato: formatoDetectado });
   } catch (err) {
     console.error("[import-excel]", err);
     return res.status(500).json({ error: "Erro ao importar Excel: " + String(err) });

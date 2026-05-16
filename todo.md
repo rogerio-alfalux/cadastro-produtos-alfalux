@@ -100,12 +100,26 @@
 - [x] Salvar checkpoint do Cadastro com endpoint público
 
 ## Importação v8 — Suporte à planilha do Configurador (Perfis)
-- [ ] Adaptar endpoint /api/products/import-excel para detectar e importar planilha no formato "Módulos de Perfis" (cabeçalho na linha 4, dados a partir da linha 6, linhas de seção ▶ ignoradas)
-- [ ] Mapear campos: Código (SKU) → sku, Nome do Produto → produto, Família → familia, Categoria → categoria, Tipo de Instalação → instalacao, Modelo Driver (220V) → driverOnoff220, Modelo Driver (Bivolt) → driverOnoffBivolt, Potência+Tipo de Barra+Corrente → moduloLed
-- [ ] Ignorar linhas de seção (▶) e linhas sem SKU
-- [ ] Testar importação com a planilha alfalux_perfis_modulos_v2.xlsx (897 SKUs esperados)
+- [x] Adaptar endpoint /api/products/import-excel para detectar e importar planilha no formato "Módulos de Perfis" (cabeçalho na linha 4, dados a partir da linha 6, linhas de seção ▶ ignoradas)
+- [x] Mapear campos: Código (SKU) → sku, Nome do Produto → produto, Família → familia, Categoria → categoria, Tipo de Instalação → instalacao, Modelo Driver (220V) → driverOnoff220, Modelo Driver (Bivolt) → driverOnoffBivolt, Potência+Tipo de Barra+Corrente → moduloLed
+- [x] Ignorar linhas de seção (▶) e linhas sem SKU
+- [x] Testar importação com a planilha alfalux_perfis_modulos_v2.xlsx (897 SKUs esperados)
 - [x] Adaptar endpoint /api/products/import-excel para detectar e importar planilha no formato "Módulos de Perfis"
 - [x] Mapear campos: Código (SKU) → sku, Nome do Produto → produto, Família → familia, Categoria → categoria, Tipo de Instalação → instalacao, Modelo Driver (220V) → driverOnoff220, Modelo Driver (Bivolt) → driverOnoffBivolt, Potência+Tipo de Barra+Corrente → moduloLed
 - [x] Ignorar linhas de seção (▶) e abas auxiliares (Resumo, Tabela de Drivers, Legenda)
 - [x] Testar importação com a planilha alfalux_perfis_modulos_v2.xlsx — 897 SKUs importados corretamente
 - [x] Limpar registros inválidos do banco gerados por importações de teste anteriores
+
+## Bugs e Melhorias v9
+- [x] Corrigir filtro de categoria: selecionar "PERFIS LINEARES LED" mostra lista vazia
+- [x] Remover duplicatas do banco (perfis duplicados)
+- [x] Implementar anti-duplicidade na importação Excel (ignorar SKUs já existentes)
+
+## Anti-duplicidade v2 — Chave composta SKU + Ótica
+- [x] Remover UNIQUE constraint do SKU no banco
+- [x] Criar UNIQUE constraint composta (sku, otica) no banco
+- [x] Atualizar schema Drizzle para refletir a nova constraint
+- [x] Atualizar bulkInsertProducts para deduplicar por SKU+Ótica (INSERT IGNORE)
+- [x] Limpar duplicatas reais do banco usando a nova chave composta
+- [x] Restaurar os 3 Spots com SKU correto LDS-2300.1CO.01B
+- [x] Atualizar testes para cobrir reimportação com variantes (mesmo SKU, óticas diferentes)

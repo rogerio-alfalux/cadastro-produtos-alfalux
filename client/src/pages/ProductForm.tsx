@@ -33,7 +33,7 @@ import {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const CATEGORIAS = ["PERFIS", "DOWNLIGHTS", "PAINÉIS", "SPOTS", "ARANDELAS", "ÁREA EXTERNA", "BALIZADORES", "DECORATIVAS"];
+const CATEGORIAS = ["PERFIS LINEARES LED", "DOWNLIGHTS", "PAINÉIS", "SPOTS", "ARANDELAS", "ÁREA EXTERNA", "BALIZADORES", "DECORATIVAS"];
 const INSTALACOES = ["EMBUTIR", "SOBREPOR", "PENDENTE", "ARANDELA", "NO FRAME"];
 const TEMPERATURAS = ["2700", "3000", "4000", "5000"];
 

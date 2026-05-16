@@ -41,7 +41,7 @@ import {
 } from "lucide-react";
 import ProductForm from "./ProductForm";
 
-const CATEGORIAS = ["PERFIS", "DOWNLIGHTS", "PAINÉIS", "SPOTS", "ARANDELAS", "ÁREA EXTERNA", "BALIZADORES", "DECORATIVAS"];
+const CATEGORIAS = ["PERFIS LINEARES LED", "DOWNLIGHTS", "PAINÉIS", "SPOTS", "ARANDELAS", "ÁREA EXTERNA", "BALIZADORES", "DECORATIVAS"];
 const INSTALACOES = ["EMBUTIR", "SOBREPOR", "PENDENTE", "ARANDELA", "NO FRAME"];
 const PAGE_SIZE = 20;
 
@@ -112,7 +112,10 @@ export default function ProductList() {
       const res = await fetch("/api/products/import-excel", { method: "POST", body: fd });
       const data = await res.json();
       if (data.success) {
-        toast.success(`${data.inserted} produtos importados com sucesso!`);
+        const msg = data.skipped > 0
+          ? `${data.inserted} produtos importados. ${data.skipped} já existiam e foram ignorados.`
+          : `${data.inserted} produtos importados com sucesso!`;
+        if (data.skipped > 0) toast.info(msg); else toast.success(msg);
         utils.products.list.invalidate();
         utils.products.count.invalidate();
       } else {

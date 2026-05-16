@@ -233,8 +233,8 @@ export const appRouter = router({
           fotoUrl: null,
           fotoKey: null,
         }));
-        const inserted = await bulkInsertProducts(items as any);
-        return { success: true, inserted };
+        const { inserted, skipped } = await bulkInsertProducts(items as any);
+        return { success: true, inserted, skipped };
       }),
 
     count: publicProcedure.query(async () => {
