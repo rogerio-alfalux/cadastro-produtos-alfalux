@@ -79,3 +79,7 @@
 - [x] Validação: ON/OFF BIVOLT obrigatório apenas se não marcado como Não Aplicável
 - [x] DIM 1-10V e DIM DALI: já eram opcionais, mas agora com checkbox explícito
 - [x] Atualizar testes
+
+## Bugs v5 — Formulário
+- [x] Bug: DISSIPADOR preenchido ainda aparece como campo obrigatório faltando (stale state)
+- [x] Bug: AutocompleteInput trava cursor ao digitar/apagar — só aceita 1 caractere por vez

@@ -128,6 +128,10 @@ export default function ProductForm({ editId, onSuccess }: ProductFormProps) {
   const [uploading, setUploading] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Keep a ref that always points to the latest form state so validate()
+  // never reads a stale closure value
+  const formRef = useRef<FormData>(form);
+  useEffect(() => { formRef.current = form; }, [form]);
   const isEdit = !!editId;
 
   // Load existing product for edit
@@ -200,16 +204,18 @@ export default function ProductForm({ editId, onSuccess }: ProductFormProps) {
 
   // ─── Validation ──────────────────────────────────────────────────────────
 
+  // Always read from formRef.current so we never use a stale closure
   const validate = (): boolean => {
+    const f = formRef.current;
     const newErrors: Partial<Record<keyof FormData, string>> = {};
 
     for (const field of REQUIRED_FIELDS) {
-      if (field === "otica" && form.oticaNaoAplicavel) continue;
-      if (field === "holder" && form.holderNaoAplicavel) continue;
-      if (field === "dissipador" && form.dissipadorNaoAplicavel) continue;
-      if (field === "driverOnoffBivolt" && form.driverOnoffBivoltNaoAplicavel) continue;
+      if (field === "otica" && f.oticaNaoAplicavel) continue;
+      if (field === "holder" && f.holderNaoAplicavel) continue;
+      if (field === "dissipador" && f.dissipadorNaoAplicavel) continue;
+      if (field === "driverOnoffBivolt" && f.driverOnoffBivoltNaoAplicavel) continue;
 
-      const value = form[field];
+      const value = f[field];
       if (!value || (typeof value === "string" && !value.trim())) {
         newErrors[field] = `${FIELD_LABELS[field]} é obrigatório`;
       }
@@ -217,12 +223,14 @@ export default function ProductForm({ editId, onSuccess }: ProductFormProps) {
 
     setErrors(newErrors);
     const allTouched: Partial<Record<keyof FormData, boolean>> = {};
-    REQUIRED_FIELDS.forEach((f) => (allTouched[f] = true));
+    REQUIRED_FIELDS.forEach((fld) => (allTouched[fld] = true));
     setTouched(allTouched);
 
     return Object.keys(newErrors).length === 0;
   };
 
+  // isFormValid is called during render — must use `form` state directly (not formRef)
+  // so the button re-enables as soon as the user fills required fields
   const isFormValid = (): boolean => {
     for (const field of REQUIRED_FIELDS) {
       if (field === "otica" && form.oticaNaoAplicavel) continue;
@@ -281,6 +289,8 @@ export default function ProductForm({ editId, onSuccess }: ProductFormProps) {
   };
 
   const handleSubmit = () => {
+    // Sync ref before validating to ensure we read the absolute latest state
+    formRef.current = form;
     if (!validate()) {
       toast.error("Preencha todos os campos obrigatórios");
       setTimeout(() => {
