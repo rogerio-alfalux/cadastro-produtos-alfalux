@@ -187,4 +187,75 @@ router.post("/import-excel", uploadExcel.single("file"), async (req, res) => {
   }
 });
 
+// ─── Endpoint público para o Configurador ───────────────────────────────────
+// Retorna todos os produtos no formato esperado pelo Configurador de Produtos
+// GET /api/products/all  (sem autenticação — consumido pelo Configurador)
+router.get("/all", async (_req, res) => {
+  try {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET");
+    res.setHeader("Cache-Control", "no-cache");
+
+    const { items } = await listProducts({ limit: 10000, offset: 0 });
+
+    // Mapear para o formato que o Configurador espera
+    const formatted = items.map((p) => {
+      const temps: string[] = [];
+      try {
+        const parsed = JSON.parse(p.temperaturasCor || "[]");
+        if (Array.isArray(parsed)) temps.push(...parsed);
+      } catch {
+        temps.push("2700", "3000", "4000", "5000");
+      }
+
+      return {
+        instalacao: p.instalacao,
+        familia: p.familia,
+        sku: p.sku,
+        name: p.produto,
+        categoria: p.categoria || null,
+        holder: p.holderNaoAplicavel ? null : (p.holder || null),
+        otica: p.oticaNaoAplicavel ? null : (p.otica || null),
+        dissipador: p.dissipadorNaoAplicavel ? null : (p.dissipador || null),
+        ledModule: p.moduloLed,
+        fotoUrl: p.fotoUrl || null,
+        temperaturasCor: temps,
+        driver220: p.driverOnoff220
+          ? { model: p.driverOnoff220, code: null }
+          : null,
+        driverBivolt: p.driverOnoffBivoltNaoAplicavel
+          ? null
+          : p.driverOnoffBivolt
+            ? { model: p.driverOnoffBivolt, code: null }
+            : null,
+        driverDim110v: p.driverDim110vNaoAplicavel
+          ? null
+          : p.driverDim110v
+            ? { model: p.driverDim110v, code: null }
+            : null,
+        driverDimDali: p.driverDimDaliNaoAplicavel
+          ? null
+          : p.driverDimDali
+            ? { model: p.driverDimDali, code: null }
+            : null,
+        custoLuminaria: p.custoLuminaria ? Number(p.custoLuminaria) : null,
+        custoDriver220: (p as any).custoDriverOnoff220 ? Number((p as any).custoDriverOnoff220) : null,
+        custoDriverBivolt: (p as any).custoDriverOnoffBivolt ? Number((p as any).custoDriverOnoffBivolt) : null,
+        custoDriverDim110v: (p as any).custoDriverDim110v ? Number((p as any).custoDriverDim110v) : null,
+        custoDriverDimDali: (p as any).custoDriverDimDali ? Number((p as any).custoDriverDimDali) : null,
+      };
+    });
+
+    return res.json({
+      count: formatted.length,
+      available: formatted.length,
+      products: formatted,
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.error("[products/all]", err);
+    return res.status(500).json({ error: "Erro ao buscar produtos" });
+  }
+});
+
 export default router;

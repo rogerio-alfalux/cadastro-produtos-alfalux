@@ -92,3 +92,9 @@
 - [x] PRODUTO limpo ao duplicar (para forçar novo nome)
 - [x] Banner de aviso no topo do formulário indicando "DUPLICANDO A PARTIR DE: [NOME DO PRODUTO ORIGINAL]"
 - [x] Todos os outros campos pré-preenchidos: categoria, instalação, família, módulo LED, ótica, holder, dissipador, drivers, temperaturas, custos, foto
+
+## Integração v7 — Configurador de Produtos
+- [x] Expor endpoint público GET /api/products/all no Cadastro para o Configurador consumir
+- [x] Documentar mudanças necessárias no Configurador (led.drivers e led.refreshDrivers) em INTEGRACAO_CONFIGURADOR.md
+- [x] Testar endpoint /api/products/all — retornando 211 produtos corretamente
+- [x] Salvar checkpoint do Cadastro com endpoint público
