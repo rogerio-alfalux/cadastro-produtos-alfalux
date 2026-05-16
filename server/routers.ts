@@ -34,9 +34,12 @@ const productSchema = z.object({
   dissipador: z.string().optional().default(""),
   dissipadorNaoAplicavel: z.boolean().default(false),
   driverOnoff220: z.string().min(1, "ON/OFF DRIVER 220Vac é obrigatório"),
-  driverOnoffBivolt: z.string().min(1, "ON/OFF DRIVER BIVOLT é obrigatório"),
+  driverOnoffBivolt: z.string().optional().default(""),
+  driverOnoffBivoltNaoAplicavel: z.boolean().default(false),
   driverDim110v: z.string().optional(),
+  driverDim110vNaoAplicavel: z.boolean().default(false),
   driverDimDali: z.string().optional(),
+  driverDimDaliNaoAplicavel: z.boolean().default(false),
   temperaturasCor: z.string().default('["2700","3000","4000","5000"]'),
   fotoUrl: z.string().optional(),
   fotoKey: z.string().optional(),
@@ -58,6 +61,10 @@ const productSchema = z.object({
   if (!data.dissipadorNaoAplicavel && (!data.dissipador || data.dissipador.trim() === "")) {
     ctx.addIssue({ code: "custom", path: ["dissipador"], message: "DISSIPADOR é obrigatório" });
   }
+  // Validar ON/OFF BIVOLT: obrigatório se não for NaoAplicavel
+  if (!data.driverOnoffBivoltNaoAplicavel && (!data.driverOnoffBivolt || data.driverOnoffBivolt.trim() === "")) {
+    ctx.addIssue({ code: "custom", path: ["driverOnoffBivolt"], message: "ON/OFF DRIVER BIVOLT é obrigatório" });
+  }
 });
 
 const bulkProductSchema = z.object({
@@ -74,9 +81,12 @@ const bulkProductSchema = z.object({
   dissipador: z.string().default(""),
   dissipadorNaoAplicavel: z.boolean().default(false),
   driverOnoff220: z.string().default(""),
-  driverOnoffBivolt: z.string().default(""),
+  driverOnoffBivolt: z.string().optional().default(""),
+  driverOnoffBivoltNaoAplicavel: z.boolean().default(false),
   driverDim110v: z.string().optional(),
+  driverDim110vNaoAplicavel: z.boolean().default(false),
   driverDimDali: z.string().optional(),
+  driverDimDaliNaoAplicavel: z.boolean().default(false),
   temperaturasCor: z.string().default('["2700","3000","4000","5000"]'),
   fotoUrl: z.string().optional(),
   fotoKey: z.string().optional(),

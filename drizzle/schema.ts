@@ -46,9 +46,12 @@ export const products = mysqlTable("products", {
 
   // Drivers
   driverOnoff220: text("driverOnoff220").notNull(),
-  driverOnoffBivolt: text("driverOnoffBivolt").notNull(),
+  driverOnoffBivolt: text("driverOnoffBivolt"),
+  driverOnoffBivoltNaoAplicavel: boolean("driverOnoffBivoltNaoAplicavel").default(false).notNull(),
   driverDim110v: text("driverDim110v"),
+  driverDim110vNaoAplicavel: boolean("driverDim110vNaoAplicavel").default(false).notNull(),
   driverDimDali: text("driverDimDali"),
+  driverDimDaliNaoAplicavel: boolean("driverDimDaliNaoAplicavel").default(false).notNull(),
 
   // Temperatura de cor (JSON array com valores selecionados) - default aplicado na aplicação
   temperaturasCor: text("temperaturasCor").notNull(),

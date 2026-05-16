@@ -287,3 +287,68 @@ describe("products.bulkCreate", () => {
     expect(result.inserted).toBe(5);
   });
 });
+
+describe("products.create - driver NaoAplicavel validation", () => {
+  const baseProduct = {
+    instalacao: "EMBUTIR",
+    familia: "LUNA",
+    sku: "TEST-DRV",
+    produto: "PRODUTO TESTE",
+    moduloLed: "MÓDULO TESTE",
+    otica: "NÃO APLICÁVEL",
+    oticaNaoAplicavel: true as const,
+    holder: "NÃO APLICÁVEL",
+    holderNaoAplicavel: true as const,
+    dissipador: "NÃO APLICÁVEL",
+    dissipadorNaoAplicavel: true as const,
+    driverOnoff220: "DRIVER 220V",
+    temperaturasCor: '["2700","3000","4000","5000"]',
+  };
+
+  it("rejects create when driverOnoffBivolt is empty and NaoAplicavel is false", async () => {
+    const caller = appRouter.createCaller(createCtx());
+    await expect(
+      caller.products.create({
+        ...baseProduct,
+        driverOnoffBivolt: "",
+        driverOnoffBivoltNaoAplicavel: false,
+      })
+    ).rejects.toThrow();
+  });
+
+  it("allows create when driverOnoffBivolt is empty but NaoAplicavel is true", async () => {
+    const caller = appRouter.createCaller(createCtx());
+    const result = await caller.products.create({
+      ...baseProduct,
+      driverOnoffBivolt: "",
+      driverOnoffBivoltNaoAplicavel: true,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("allows create with driverDim110vNaoAplicavel and driverDimDaliNaoAplicavel set to true", async () => {
+    const caller = appRouter.createCaller(createCtx());
+    const result = await caller.products.create({
+      ...baseProduct,
+      driverOnoffBivolt: "DRIVER BIVOLT",
+      driverOnoffBivoltNaoAplicavel: false,
+      driverDim110v: undefined,
+      driverDim110vNaoAplicavel: true,
+      driverDimDali: undefined,
+      driverDimDaliNaoAplicavel: true,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("persists driverOnoffBivoltNaoAplicavel=true in createProduct call", async () => {
+    const { createProduct } = await import("./db");
+    const caller = appRouter.createCaller(createCtx());
+    await caller.products.create({
+      ...baseProduct,
+      driverOnoffBivolt: "",
+      driverOnoffBivoltNaoAplicavel: true,
+    });
+    const callArgs = (createProduct as any).mock.calls.at(-1)?.[0];
+    expect(callArgs?.driverOnoffBivoltNaoAplicavel).toBe(true);
+  });
+});

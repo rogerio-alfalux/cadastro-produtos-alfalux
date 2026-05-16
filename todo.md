@@ -71,3 +71,11 @@
 - [x] Criar componente AutocompleteInput com sugestões dos valores já cadastrados
 - [x] Aplicar autocomplete nos campos: Família, Produto, Módulo LED, Ótica, Holder, Dissipador, Drivers
 - [x] Corrigir bug do cursor: Delete/Backspace não deve tirar o foco do campo
+
+## Melhorias v4 — Drivers Não Aplicável
+- [x] Schema: adicionar colunas driverOnoffBivoltNaoAplicavel, driverDim110vNaoAplicavel, driverDimDaliNaoAplicavel (boolean)
+- [x] Backend: atualizar Zod schema e db helpers para os novos campos
+- [x] Frontend: adicionar checkbox "NÃO APLICÁVEL" ao lado de ON/OFF BIVOLT, DIM 1-10V e DIM DALI
+- [x] Validação: ON/OFF BIVOLT obrigatório apenas se não marcado como Não Aplicável
+- [x] DIM 1-10V e DIM DALI: já eram opcionais, mas agora com checkbox explícito
+- [x] Atualizar testes
