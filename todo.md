@@ -129,5 +129,5 @@
 - [x] Atualizar constante CATEGORIAS no frontend (ProductList, ProductForm) para "PERFIS"
 - [x] Atualizar importador Excel para mapear "PERFIS LINEARES LED" → "PERFIS"
 - [x] Corrigir campo categoria vazio no formulário de edição de perfis
-- [ ] Investigar e buscar fotos dos perfis no Configurador
-- [ ] Associar fotos aos perfis no banco
+- [x] Fazer upload das 33 fotos de perfis para o storage e associar ao banco (739 produtos)
+- [ ] Associar fotos das famílias FLOW (6), SMART MINI (120) e SOFT (26) — aguardando imagens do usuário
