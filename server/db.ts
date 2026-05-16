@@ -1,4 +1,4 @@
-import { and, eq, like, or, sql } from "drizzle-orm";
+import { and, asc, eq, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertProduct, InsertUser, products, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
@@ -152,4 +152,34 @@ export async function countProducts() {
   if (!db) return 0;
   const result = await db.select({ count: sql<number>`count(*)` }).from(products);
   return Number(result[0]?.count ?? 0);
+}
+
+// ─── Autocomplete suggestions ────────────────────────────────────────────────
+
+const ALLOWED_SUGGESTION_FIELDS = [
+  "familia", "produto", "moduloLed", "otica", "holder", "dissipador",
+  "driverOnoff220", "driverOnoffBivolt", "driverDim110v", "driverDimDali",
+] as const;
+
+type SuggestionField = (typeof ALLOWED_SUGGESTION_FIELDS)[number];
+
+export async function getFieldSuggestions(field: SuggestionField, query: string): Promise<string[]> {
+  const db = await getDb();
+  if (!db || !query || query.trim().length < 1) return [];
+
+  // Validate field is in the allowed list (security: prevent SQL injection via column name)
+  if (!ALLOWED_SUGGESTION_FIELDS.includes(field)) return [];
+
+  const col = products[field];
+  if (!col) return [];
+
+  const term = `%${query.trim()}%`;
+  const rows = await db
+    .selectDistinct({ value: col })
+    .from(products)
+    .where(and(like(col, term), sql`${col} IS NOT NULL`, sql`${col} != ''`, sql`${col} != 'NÃO APLICÁVEL'`))
+    .orderBy(asc(col))
+    .limit(10);
+
+  return rows.map((r) => String(r.value)).filter(Boolean);
 }

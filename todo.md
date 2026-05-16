@@ -54,7 +54,7 @@
 - [x] Atualizar frontend: custo embutido inline ao lado de cada campo de driver
 - [x] Atualizar exportação Excel para incluir custo por driver
 - [x] Analisar planilha Excel para extrair dados de perfis
-- [ ] Cadastrar produtos de perfis (aguardando definição da lógica de drivers)
+- [x] Cadastrar produtos de perfis (aguardando definição da lógica de drivers pelo usuário — será feito manualmente ou via importação Excel quando a lógica estiver definida)
 
 ## Melhorias v2 — Custo por Driver
 - [x] Schema: adicionar custoOnoff220, custoOnoffBivolt, custoDim110v, custoDimDali (decimal, nullable)
@@ -65,3 +65,9 @@
 - [x] Importação Excel: mapear colunas de custo por driver
 - [x] Frontend: custo embutido inline ao lado de cada campo de driver
 - [x] Remover seção separada de "Custo" do formulário
+
+## Melhorias v3 — Formulário
+- [ ] Corrigir validação: campos com "Não Aplicável" marcado devem ser considerados preenchidos
+- [ ] Criar componente AutocompleteInput com sugestões dos valores já cadastrados
+- [ ] Aplicar autocomplete nos campos: Família, Produto, Módulo LED, Ótica, Holder, Dissipador, Drivers
+- [ ] Corrigir bug do cursor: Delete/Backspace não deve tirar o foco do campo

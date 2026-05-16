@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { AutocompleteInput } from "@/components/AutocompleteInput";
 import {
   Select,
   SelectContent,
@@ -353,6 +354,7 @@ export default function ProductForm({ editId, onSuccess }: ProductFormProps) {
     optional?: boolean;
   }) => {
     const hasError = touched[driverField] && errors[driverField];
+    const suggestionField = driverField as "driverOnoff220" | "driverOnoffBivolt" | "driverDim110v" | "driverDimDali";
     return (
       <div className={cn("space-y-1.5", hasError && "field-error")}>
         <div className="flex items-center gap-2">
@@ -365,16 +367,18 @@ export default function ProductForm({ editId, onSuccess }: ProductFormProps) {
           )}
         </div>
         <div className="flex gap-2 items-start">
-          {/* Driver name input */}
+          {/* Driver name input with autocomplete */}
           <div className="flex-1">
-            <Input
-              className={cn(
-                "input-dark",
-                hasError && "border-destructive ring-1 ring-destructive"
-              )}
+            <AutocompleteInput
+              field={suggestionField}
               value={form[driverField] as string}
-              onChange={(e) => handleTextUpper(driverField, e.target.value)}
+              onChange={(v) => {
+                setField(driverField, v);
+                setTouched((p) => ({ ...p, [driverField]: true }));
+              }}
+              onBlur={() => setTouched((p) => ({ ...p, [driverField]: true }))}
               placeholder={placeholder}
+              hasError={!!hasError}
             />
           </div>
           {/* Cost input inline */}
@@ -468,11 +472,13 @@ export default function ProductForm({ editId, onSuccess }: ProductFormProps) {
 
             {/* Família */}
             <FieldWrapper field="familia" label="FAMÍLIA" required>
-              <Input
-                className={cn("input-dark", touched.familia && errors.familia && "border-destructive ring-1 ring-destructive")}
+              <AutocompleteInput
+                field="familia"
                 value={form.familia}
-                onChange={(e) => handleTextUpper("familia", e.target.value)}
+                onChange={(v) => { setField("familia", v); setTouched((p) => ({ ...p, familia: true })); }}
+                onBlur={() => setTouched((p) => ({ ...p, familia: true }))}
                 placeholder="Ex: LUNA"
+                hasError={!!(touched.familia && errors.familia)}
               />
             </FieldWrapper>
 
@@ -488,11 +494,13 @@ export default function ProductForm({ editId, onSuccess }: ProductFormProps) {
 
             {/* Produto */}
             <FieldWrapper field="produto" label="PRODUTO" required className="lg:col-span-2">
-              <Input
-                className={cn("input-dark", touched.produto && errors.produto && "border-destructive ring-1 ring-destructive")}
+              <AutocompleteInput
+                field="produto"
                 value={form.produto}
-                onChange={(e) => handleTextUpper("produto", e.target.value)}
+                onChange={(v) => { setField("produto", v); setTouched((p) => ({ ...p, produto: true })); }}
+                onBlur={() => setTouched((p) => ({ ...p, produto: true }))}
                 placeholder="Ex: LUNA PP LED 6,5W RE ABS"
+                hasError={!!(touched.produto && errors.produto)}
               />
             </FieldWrapper>
           </div>
@@ -508,11 +516,13 @@ export default function ProductForm({ editId, onSuccess }: ProductFormProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Módulo LED */}
             <FieldWrapper field="moduloLed" label="MÓDULO LED" required className="md:col-span-2">
-              <Input
-                className={cn("input-dark", touched.moduloLed && errors.moduloLed && "border-destructive ring-1 ring-destructive")}
+              <AutocompleteInput
+                field="moduloLed"
                 value={form.moduloLed}
-                onChange={(e) => handleTextUpper("moduloLed", e.target.value)}
+                onChange={(v) => { setField("moduloLed", v); setTouched((p) => ({ ...p, moduloLed: true })); }}
+                onBlur={() => setTouched((p) => ({ ...p, moduloLed: true }))}
                 placeholder="Ex: TRACE CIRCULAR 6 LEDS Ø50MM [CCT]"
+                hasError={!!(touched.moduloLed && errors.moduloLed)}
               />
             </FieldWrapper>
 
@@ -534,13 +544,18 @@ export default function ProductForm({ editId, onSuccess }: ProductFormProps) {
                     NÃO APLICÁVEL
                   </label>
                 </div>
-                <Input
-                  className={cn("input-dark", touched.otica && errors.otica && !form.oticaNaoAplicavel && "border-destructive ring-1 ring-destructive")}
-                  value={form.oticaNaoAplicavel ? "NÃO APLICÁVEL" : form.otica}
-                  onChange={(e) => handleTextUpper("otica", e.target.value)}
-                  disabled={form.oticaNaoAplicavel}
-                  placeholder="Ex: LENTE SPOT 24°"
-                />
+                {form.oticaNaoAplicavel ? (
+                  <Input className="input-dark" value="NÃO APLICÁVEL" disabled readOnly />
+                ) : (
+                  <AutocompleteInput
+                    field="otica"
+                    value={form.otica}
+                    onChange={(v) => { setField("otica", v); setTouched((p) => ({ ...p, otica: true })); }}
+                    onBlur={() => setTouched((p) => ({ ...p, otica: true }))}
+                    placeholder="Ex: LENTE SPOT 24°"
+                    hasError={!!(touched.otica && errors.otica && !form.oticaNaoAplicavel)}
+                  />
+                )}
               </div>
             </FieldWrapper>
 
@@ -562,13 +577,18 @@ export default function ProductForm({ editId, onSuccess }: ProductFormProps) {
                     NÃO APLICÁVEL
                   </label>
                 </div>
-                <Input
-                  className={cn("input-dark", touched.holder && errors.holder && !form.holderNaoAplicavel && "border-destructive ring-1 ring-destructive")}
-                  value={form.holderNaoAplicavel ? "NÃO APLICÁVEL" : form.holder}
-                  onChange={(e) => handleTextUpper("holder", e.target.value)}
-                  disabled={form.holderNaoAplicavel}
-                  placeholder="Ex: HOLDER ALUMÍNIO"
-                />
+                {form.holderNaoAplicavel ? (
+                  <Input className="input-dark" value="NÃO APLICÁVEL" disabled readOnly />
+                ) : (
+                  <AutocompleteInput
+                    field="holder"
+                    value={form.holder}
+                    onChange={(v) => { setField("holder", v); setTouched((p) => ({ ...p, holder: true })); }}
+                    onBlur={() => setTouched((p) => ({ ...p, holder: true }))}
+                    placeholder="Ex: HOLDER ALUMÍNIO"
+                    hasError={!!(touched.holder && errors.holder && !form.holderNaoAplicavel)}
+                  />
+                )}
               </div>
             </FieldWrapper>
 
@@ -590,13 +610,18 @@ export default function ProductForm({ editId, onSuccess }: ProductFormProps) {
                     NÃO APLICÁVEL
                   </label>
                 </div>
-                <Input
-                  className={cn("input-dark", touched.dissipador && errors.dissipador && !form.dissipadorNaoAplicavel && "border-destructive ring-1 ring-destructive")}
-                  value={form.dissipadorNaoAplicavel ? "NÃO APLICÁVEL" : form.dissipador}
-                  onChange={(e) => handleTextUpper("dissipador", e.target.value)}
-                  disabled={form.dissipadorNaoAplicavel}
-                  placeholder="Ex: DISSIPADOR ALUMÍNIO"
-                />
+                {form.dissipadorNaoAplicavel ? (
+                  <Input className="input-dark" value="NÃO APLICÁVEL" disabled readOnly />
+                ) : (
+                  <AutocompleteInput
+                    field="dissipador"
+                    value={form.dissipador}
+                    onChange={(v) => { setField("dissipador", v); setTouched((p) => ({ ...p, dissipador: true })); }}
+                    onBlur={() => setTouched((p) => ({ ...p, dissipador: true }))}
+                    placeholder="Ex: DISSIPADOR ALUMÍNIO"
+                    hasError={!!(touched.dissipador && errors.dissipador && !form.dissipadorNaoAplicavel)}
+                  />
+                )}
               </div>
             </FieldWrapper>
           </div>

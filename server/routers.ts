@@ -9,6 +9,7 @@ import {
   countProducts,
   createProduct,
   deleteProduct,
+  getFieldSuggestions,
   getProductById,
   listProducts,
   updateProduct,
@@ -234,6 +235,21 @@ export const appRouter = router({
       const result = await listProducts({ limit: 2000, offset: 0 });
       return result.items;
     }),
+
+    // Autocomplete suggestions for free-text fields
+    suggestions: publicProcedure
+      .input(
+        z.object({
+          field: z.enum([
+            "familia", "produto", "moduloLed", "otica", "holder", "dissipador",
+            "driverOnoff220", "driverOnoffBivolt", "driverDim110v", "driverDimDali",
+          ]),
+          query: z.string().min(1).max(100),
+        })
+      )
+      .query(async ({ input }) => {
+        return await getFieldSuggestions(input.field, input.query);
+      }),
   }),
 });
 
