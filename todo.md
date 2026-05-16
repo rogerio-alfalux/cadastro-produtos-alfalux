@@ -83,3 +83,12 @@
 ## Bugs v5 — Formulário
 - [x] Bug: DISSIPADOR preenchido ainda aparece como campo obrigatório faltando (stale state)
 - [x] Bug: AutocompleteInput trava cursor ao digitar/apagar — só aceita 1 caractere por vez
+
+## Funcionalidade v6 — Duplicar Produto
+- [x] Botão "Duplicar" na linha de cada produto na listagem (ícone de copiar ao lado de editar/excluir)
+- [x] Botão "Duplicar" no modal de visualização do produto
+- [x] Modal de duplicação abre formulário pré-preenchido com dados do produto original
+- [x] SKU limpo ao duplicar (campo obrigatório vazio para forçar novo código)
+- [x] PRODUTO limpo ao duplicar (para forçar novo nome)
+- [x] Banner de aviso no topo do formulário indicando "DUPLICANDO A PARTIR DE: [NOME DO PRODUTO ORIGINAL]"
+- [x] Todos os outros campos pré-preenchidos: categoria, instalação, família, módulo LED, ótica, holder, dissipador, drivers, temperaturas, custos, foto

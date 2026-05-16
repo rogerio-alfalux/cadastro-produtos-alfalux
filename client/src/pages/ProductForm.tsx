@@ -28,6 +28,7 @@ import {
   Thermometer,
   ArrowLeft,
   Save,
+  Copy,
 } from "lucide-react";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -117,27 +118,31 @@ const FIELD_LABELS: Record<string, string> = {
 
 interface ProductFormProps {
   editId?: number;
+  duplicarDeId?: number;
   onSuccess?: () => void;
 }
 
-export default function ProductForm({ editId, onSuccess }: ProductFormProps) {
+export default function ProductForm({ editId, duplicarDeId, onSuccess }: ProductFormProps) {
   const [, navigate] = useLocation();
   const [form, setForm] = useState<FormData>(defaultForm);
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
   const [touched, setTouched] = useState<Partial<Record<keyof FormData, boolean>>>({});
   const [uploading, setUploading] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [produtoOriginalNome, setProdutoOriginalNome] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   // Keep a ref that always points to the latest form state so validate()
   // never reads a stale closure value
   const formRef = useRef<FormData>(form);
   useEffect(() => { formRef.current = form; }, [form]);
   const isEdit = !!editId;
+  const isDuplicate = !!duplicarDeId;
 
-  // Load existing product for edit
+  // Load existing product for edit OR for duplication
+  const loadId = editId ?? duplicarDeId;
   const { data: existingProduct } = trpc.products.getById.useQuery(
-    { id: editId! },
-    { enabled: !!editId }
+    { id: loadId! },
+    { enabled: !!loadId }
   );
 
   useEffect(() => {
@@ -147,7 +152,7 @@ export default function ProductForm({ editId, onSuccess }: ProductFormProps) {
         catch { return ["2700", "3000", "4000", "5000"]; }
       })();
       const p = existingProduct as any;
-      setForm({
+      const baseForm = {
         categoria: existingProduct.categoria || "",
         instalacao: existingProduct.instalacao || "",
         familia: existingProduct.familia || "",
@@ -175,10 +180,19 @@ export default function ProductForm({ editId, onSuccess }: ProductFormProps) {
         fotoUrl: existingProduct.fotoUrl || "",
         fotoKey: existingProduct.fotoKey || "",
         custoLuminaria: existingProduct.custoLuminaria ? String(existingProduct.custoLuminaria) : "",
-      });
-      if (existingProduct.fotoUrl) setPhotoPreview(existingProduct.fotoUrl);
+      };
+
+      if (isDuplicate) {
+        // When duplicating: clear SKU and PRODUTO so user must define new ones
+        setProdutoOriginalNome(existingProduct.produto || existingProduct.sku || "produto");
+        setForm({ ...baseForm, sku: "", produto: "" });
+        setPhotoPreview(existingProduct.fotoUrl || null);
+      } else {
+        setForm(baseForm);
+        if (existingProduct.fotoUrl) setPhotoPreview(existingProduct.fotoUrl);
+      }
     }
-  }, [existingProduct]);
+  }, [existingProduct, isDuplicate]);
 
   const utils = trpc.useUtils();
   const createMutation = trpc.products.create.useMutation({
@@ -468,7 +482,7 @@ export default function ProductForm({ editId, onSuccess }: ProductFormProps) {
   return (
     <div className="max-w-5xl mx-auto animate-fade-in">
       {/* Page Header */}
-      <div className="flex items-center gap-4 mb-8">
+      <div className="flex items-center gap-4 mb-6">
         <button
           onClick={() => navigate("/")}
           className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
@@ -477,13 +491,29 @@ export default function ProductForm({ editId, onSuccess }: ProductFormProps) {
         </button>
         <div>
           <h1 className="text-2xl font-bold text-foreground tracking-tight">
-            {isEdit ? "EDITAR PRODUTO" : "CADASTRAR PRODUTO"}
+            {isEdit ? "EDITAR PRODUTO" : isDuplicate ? "DUPLICAR PRODUTO" : "CADASTRAR PRODUTO"}
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {isEdit ? "Atualize as informações do produto" : "Preencha os dados para cadastrar um novo produto"}
+            {isEdit
+              ? "Atualize as informações do produto"
+              : isDuplicate
+              ? "Preencha o SKU e o nome do novo produto. Os demais campos foram copiados do original."
+              : "Preencha os dados para cadastrar um novo produto"}
           </p>
         </div>
       </div>
+
+      {/* Banner de duplicação */}
+      {isDuplicate && produtoOriginalNome && (
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3">
+          <Copy className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-xs font-bold text-cyan-400 tracking-wider">DUPLICANDO A PARTIR DE</p>
+            <p className="text-sm text-cyan-300/80 mt-0.5">{produtoOriginalNome}</p>
+            <p className="text-[11px] text-cyan-400/60 mt-1">Os campos SKU e PRODUTO foram deixados em branco. Preencha-os com os dados do novo produto antes de salvar.</p>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-6">
         {/* ─── Seção 1: Identificação ─────────────────────────────────── */}

@@ -37,6 +37,7 @@ import {
   RefreshCw,
   AlertTriangle,
   Zap,
+  Copy,
 } from "lucide-react";
 import ProductForm from "./ProductForm";
 
@@ -53,6 +54,7 @@ export default function ProductList() {
   const [editId, setEditId] = useState<number | null>(null);
   const [viewId, setViewId] = useState<number | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [duplicarId, setDuplicarId] = useState<number | null>(null);
   const [importing, setImporting] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
 
@@ -406,6 +408,13 @@ export default function ProductList() {
                             <Eye className="w-3.5 h-3.5" />
                           </button>
                           <button
+                            onClick={() => setDuplicarId(product.id)}
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-cyan-400 hover:bg-cyan-400/10 transition-colors"
+                            title="Duplicar produto"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                          <button
                             onClick={() => setEditId(product.id)}
                             className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                             title="Editar"
@@ -472,6 +481,24 @@ export default function ProductList() {
         )}
       </div>
 
+      {/* ─── Duplicate Modal ──────────────────────────────────────────── */}
+      <Dialog open={!!duplicarId} onOpenChange={(o) => !o && setDuplicarId(null)}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-background border-border">
+          <DialogHeader>
+            <DialogTitle className="text-cyan-400 tracking-wider flex items-center gap-2">
+              <Copy className="w-4 h-4" />
+              DUPLICAR PRODUTO
+            </DialogTitle>
+          </DialogHeader>
+          {duplicarId && (
+            <ProductForm
+              duplicarDeId={duplicarId}
+              onSuccess={() => setDuplicarId(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* ─── Edit Modal ───────────────────────────────────────────────── */}
       <Dialog open={!!editId} onOpenChange={(o) => !o && setEditId(null)}>
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-background border-border">
@@ -494,6 +521,17 @@ export default function ProductList() {
             <DialogTitle className="text-foreground tracking-wider">DETALHES DO PRODUTO</DialogTitle>
           </DialogHeader>
           {viewId && <ProductDetail id={viewId} />}
+          <DialogFooter className="mt-4 pt-4 border-t border-border/40">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => { setDuplicarId(viewId); setViewId(null); }}
+              className="border-cyan-500/40 text-cyan-400 hover:bg-cyan-400/10 hover:text-cyan-300 text-xs font-bold tracking-wider"
+            >
+              <Copy className="w-3.5 h-3.5 mr-1.5" />
+              DUPLICAR ESTE PRODUTO
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
