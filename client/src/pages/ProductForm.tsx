@@ -183,9 +183,9 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       };
 
       if (isDuplicate) {
-        // When duplicating: clear SKU and PRODUTO so user must define new ones
+        // When duplicating: keep SKU (same SKU can have multiple variants), clear only PRODUTO
         setProdutoOriginalNome(existingProduct.produto || existingProduct.sku || "produto");
-        setForm({ ...baseForm, sku: "", produto: "" });
+        setForm({ ...baseForm, produto: "" });
         setPhotoPreview(existingProduct.fotoUrl || null);
       } else {
         setForm(baseForm);
@@ -510,7 +510,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
           <div>
             <p className="text-xs font-bold text-cyan-400 tracking-wider">DUPLICANDO A PARTIR DE</p>
             <p className="text-sm text-cyan-300/80 mt-0.5">{produtoOriginalNome}</p>
-            <p className="text-[11px] text-cyan-400/60 mt-1">Os campos SKU e PRODUTO foram deixados em branco. Preencha-os com os dados do novo produto antes de salvar.</p>
+            <p className="text-[11px] text-cyan-400/60 mt-1">O campo PRODUTO foi deixado em branco. Preencha o nome do novo produto antes de salvar. O SKU foi mantido pois produtos variantes podem compartilhá-lo.</p>
           </div>
         </div>
       )}
