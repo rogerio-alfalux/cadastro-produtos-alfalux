@@ -98,3 +98,14 @@
 - [x] Documentar mudanças necessárias no Configurador (led.drivers e led.refreshDrivers) em INTEGRACAO_CONFIGURADOR.md
 - [x] Testar endpoint /api/products/all — retornando 211 produtos corretamente
 - [x] Salvar checkpoint do Cadastro com endpoint público
+
+## Importação v8 — Suporte à planilha do Configurador (Perfis)
+- [ ] Adaptar endpoint /api/products/import-excel para detectar e importar planilha no formato "Módulos de Perfis" (cabeçalho na linha 4, dados a partir da linha 6, linhas de seção ▶ ignoradas)
+- [ ] Mapear campos: Código (SKU) → sku, Nome do Produto → produto, Família → familia, Categoria → categoria, Tipo de Instalação → instalacao, Modelo Driver (220V) → driverOnoff220, Modelo Driver (Bivolt) → driverOnoffBivolt, Potência+Tipo de Barra+Corrente → moduloLed
+- [ ] Ignorar linhas de seção (▶) e linhas sem SKU
+- [ ] Testar importação com a planilha alfalux_perfis_modulos_v2.xlsx (897 SKUs esperados)
+- [x] Adaptar endpoint /api/products/import-excel para detectar e importar planilha no formato "Módulos de Perfis"
+- [x] Mapear campos: Código (SKU) → sku, Nome do Produto → produto, Família → familia, Categoria → categoria, Tipo de Instalação → instalacao, Modelo Driver (220V) → driverOnoff220, Modelo Driver (Bivolt) → driverOnoffBivolt, Potência+Tipo de Barra+Corrente → moduloLed
+- [x] Ignorar linhas de seção (▶) e abas auxiliares (Resumo, Tabela de Drivers, Legenda)
+- [x] Testar importação com a planilha alfalux_perfis_modulos_v2.xlsx — 897 SKUs importados corretamente
+- [x] Limpar registros inválidos do banco gerados por importações de teste anteriores
