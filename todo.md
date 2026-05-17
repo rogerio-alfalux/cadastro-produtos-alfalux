@@ -135,3 +135,21 @@
 ## Fotos v11 — Downlights e Painéis
 - [x] Fazer upload das 87 fotos de Downlights e Painéis para o storage
 - [x] Mapear e associar fotos aos produtos no banco por SKU/nome do produto (65/65 DL, 36/38 Painéis, 3/3 Spots)
+
+## Bug Fix v12 — Digitação de um caractere por vez
+- [x] Corrigir bug de digitação no ProductForm: campos travam após cada caractere digitado (causa provável: re-render por query invalidation ou referência instável no useQuery)
+
+## Feature v12 — Tabela de Componentes
+- [x] Criar tabela `components` no banco (id, tipo, modelo, codigo, observacao, createdAt)
+- [x] Tipos: DRIVER_ONOFF_220, DRIVER_ONOFF_BIVOLT, DRIVER_DIM_110V, DRIVER_DIM_DALI, OTICA, HOLDER, DISSIPADOR, MODULO_LED
+- [x] Criar endpoints tRPC: components.list, components.create, components.update, components.delete, components.bulkReplace, components.countUsage, components.families
+- [x] Migrar dados existentes de drivers/óticas/holders/etc. do banco para a tabela components
+- [x] Atualizar ProductForm para usar ComponentSelect (busca + seleção) de componentes por tipo
+- [x] Manter compatibilidade: campo de texto livre ainda disponível se componente não estiver cadastrado
+
+## Feature v12 — Alteração em Massa de Componentes
+- [x] Criar página "Componentes" no menu lateral
+- [x] Página "Componentes": listar, criar, editar e excluir componentes por tipo (agrupados)
+- [x] Botão "Alteração em Massa": substituir componente em todos os produtos que o utilizam
+- [x] Filtro por família: permitir restringir a substituição a uma família específica de produtos
+- [x] Prévia antes de confirmar: mostrar quantos produtos serão afetados antes de aplicar

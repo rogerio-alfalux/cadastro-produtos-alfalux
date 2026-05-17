@@ -80,3 +80,39 @@ export const products = mysqlTable("products", {
 
 export type Product = typeof products.$inferSelect;
 export type InsertProduct = typeof products.$inferInsert;
+
+// Tabela de componentes reutilizáveis (drivers, óticas, holders, etc.)
+export const components = mysqlTable("components", {
+  id: int("id").autoincrement().primaryKey(),
+
+  // Tipo do componente
+  tipo: mysqlEnum("tipo", [
+    "DRIVER_ONOFF_220",
+    "DRIVER_ONOFF_BIVOLT",
+    "DRIVER_DIM_110V",
+    "DRIVER_DIM_DALI",
+    "OTICA",
+    "HOLDER",
+    "DISSIPADOR",
+    "MODULO_LED",
+  ]).notNull(),
+
+  // Descrição completa do componente (ex: "PHILIPS CERTADRIVE 20W 500MA (EQ00353)")
+  modelo: text("modelo").notNull(),
+
+  // Código interno opcional (ex: "EQ00353")
+  codigo: varchar("codigo", { length: 100 }),
+
+  // Observações opcionais
+  observacao: text("observacao"),
+
+  // Custo unitário do componente
+  custo: decimal("custo", { precision: 10, scale: 2 }),
+
+  // Metadados
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Component = typeof components.$inferSelect;
+export type InsertComponent = typeof components.$inferInsert;

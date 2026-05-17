@@ -9,6 +9,7 @@ import {
   Zap,
   Menu,
   X,
+  Cpu,
 } from "lucide-react";
 
 interface NavItem {
@@ -20,6 +21,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: "PRODUTOS", href: "/", icon: Database },
   { label: "CADASTRAR", href: "/cadastrar", icon: PlusCircle },
+  { label: "COMPONENTES", href: "/componentes", icon: Cpu },
 ];
 
 interface AlfaluxLayoutProps {
@@ -123,7 +125,7 @@ export default function AlfaluxLayout({ children }: AlfaluxLayoutProps) {
             <span>ALFALUX</span>
             <ChevronRight className="w-3 h-3" />
             <span className="text-foreground font-medium">
-              {location === "/" ? "PRODUTOS" : location === "/cadastrar" ? "CADASTRAR PRODUTO" : "EDITAR PRODUTO"}
+              {location === "/" ? "PRODUTOS" : location === "/cadastrar" ? "CADASTRAR PRODUTO" : location.startsWith("/componentes") ? "COMPONENTES" : "EDITAR PRODUTO"}
             </span>
           </div>
         </div>

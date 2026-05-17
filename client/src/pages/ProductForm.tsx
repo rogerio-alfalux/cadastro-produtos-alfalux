@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AutocompleteInput } from "@/components/AutocompleteInput";
+import { ComponentSelect } from "@/components/ComponentSelect";
 import {
   Select,
   SelectContent,
@@ -394,7 +395,14 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
   }) => {
     const isNaoAplicavel = naoAplicavelField ? !!form[naoAplicavelField] : false;
     const hasError = !isNaoAplicavel && touched[driverField] && errors[driverField];
-    const suggestionField = driverField as "driverOnoff220" | "driverOnoffBivolt" | "driverDim110v" | "driverDimDali";
+    // Map driverField to ComponentType
+    const driverTypeMap: Record<string, "DRIVER_ONOFF_220" | "DRIVER_ONOFF_BIVOLT" | "DRIVER_DIM_110V" | "DRIVER_DIM_DALI"> = {
+      driverOnoff220: "DRIVER_ONOFF_220",
+      driverOnoffBivolt: "DRIVER_ONOFF_BIVOLT",
+      driverDim110v: "DRIVER_DIM_110V",
+      driverDimDali: "DRIVER_DIM_DALI",
+    };
+    const componentTipo = driverTypeMap[driverField as string];
     return (
       <div className={cn("space-y-1.5", hasError && "field-error")}>
         <div className="flex items-center gap-2">
@@ -435,19 +443,33 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
           <Input className="input-dark opacity-50" value="NÃO APLICÁVEL" disabled readOnly />
         ) : (
           <div className="flex gap-2 items-start">
-            {/* Driver name input with autocomplete */}
+            {/* Driver name — ComponentSelect if tipo known, else AutocompleteInput */}
             <div className="flex-1">
-              <AutocompleteInput
-                field={suggestionField}
-                value={form[driverField] as string}
-                onChange={(v) => {
-                  setField(driverField, v);
-                  setTouched((p) => ({ ...p, [driverField]: true }));
-                }}
-                onBlur={() => setTouched((p) => ({ ...p, [driverField]: true }))}
-                placeholder={placeholder}
-                hasError={!!hasError}
-              />
+              {componentTipo ? (
+                <ComponentSelect
+                  tipo={componentTipo}
+                  value={form[driverField] as string}
+                  onChange={(v) => {
+                    setField(driverField, v);
+                    setTouched((p) => ({ ...p, [driverField]: true }));
+                  }}
+                  onBlur={() => setTouched((p) => ({ ...p, [driverField]: true }))}
+                  placeholder={placeholder}
+                  hasError={!!hasError}
+                />
+              ) : (
+                <AutocompleteInput
+                  field={driverField as any}
+                  value={form[driverField] as string}
+                  onChange={(v) => {
+                    setField(driverField, v);
+                    setTouched((p) => ({ ...p, [driverField]: true }));
+                  }}
+                  onBlur={() => setTouched((p) => ({ ...p, [driverField]: true }))}
+                  placeholder={placeholder}
+                  hasError={!!hasError}
+                />
+              )}
             </div>
             {/* Cost input inline */}
             <div className="relative w-36 flex-shrink-0">
@@ -601,8 +623,8 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Módulo LED */}
             <FieldWrapper field="moduloLed" label="MÓDULO LED" required className="md:col-span-2">
-              <AutocompleteInput
-                field="moduloLed"
+              <ComponentSelect
+                tipo="MODULO_LED"
                 value={form.moduloLed}
                 onChange={(v) => { setField("moduloLed", v); setTouched((p) => ({ ...p, moduloLed: true })); }}
                 onBlur={() => setTouched((p) => ({ ...p, moduloLed: true }))}
@@ -637,8 +659,8 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                 {form.oticaNaoAplicavel ? (
                   <Input className="input-dark" value="NÃO APLICÁVEL" disabled readOnly />
                 ) : (
-                  <AutocompleteInput
-                    field="otica"
+                  <ComponentSelect
+                    tipo="OTICA"
                     value={form.otica}
                     onChange={(v) => { setField("otica", v); setTouched((p) => ({ ...p, otica: true })); }}
                     onBlur={() => setTouched((p) => ({ ...p, otica: true }))}
@@ -675,8 +697,8 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                 {form.holderNaoAplicavel ? (
                   <Input className="input-dark" value="NÃO APLICÁVEL" disabled readOnly />
                 ) : (
-                  <AutocompleteInput
-                    field="holder"
+                  <ComponentSelect
+                    tipo="HOLDER"
                     value={form.holder}
                     onChange={(v) => { setField("holder", v); setTouched((p) => ({ ...p, holder: true })); }}
                     onBlur={() => setTouched((p) => ({ ...p, holder: true }))}
@@ -713,8 +735,8 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                 {form.dissipadorNaoAplicavel ? (
                   <Input className="input-dark" value="NÃO APLICÁVEL" disabled readOnly />
                 ) : (
-                  <AutocompleteInput
-                    field="dissipador"
+                  <ComponentSelect
+                    tipo="DISSIPADOR"
                     value={form.dissipador}
                     onChange={(v) => { setField("dissipador", v); setTouched((p) => ({ ...p, dissipador: true })); }}
                     onBlur={() => setTouched((p) => ({ ...p, dissipador: true }))}

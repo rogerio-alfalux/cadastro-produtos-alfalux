@@ -50,6 +50,13 @@
       "when": 1778902738031,
       "tag": "0006_nice_shiver_man",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1779045122843,
+      "tag": "0007_windy_jigsaw",
+      "breakpoints": true
     }
   ]
 }

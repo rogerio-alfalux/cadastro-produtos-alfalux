@@ -7,6 +7,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import AlfaluxLayout from "./components/AlfaluxLayout";
 import ProductList from "./pages/ProductList";
 import ProductForm from "./pages/ProductForm";
+import ComponentsPage from "./pages/Components";
 
 function CadastrarPage() {
   return <ProductForm />;
@@ -18,6 +19,7 @@ function Router() {
       <Switch>
         <Route path="/" component={ProductList} />
         <Route path="/cadastrar" component={CadastrarPage} />
+        <Route path="/componentes" component={ComponentsPage} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

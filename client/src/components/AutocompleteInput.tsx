@@ -37,20 +37,29 @@ export function AutocompleteInput({
 }: AutocompleteInputProps) {
   const [open, setOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  // ─── Debounced query: only update after 300ms of inactivity ───────────────
+  const [debouncedQuery, setDebouncedQuery] = useState(value.trim());
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  // Track whether a suggestion click is in progress to avoid premature close
   const mouseDownOnListRef = useRef(false);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Use the external `value` directly as the query for suggestions
-  const queryForSuggestions = value.trim();
+  // Debounce: update the query used for API calls 300ms after the user stops typing
+  useEffect(() => {
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = setTimeout(() => {
+      setDebouncedQuery(value.trim());
+    }, 300);
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    };
+  }, [value]);
 
   const { data: suggestions = [] } = trpc.products.suggestions.useQuery(
-    { field, query: queryForSuggestions },
+    { field, query: debouncedQuery },
     {
-      enabled: open && queryForSuggestions.length >= 1,
-      staleTime: 15_000,
-      // Keep previous data while new query is loading to avoid flicker
+      enabled: open && debouncedQuery.length >= 1,
+      staleTime: 30_000,
       placeholderData: (prev) => prev,
     }
   );
@@ -72,7 +81,6 @@ export function AutocompleteInput({
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Convert to uppercase and pass directly to parent — no internal state copy
     const upper = e.target.value.toUpperCase();
     onChange(upper);
     setOpen(true);
@@ -83,17 +91,13 @@ export function AutocompleteInput({
     onChange(suggestion);
     setOpen(false);
     setHighlightedIndex(-1);
-    // Return focus to input so user can keep editing
     requestAnimationFrame(() => {
       inputRef.current?.focus();
     });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Never intercept Delete/Backspace — let the browser handle natively
-    if (e.key === "Backspace" || e.key === "Delete") {
-      return;
-    }
+    if (e.key === "Backspace" || e.key === "Delete") return;
 
     if (e.key === "Escape") {
       setOpen(false);
@@ -126,11 +130,10 @@ export function AutocompleteInput({
   };
 
   const handleFocus = () => {
-    if (queryForSuggestions.length >= 1) setOpen(true);
+    if (debouncedQuery.length >= 1) setOpen(true);
   };
 
   const handleBlur = () => {
-    // If the blur was caused by clicking on the suggestion list, don't close yet
     if (mouseDownOnListRef.current) return;
     setOpen(false);
     onBlur?.();
@@ -169,23 +172,15 @@ export function AutocompleteInput({
         <ul
           role="listbox"
           className="absolute z-50 left-0 right-0 top-full mt-1 max-h-60 overflow-auto rounded-md border border-border bg-card shadow-lg"
-          onMouseDown={() => {
-            // Signal that a click on the list is happening so blur doesn't close it
-            mouseDownOnListRef.current = true;
-          }}
-          onMouseUp={() => {
-            mouseDownOnListRef.current = false;
-          }}
+          onMouseDown={() => { mouseDownOnListRef.current = true; }}
+          onMouseUp={() => { mouseDownOnListRef.current = false; }}
         >
           {suggestions.map((suggestion, index) => (
             <li
               key={suggestion}
               role="option"
               aria-selected={index === highlightedIndex}
-              onMouseDown={(e) => {
-                // Prevent the input from losing focus before we apply the selection
-                e.preventDefault();
-              }}
+              onMouseDown={(e) => { e.preventDefault(); }}
               onClick={() => {
                 mouseDownOnListRef.current = false;
                 selectSuggestion(suggestion);
@@ -198,7 +193,7 @@ export function AutocompleteInput({
                   : "text-foreground hover:bg-muted/50"
               )}
             >
-              <SuggestionHighlight text={suggestion} query={queryForSuggestions} />
+              <SuggestionHighlight text={suggestion} query={debouncedQuery} />
             </li>
           ))}
         </ul>
