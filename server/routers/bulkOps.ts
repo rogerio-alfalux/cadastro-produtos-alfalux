@@ -58,6 +58,25 @@ function buildWhere(filters: {
 
 export const bulkOpsRouter = router({
 
+
+  // ─── Autocomplete for moduloLed field ────────────────────────────────────────
+  moduloLedSuggestions: publicProcedure
+    .input(z.object({ query: z.string().default(""), categoria: z.string().optional(), familia: z.string().optional() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const q = input.query.trim();
+      if (!q) return [];
+      const extra: string[] = [];
+      if (input.categoria?.trim()) extra.push(`categoria = '${input.categoria.replace(/'/g, "''")}'`);
+      if (input.familia?.trim()) extra.push(`familia = '${input.familia.replace(/'/g, "''")}'`);
+      const extraSql = extra.length ? ` AND ${extra.join(" AND ")}` : "";
+      const result = await db.execute(
+        sql`SELECT DISTINCT moduloLed as val FROM products WHERE moduloLed LIKE ${`%${q}%`}${sql.raw(extraSql)} AND moduloLed IS NOT NULL AND moduloLed != '' ORDER BY val ASC LIMIT 30`
+      );
+      return ((result[0] as unknown as any[]) ?? []).map((r: any) => r.val).filter(Boolean);
+    }),
+
   // ─── List distinct families ────────────────────────────────────────────────
   families: publicProcedure.query(async () => {
     const db = await getDb();

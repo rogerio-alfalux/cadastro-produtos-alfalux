@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { ComponentSelect } from "@/components/ComponentSelect";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -38,6 +38,93 @@ const DRIVER_LABELS: Record<DriverType, string> = {
   DRIVER_DIM_DALI: "DIM DALI",
 };
 
+
+// ─── ModuloLedAutocomplete ────────────────────────────────────────────────────
+
+interface ModuloLedAutocompleteProps {
+  value: string;
+  onChange: (v: string) => void;
+  categoria?: string;
+  familia?: string;
+}
+
+function ModuloLedAutocomplete({ value, onChange, categoria, familia }: ModuloLedAutocompleteProps) {
+  const [open, setOpen] = useState(false);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
+  const suppressBlurRef = useRef(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const { data: suggestions = [] } = trpc.bulkOps.moduloLedSuggestions.useQuery(
+    {
+      query: value,
+      categoria: categoria && categoria !== "__all__" ? categoria : undefined,
+      familia: familia && familia !== "__all__" ? familia : undefined,
+    },
+    { enabled: value.trim().length > 0 }
+  );
+
+  const handleSelect = (val: string) => {
+    suppressBlurRef.current = true;
+    onChange(val);
+    setOpen(false);
+    setTimeout(() => {
+      suppressBlurRef.current = false;
+      inputRef.current?.focus();
+    }, 50);
+  };
+
+  const handleBlur = () => {
+    if (suppressBlurRef.current) return;
+    setTimeout(() => setOpen(false), 150);
+  };
+
+  const handleFocusOrChange = (newValue?: string) => {
+    if (inputRef.current) {
+      const rect = inputRef.current.getBoundingClientRect();
+      setDropdownStyle({
+        position: "fixed",
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+        zIndex: 9999,
+      });
+    }
+    setOpen(true);
+    if (newValue !== undefined) onChange(newValue);
+  };
+
+  return (
+    <div className="relative">
+      <Input
+        ref={inputRef}
+        className="h-9"
+        placeholder="Ex: STRIPFLEX, TRACE LINEAR, LUX ROUND..."
+        value={value}
+        onChange={(e) => handleFocusOrChange(e.target.value)}
+        onFocus={() => { if (value.trim()) handleFocusOrChange(); }}
+        onBlur={handleBlur}
+        autoComplete="off"
+      />
+      {open && suggestions.length > 0 && (
+        <ul
+          onMouseDown={(e) => e.preventDefault()}
+          style={dropdownStyle}
+          className="max-h-64 overflow-auto rounded-md border border-border bg-card shadow-xl"
+        >
+          {suggestions.map((s: string) => (
+            <li
+              key={s}
+              onClick={() => handleSelect(s)}
+              className="px-3 py-2 text-sm cursor-pointer select-none hover:bg-muted/50 transition-colors"
+            >
+              {s}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 // ─── Shared filter bar ────────────────────────────────────────────────────────
 
@@ -84,12 +171,12 @@ function FilterBar({ familia, setFamilia, categoria, setCategoria, moduloLedCont
         </Select>
       </div>
       <div className="space-y-1.5">
-        <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Módulo LED contém</Label>
-        <Input
-          className="h-9"
-          placeholder="Ex: 2 barras, 18W, STRIPFLEX..."
+        <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Módulos LED</Label>
+        <ModuloLedAutocomplete
           value={moduloLedContem}
-          onChange={(e) => setModuloLedContem(e.target.value)}
+          onChange={setModuloLedContem}
+          categoria={categoria}
+          familia={familia}
         />
       </div>
     </div>
