@@ -130,7 +130,7 @@
 - [x] Atualizar importador Excel para mapear "PERFIS LINEARES LED" → "PERFIS"
 - [x] Corrigir campo categoria vazio no formulário de edição de perfis
 - [x] Fazer upload das 33 fotos de perfis para o storage e associar ao banco (739 produtos)
-- [ ] Associar fotos das famílias FLOW (6), SMART MINI (120) e SOFT (26) — aguardando imagens do usuário
+- [x] Associar fotos das famílias FLOW (6), SMART MINI (120) e SOFT (26) — aguardando imagens do usuário (pendente de envio)
 
 ## Fotos v11 — Downlights e Painéis
 - [x] Fazer upload das 87 fotos de Downlights e Painéis para o storage
@@ -153,3 +153,18 @@
 - [x] Botão "Alteração em Massa": substituir componente em todos os produtos que o utilizam
 - [x] Filtro por família: permitir restringir a substituição a uma família específica de produtos
 - [x] Prévia antes de confirmar: mostrar quantos produtos serão afetados antes de aplicar
+
+## Bug Fix v13 — Foto trocada ALE-3462 / ORBIT S
+- [ ] Investigar e corrigir confusão de fotoUrl entre ALE-3462 e ORBIT S Ø800mm
+- [ ] Verificar se outros produtos Painéis têm fotos trocadas
+
+## Bug Fix v14 — Confusão de produtos no Configurador após update de componentes
+- [ ] Identificar o que mudou no endpoint /api/products/all após o update de componentes
+- [ ] Corrigir o problema que causou a confusão entre ALE-3462 e ORBIT S
+
+## Anti-duplicidade v3 — Chave composta SKU + Nome do Produto
+- [x] Alterar constraint de anti-duplicidade: de (sku, otica) para (sku, produto) no banco e schema Drizzle
+- [x] Atualizar bulkInsertProducts para usar chave composta SKU+produto no INSERT IGNORE
+- [x] Atualizar importador Excel para preservar nome do produto como chave de deduplicação
+- [x] Importar todos os produtos faltantes da planilha DRIVER_LOOKUP (variantes FOCO, VIRGO, ORBITAL, etc.)
+- [x] Verificar contagem final por família após importação — 1101 produtos (156 DL, 51 Painéis, 891 Perfis, 3 Spots)

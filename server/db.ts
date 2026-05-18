@@ -137,12 +137,12 @@ export async function bulkInsertProducts(items: InsertProduct[]): Promise<{ inse
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  // Deduplicate within the batch itself (keep last occurrence per SKU+Ótica)
-  // A product is uniquely identified by its SKU + Ótica combination
-  // (same SKU can have multiple variants with different optical accessories)
+  // Deduplicate within the batch itself (keep last occurrence per SKU+Produto)
+  // A product is uniquely identified by its SKU + Nome do Produto combination
+  // (same SKU can have multiple variants with different names/angles/options)
   const seen = new Map<string, InsertProduct>();
   for (const item of items) {
-    const key = `${(item.sku ?? "").toUpperCase()}||${(item.otica ?? "").toUpperCase()}`;
+    const key = `${(item.sku ?? "").toUpperCase()}||${(item.produto ?? "").toUpperCase()}`;
     seen.set(key, item);
   }
   const deduped = Array.from(seen.values());

@@ -118,6 +118,119 @@ function isConfiguadorFormat(rawData: any[][]): boolean {
 }
 
 /**
+ * Detecta se a planilha está no formato DRIVER_LOOKUP (Downlights/Painéis)
+ * O XLSX.js pula linhas vazias iniciais, então o cabeçalho aparece na linha 1 (idx 0)
+ * Colunas: INSTALAÇÃO, SKU, FAMÍLIA, PRODUTO, HOLDER/MÓDULO LED, ÓTICA, DISSIPADOR...
+ */
+function isDriverLookupFormat(rawData: any[][], sheetName: string): boolean {
+  // Procurar a linha de cabeçalho nas primeiras 5 linhas (XLSX.js pula linhas vazias)
+  for (let i = 0; i < Math.min(5, rawData.length); i++) {
+    const row = rawData[i] as any[];
+    if (!row) continue;
+    const cells = row.map((c: any) => String(c || "").toUpperCase());
+    if (cells.includes("INSTALAÇÃO") && cells.includes("SKU") && cells.includes("FAMÍLIA") && cells.includes("PRODUTO")) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Importa produtos no formato DRIVER_LOOKUP
+ * O XLSX.js pula linhas vazias, então o cabeçalho está na primeira linha não vazia
+ * Suporta abas DOWNLIGHTS e PAINÉIS com colunas ligeiramente diferentes
+ */
+function parseFormatoDriverLookup(ws: any, sheetName: string): any[] {
+  const rawData = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
+
+  // Encontrar a linha de cabeçalho (contém INSTALAÇÃO, SKU, FAMÍLIA, PRODUTO)
+  let headerRowIdx = -1;
+  for (let i = 0; i < Math.min(5, rawData.length); i++) {
+    const row = rawData[i] as any[];
+    if (!row) continue;
+    const cells = row.map((c: any) => String(c || "").toUpperCase());
+    if (cells.includes("INSTALAÇÃO") && cells.includes("SKU") && cells.includes("PRODUTO")) {
+      headerRowIdx = i;
+      break;
+    }
+  }
+  if (headerRowIdx < 0) return [];
+
+  const headers = rawData[headerRowIdx] as any[];
+
+  // Mapear índices das colunas pelo nome
+  const colIdx: Record<string, number> = {};
+  headers.forEach((h: any, i: number) => {
+    if (h != null) colIdx[String(h).trim().toUpperCase()] = i;
+  });
+
+  // Detectar categoria pela aba
+  const categoriaAba = sheetName.toUpperCase().includes("PAIN") ? "PAINÉIS" : "DOWNLIGHTS";
+
+  const products: any[] = [];
+  for (let i = headerRowIdx + 1; i < rawData.length; i++) {
+    const row = rawData[i];
+    if (!row) continue;
+
+    const skuRaw = row[colIdx["SKU"]];
+    const sku = String(skuRaw || "").trim();
+    if (!sku) continue;
+
+    const produto = String(row[colIdx["PRODUTO"]] || "").trim().toUpperCase();
+    if (!produto) continue;
+
+    const instalacao = String(row[colIdx["INSTALAÇÃO"]] || "").trim().toUpperCase();
+    const familia = String(row[colIdx["FAMÍLIA"]] || "").trim().toUpperCase();
+
+    // Campos que podem variar entre abas
+    const holderRaw = String(row[colIdx["HOLDER"]] || "").trim().toUpperCase();
+    const oticaRaw = String(row[colIdx["ÓTICA"]] || row[colIdx["OTICA"]] || "").trim().toUpperCase();
+    const dissipadorRaw = String(row[colIdx["DISSIPADOR"]] || "").trim().toUpperCase();
+    const moduloLed = String(row[colIdx["MÓDULO LED"]] || row[colIdx["MODULO LED"]] || "").trim().toUpperCase();
+
+    const driver220 = String(row[colIdx["ON/OFF DRIVER 220VAC"]] || row[colIdx["ON/OFF DRIVER 220Vac"]] || "").trim().toUpperCase();
+    const driverBivolt = String(row[colIdx["ON/OFF DRIVER BIVOLT"]] || "").trim().toUpperCase();
+    const driverDim110 = String(row[colIdx["DIM 1-10V"]] || "").trim().toUpperCase();
+    const driverDali = String(row[colIdx["DIM DALI"]] || "").trim().toUpperCase();
+
+    const otica = oticaRaw || "NÃO APLICÁVEL";
+    const holder = holderRaw || "NÃO APLICÁVEL";
+    const dissipador = dissipadorRaw || "NÃO APLICÁVEL";
+
+    products.push({
+      categoria: categoriaAba,
+      instalacao,
+      familia,
+      sku: sku.toUpperCase(),
+      produto,
+      moduloLed: moduloLed || "NÃO ESPECIFICADO",
+      otica,
+      oticaNaoAplicavel: otica === "NÃO APLICÁVEL" || otica === "NAO APLICAVEL",
+      holder,
+      holderNaoAplicavel: holder === "NÃO APLICÁVEL" || holder === "NAO APLICAVEL",
+      dissipador,
+      dissipadorNaoAplicavel: dissipador === "NÃO APLICÁVEL" || dissipador === "NAO APLICAVEL",
+      driverOnoff220: driver220 || "NÃO ESPECIFICADO",
+      driverOnoffBivolt: driverBivolt || null,
+      driverOnoffBivoltNaoAplicavel: !driverBivolt,
+      driverDim110v: driverDim110 || null,
+      driverDim110vNaoAplicavel: !driverDim110,
+      driverDimDali: driverDali || null,
+      driverDimDaliNaoAplicavel: !driverDali,
+      temperaturasCor: '["2700","3000","4000","5000"]',
+      fotoUrl: null,
+      fotoKey: null,
+      custoLuminaria: null,
+      custoDriverOnoff220: null,
+      custoDriverOnoffBivolt: null,
+      custoDriverDim110v: null,
+      custoDriverDimDali: null,
+    });
+  }
+  return products;
+}
+
+/**
  * Importa produtos no formato padrão do Cadastro (cabeçalho na primeira linha encontrada com SKU/PRODUTO)
  */
 function parseFormatoPadrao(ws: any, sheetName: string): any[] {
@@ -296,6 +409,10 @@ router.post("/import-excel", uploadExcel.single("file"), async (req, res) => {
         formatoDetectado = "configurador";
         break;
       }
+      if (isDriverLookupFormat(rawData, sheetName)) {
+        formatoDetectado = "driver_lookup";
+        break;
+      }
     }
 
     // Passo 2: processar as abas de acordo com o formato detectado
@@ -312,6 +429,13 @@ router.post("/import-excel", uploadExcel.single("file"), async (req, res) => {
           allProducts.push(...produtos);
         }
         // Abas não reconhecidas no formato configurador são ignoradas
+      } else if (formatoDetectado === "driver_lookup") {
+        // Formato DRIVER_LOOKUP: processar cada aba (DOWNLIGHTS, PAINÉIS)
+        const rawData = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
+        if (isDriverLookupFormat(rawData, sheetName)) {
+          const produtos = parseFormatoDriverLookup(ws, sheetName);
+          allProducts.push(...produtos);
+        }
       } else {
         // Formato padrão do Cadastro
         const produtos = parseFormatoPadrao(ws, sheetName);

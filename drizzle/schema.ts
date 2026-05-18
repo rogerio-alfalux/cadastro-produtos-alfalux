@@ -74,8 +74,8 @@ export const products = mysqlTable("products", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({
-  // Um produto é único pela combinação de SKU + Ótica (variantes do mesmo SKU têm óticas diferentes)
-  skuOticaUnique: uniqueIndex("uq_products_sku_otica").on(table.sku, table.otica),
+  // Um produto é único pela combinação de SKU + Nome do Produto (variantes do mesmo SKU têm nomes diferentes)
+  skuProdutoUnique: uniqueIndex("uq_products_sku_produto").on(table.sku, table.produto),
 }));
 
 export type Product = typeof products.$inferSelect;
