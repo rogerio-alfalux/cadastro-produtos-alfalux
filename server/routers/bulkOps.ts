@@ -69,6 +69,45 @@ export const bulkOpsRouter = router({
     return rows.map((r: { familia: string }) => r.familia).filter(Boolean);
   }),
 
+  // ─── List distinct families filtered by category ───────────────────────────
+  familiesByCategory: publicProcedure
+    .input(z.object({ categoria: z.string().optional() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      if (!input.categoria?.trim()) {
+        const rows = await db
+          .selectDistinct({ familia: products.familia })
+          .from(products)
+          .orderBy(asc(products.familia));
+        return rows.map((r: { familia: string }) => r.familia).filter(Boolean);
+      }
+      const result = await db.execute(
+        sql`SELECT DISTINCT familia FROM products WHERE categoria = ${input.categoria} AND familia IS NOT NULL AND familia != '' ORDER BY familia ASC`
+      );
+      return ((result[0] as unknown as any[]) ?? []).map((r: any) => r.familia).filter(Boolean);
+    }),
+
+  // ─── List distinct driver values filtered by query string (autocomplete) ────
+  driverValuesByQuery: publicProcedure
+    .input(z.object({ tipo: z.enum(DRIVER_TYPES), query: z.string().default("") }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const col = DRIVER_COL[input.tipo];
+      const q = input.query.trim();
+      if (!q) {
+        const result = await db.execute(
+          sql`SELECT DISTINCT ${sql.raw(`\`${col}\``)} as val FROM products WHERE ${sql.raw(`\`${col}\``)} IS NOT NULL AND ${sql.raw(`\`${col}\``)} != '' ORDER BY val ASC LIMIT 30`
+        );
+        return ((result[0] as unknown as any[]) ?? []).map((r: any) => r.val).filter(Boolean);
+      }
+      const result = await db.execute(
+        sql`SELECT DISTINCT ${sql.raw(`\`${col}\``)} as val FROM products WHERE ${sql.raw(`\`${col}\``)} LIKE ${`%${q}%`} ORDER BY val ASC LIMIT 30`
+      );
+      return ((result[0] as unknown as any[]) ?? []).map((r: any) => r.val).filter(Boolean);
+    }),
+
   // ─── List distinct categories ──────────────────────────────────────────────
   categories: publicProcedure.query(async () => {
     const db = await getDb();

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -37,6 +37,92 @@ const DRIVER_LABELS: Record<DriverType, string> = {
   DRIVER_DIM_DALI: "DIM DALI",
 };
 
+// ─── DriverAutocomplete ───────────────────────────────────────────────────────
+// Campo de texto com autocomplete usando os valores do banco para o tipo de driver
+
+interface DriverAutocompleteProps {
+  tipo: DriverType;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  className?: string;
+}
+
+function DriverAutocomplete({ tipo, value, onChange, placeholder, className }: DriverAutocompleteProps) {
+  const [inputValue, setInputValue] = useState(value);
+  const [open, setOpen] = useState(false);
+  const suppressBlurRef = useRef(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync external value → input (only when value changes from outside)
+  useEffect(() => {
+    setInputValue(value);
+  }, [value]);
+
+  const { data: suggestions = [] } = trpc.bulkOps.driverValuesByQuery.useQuery(
+    { tipo, query: inputValue },
+    { enabled: true }
+  );
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value;
+    setInputValue(v);
+    onChange(v);
+    setOpen(true);
+  };
+
+  const handleSelect = (val: string) => {
+    suppressBlurRef.current = true;
+    setInputValue(val);
+    onChange(val);
+    setOpen(false);
+    setTimeout(() => {
+      suppressBlurRef.current = false;
+      inputRef.current?.focus();
+    }, 50);
+  };
+
+  const handleBlur = () => {
+    if (suppressBlurRef.current) return;
+    setTimeout(() => setOpen(false), 150);
+  };
+
+  const filtered = suggestions.filter((s: string) =>
+    inputValue.trim() === "" || s.toLowerCase().includes(inputValue.toLowerCase())
+  );
+
+  return (
+    <div className="relative">
+      <Input
+        ref={inputRef}
+        value={inputValue}
+        onChange={handleChange}
+        onFocus={() => setOpen(true)}
+        onBlur={handleBlur}
+        placeholder={placeholder}
+        className={className}
+        autoComplete="off"
+      />
+      {open && filtered.length > 0 && (
+        <div className="absolute z-50 w-full mt-1 rounded-md border border-border bg-popover shadow-lg max-h-60 overflow-y-auto">
+          {filtered.map((s: string) => (
+            <div
+              key={s}
+              className="px-3 py-2 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleSelect(s);
+              }}
+            >
+              {s}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Shared filter bar ────────────────────────────────────────────────────────
 
 interface FilterBarProps {
@@ -54,6 +140,20 @@ function FilterBar({ familia, setFamilia, categoria, setCategoria, moduloLedCont
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <div className="space-y-1.5">
+        <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Categoria</Label>
+        <Select value={categoria} onValueChange={(v) => { setCategoria(v); setFamilia("__all__"); }}>
+          <SelectTrigger className="h-9">
+            <SelectValue placeholder="Todas as categorias" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">Todas as categorias</SelectItem>
+            {categories.map((c) => (
+              <SelectItem key={c} value={c}>{c}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1.5">
         <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Família</Label>
         <Select value={familia} onValueChange={setFamilia}>
           <SelectTrigger className="h-9">
@@ -63,20 +163,6 @@ function FilterBar({ familia, setFamilia, categoria, setCategoria, moduloLedCont
             <SelectItem value="__all__">Todas as famílias</SelectItem>
             {families.map((f) => (
               <SelectItem key={f} value={f}>{f}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="space-y-1.5">
-        <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Categoria</Label>
-        <Select value={categoria} onValueChange={setCategoria}>
-          <SelectTrigger className="h-9">
-            <SelectValue placeholder="Todas as categorias" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">Todas as categorias</SelectItem>
-            {categories.map((c) => (
-              <SelectItem key={c} value={c}>{c}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -96,7 +182,10 @@ function FilterBar({ familia, setFamilia, categoria, setCategoria, moduloLedCont
 
 // ─── Preview table ────────────────────────────────────────────────────────────
 
-function PreviewTable({ produtos, count, label }: { produtos: any[]; count: number; label: string }) {
+function PreviewTable({ produtos, count, label, isLoading }: { produtos: any[]; count: number; label: string; isLoading?: boolean }) {
+  if (isLoading) return (
+    <div className="text-sm text-muted-foreground italic py-2">Carregando prévia...</div>
+  );
   if (count === 0) return (
     <div className="text-sm text-muted-foreground italic py-2">Nenhum produto encontrado com os filtros selecionados.</div>
   );
@@ -137,12 +226,17 @@ function PreviewTable({ produtos, count, label }: { produtos: any[]; count: numb
 
 // ─── Tab: Custo da Luminária ──────────────────────────────────────────────────
 
-function TabCustoLuminaria({ families, categories }: { families: string[]; categories: string[] }) {
+function TabCustoLuminaria({ categories }: { categories: string[] }) {
   const [familia, setFamilia] = useState("__all__");
   const [categoria, setCategoria] = useState("__all__");
   const [moduloLedContem, setModuloLedContem] = useState("");
   const [novoCusto, setNovoCusto] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
+
+  // Famílias filtradas pela categoria selecionada
+  const { data: families = [] } = trpc.bulkOps.familiesByCategory.useQuery(
+    { categoria: categoria === "__all__" ? undefined : categoria },
+  );
 
   const filterInput = useMemo(() => ({
     familia: familia === "__all__" ? undefined : familia,
@@ -150,7 +244,7 @@ function TabCustoLuminaria({ families, categories }: { families: string[]; categ
     moduloLedContem: moduloLedContem.trim() || undefined,
   }), [familia, categoria, moduloLedContem]);
 
-  const { data: preview } = trpc.bulkOps.previewCostLuminaria.useQuery(filterInput);
+  const { data: preview, isLoading: previewLoading } = trpc.bulkOps.previewCostLuminaria.useQuery(filterInput);
   const utils = trpc.useUtils();
   const apply = trpc.bulkOps.applyCostLuminaria.useMutation({
     onSuccess: (res) => {
@@ -172,27 +266,26 @@ function TabCustoLuminaria({ families, categories }: { families: string[]; categ
         <CardContent className="space-y-4">
           <FilterBar
             familia={familia} setFamilia={setFamilia}
-            categoria={categoria} setCategoria={setCategoria}
+            categoria={categoria} setCategoria={(v) => { setCategoria(v); setFamilia("__all__"); }}
             moduloLedContem={moduloLedContem} setModuloLedContem={setModuloLedContem}
             families={families} categories={categories}
           />
         </CardContent>
       </Card>
 
-      {preview && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Prévia dos Produtos Afetados</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <PreviewTable
-              produtos={preview.produtos}
-              count={preview.count}
-              label="produto(s) terão o custo da luminária alterado"
-            />
-          </CardContent>
-        </Card>
-      )}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Prévia dos Produtos Afetados</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <PreviewTable
+            produtos={preview?.produtos ?? []}
+            count={preview?.count ?? 0}
+            label="produto(s) terão o custo da luminária alterado"
+            isLoading={previewLoading}
+          />
+        </CardContent>
+      </Card>
 
       {(preview?.count ?? 0) > 0 && (
         <Card className="border-primary/30 bg-primary/5">
@@ -229,8 +322,8 @@ function TabCustoLuminaria({ families, categories }: { families: string[]; categ
             <AlertDialogTitle>Confirmar Alteração em Massa</AlertDialogTitle>
             <AlertDialogDescription>
               Você está prestes a alterar o custo da luminária de <strong>{preview?.count} produto(s)</strong> para <strong>R$ {novoCusto}</strong>.
-              {familia !== "__all__" && <> Família: <strong>{familia}</strong>.</>}
               {categoria !== "__all__" && <> Categoria: <strong>{categoria}</strong>.</>}
+              {familia !== "__all__" && <> Família: <strong>{familia}</strong>.</>}
               {moduloLedContem && <> Módulo LED contém: <strong>{moduloLedContem}</strong>.</>}
               {" "}Esta ação não pode ser desfeita automaticamente.
             </AlertDialogDescription>
@@ -252,7 +345,7 @@ function TabCustoLuminaria({ families, categories }: { families: string[]; categ
 
 // ─── Tab: Custo de Driver ─────────────────────────────────────────────────────
 
-function TabCustoDriver({ families, categories }: { families: string[]; categories: string[] }) {
+function TabCustoDriver({ categories }: { categories: string[] }) {
   const [tipoDriver, setTipoDriver] = useState<DriverType>("DRIVER_ONOFF_220");
   const [familia, setFamilia] = useState("__all__");
   const [categoria, setCategoria] = useState("__all__");
@@ -260,6 +353,11 @@ function TabCustoDriver({ families, categories }: { families: string[]; categori
   const [driverAtual, setDriverAtual] = useState("__all__");
   const [novoCusto, setNovoCusto] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
+
+  // Famílias filtradas pela categoria selecionada
+  const { data: families = [] } = trpc.bulkOps.familiesByCategory.useQuery(
+    { categoria: categoria === "__all__" ? undefined : categoria },
+  );
 
   const { data: driverValues = [] } = trpc.bulkOps.driverValues.useQuery({ tipo: tipoDriver });
 
@@ -271,7 +369,7 @@ function TabCustoDriver({ families, categories }: { families: string[]; categori
     driverAtual: driverAtual === "__all__" ? undefined : driverAtual,
   }), [tipoDriver, familia, categoria, moduloLedContem, driverAtual]);
 
-  const { data: preview } = trpc.bulkOps.previewCostDriver.useQuery(filterInput);
+  const { data: preview, isLoading: previewLoading } = trpc.bulkOps.previewCostDriver.useQuery(filterInput);
   const utils = trpc.useUtils();
   const apply = trpc.bulkOps.applyCostDriver.useMutation({
     onSuccess: (res) => {
@@ -308,12 +406,12 @@ function TabCustoDriver({ families, categories }: { families: string[]; categori
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Filtros de Seleção</CardTitle>
-          <CardDescription>Filtre por família, categoria, módulo LED e/ou driver específico.</CardDescription>
+          <CardDescription>Filtre por categoria, família, módulo LED e/ou driver específico.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <FilterBar
             familia={familia} setFamilia={setFamilia}
-            categoria={categoria} setCategoria={setCategoria}
+            categoria={categoria} setCategoria={(v) => { setCategoria(v); setFamilia("__all__"); }}
             moduloLedContem={moduloLedContem} setModuloLedContem={setModuloLedContem}
             families={families} categories={categories}
           />
@@ -336,20 +434,19 @@ function TabCustoDriver({ families, categories }: { families: string[]; categori
         </CardContent>
       </Card>
 
-      {preview && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Prévia dos Produtos Afetados</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <PreviewTable
-              produtos={preview.produtos}
-              count={preview.count}
-              label={`produto(s) terão o custo do driver ${DRIVER_LABELS[tipoDriver]} alterado`}
-            />
-          </CardContent>
-        </Card>
-      )}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Prévia dos Produtos Afetados</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <PreviewTable
+            produtos={preview?.produtos ?? []}
+            count={preview?.count ?? 0}
+            label={`produto(s) terão o custo do driver ${DRIVER_LABELS[tipoDriver]} alterado`}
+            isLoading={previewLoading}
+          />
+        </CardContent>
+      </Card>
 
       {(preview?.count ?? 0) > 0 && (
         <Card className="border-primary/30 bg-primary/5">
@@ -386,6 +483,9 @@ function TabCustoDriver({ families, categories }: { families: string[]; categori
             <AlertDialogDescription>
               Você está prestes a alterar o custo do driver <strong>{DRIVER_LABELS[tipoDriver]}</strong> de{" "}
               <strong>{preview?.count} produto(s)</strong> para <strong>R$ {novoCusto}</strong>.
+              {categoria !== "__all__" && <> Categoria: <strong>{categoria}</strong>.</>}
+              {familia !== "__all__" && <> Família: <strong>{familia}</strong>.</>}
+              {driverAtual !== "__all__" && <> Driver atual: <strong>{driverAtual}</strong>.</>}
               {" "}Esta ação não pode ser desfeita automaticamente.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -406,7 +506,7 @@ function TabCustoDriver({ families, categories }: { families: string[]; categori
 
 // ─── Tab: Gestão de Drivers ───────────────────────────────────────────────────
 
-function TabGestaoDrivers({ families, categories }: { families: string[]; categories: string[] }) {
+function TabGestaoDrivers({ categories }: { categories: string[] }) {
   const [tipoDriver, setTipoDriver] = useState<DriverType>("DRIVER_DIM_DALI");
   const [acao, setAcao] = useState<"INSERIR" | "REMOVER">("INSERIR");
   const [familia, setFamilia] = useState("__all__");
@@ -416,6 +516,11 @@ function TabGestaoDrivers({ families, categories }: { families: string[]; catego
   const [novoDriver, setNovoDriver] = useState("");
   const [novoCusto, setNovoCusto] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
+
+  // Famílias filtradas pela categoria selecionada
+  const { data: families = [] } = trpc.bulkOps.familiesByCategory.useQuery(
+    { categoria: categoria === "__all__" ? undefined : categoria },
+  );
 
   const { data: driverValues = [] } = trpc.bulkOps.driverValues.useQuery({ tipo: tipoDriver });
 
@@ -428,7 +533,7 @@ function TabGestaoDrivers({ families, categories }: { families: string[]; catego
     driverAtual: (acao === "REMOVER" && driverAtual !== "__all__") ? driverAtual : undefined,
   }), [tipoDriver, acao, familia, categoria, moduloLedContem, driverAtual]);
 
-  const { data: preview } = trpc.bulkOps.previewDriver.useQuery(filterInput);
+  const { data: preview, isLoading: previewLoading } = trpc.bulkOps.previewDriver.useQuery(filterInput);
   const utils = trpc.useUtils();
   const apply = trpc.bulkOps.applyDriver.useMutation({
     onSuccess: (res) => {
@@ -446,10 +551,10 @@ function TabGestaoDrivers({ families, categories }: { families: string[]; catego
 
   return (
     <div className="space-y-6">
-      {/* Tipo de Driver */}
+      {/* Tipo de Driver + Ação */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Tipo de Driver</CardTitle>
+          <CardTitle className="text-base">Tipo de Driver e Ação</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2">
@@ -499,7 +604,7 @@ function TabGestaoDrivers({ families, categories }: { families: string[]; catego
         <CardContent className="space-y-4">
           <FilterBar
             familia={familia} setFamilia={setFamilia}
-            categoria={categoria} setCategoria={setCategoria}
+            categoria={categoria} setCategoria={(v) => { setCategoria(v); setFamilia("__all__"); }}
             moduloLedContem={moduloLedContem} setModuloLedContem={setModuloLedContem}
             families={families} categories={categories}
           />
@@ -524,23 +629,22 @@ function TabGestaoDrivers({ families, categories }: { families: string[]; catego
         </CardContent>
       </Card>
 
-      {/* Prévia */}
-      {preview && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Prévia dos Produtos Afetados</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <PreviewTable
-              produtos={preview.produtos}
-              count={preview.count}
-              label={`produto(s) ${acao === "INSERIR" ? "receberão" : "terão removido"} o driver ${DRIVER_LABELS[tipoDriver]}`}
-            />
-          </CardContent>
-        </Card>
-      )}
+      {/* Prévia — sempre visível */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Prévia dos Produtos Afetados</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <PreviewTable
+            produtos={preview?.produtos ?? []}
+            count={preview?.count ?? 0}
+            label={`produto(s) ${acao === "INSERIR" ? "receberão" : "terão removido"} o driver ${DRIVER_LABELS[tipoDriver]}`}
+            isLoading={previewLoading}
+          />
+        </CardContent>
+      </Card>
 
-      {/* Ação */}
+      {/* Ação — só aparece se há produtos afetados */}
       {(preview?.count ?? 0) > 0 && (
         <Card className={acao === "REMOVER" ? "border-destructive/30 bg-destructive/5" : "border-primary/30 bg-primary/5"}>
           <CardHeader className="pb-3">
@@ -553,10 +657,11 @@ function TabGestaoDrivers({ families, categories }: { families: string[]; catego
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Modelo do Driver *</Label>
-                  <Input
-                    placeholder="Ex: LIFUD 40W 1000MA BIVOLT..."
+                  <DriverAutocomplete
+                    tipo={tipoDriver}
                     value={novoDriver}
-                    onChange={(e) => setNovoDriver(e.target.value)}
+                    onChange={setNovoDriver}
+                    placeholder="Ex: LIFUD 40W 1000MA BIVOLT..."
                     className="h-9"
                   />
                 </div>
@@ -597,6 +702,10 @@ function TabGestaoDrivers({ families, categories }: { families: string[]; catego
               ) : (
                 <>Você está prestes a <strong>remover</strong> o driver <strong>{DRIVER_LABELS[tipoDriver]}</strong> de <strong>{preview?.count} produto(s)</strong>.</>
               )}
+              {categoria !== "__all__" && <> Categoria: <strong>{categoria}</strong>.</>}
+              {familia !== "__all__" && <> Família: <strong>{familia}</strong>.</>}
+              {moduloLedContem && <> Módulo LED contém: <strong>{moduloLedContem}</strong>.</>}
+              {acao === "REMOVER" && driverAtual !== "__all__" && <> Driver específico: <strong>{driverAtual}</strong>.</>}
               {" "}Esta ação não pode ser desfeita automaticamente.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -623,7 +732,6 @@ function TabGestaoDrivers({ families, categories }: { families: string[]; catego
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function BulkOps() {
-  const { data: families = [] } = trpc.bulkOps.families.useQuery();
   const { data: categories = [] } = trpc.bulkOps.categories.useQuery();
 
   return (
@@ -631,7 +739,7 @@ export default function BulkOps() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Operações em Massa</h1>
         <p className="text-muted-foreground mt-1">
-          Altere custos e gerencie drivers de múltiplos produtos simultaneamente usando filtros por família, categoria e módulo LED.
+          Altere custos e gerencie drivers de múltiplos produtos simultaneamente usando filtros por categoria, família e módulo LED.
         </p>
       </div>
 
@@ -643,15 +751,15 @@ export default function BulkOps() {
         </TabsList>
 
         <TabsContent value="custo-luminaria">
-          <TabCustoLuminaria families={families} categories={categories} />
+          <TabCustoLuminaria categories={categories} />
         </TabsContent>
 
         <TabsContent value="custo-driver">
-          <TabCustoDriver families={families} categories={categories} />
+          <TabCustoDriver categories={categories} />
         </TabsContent>
 
         <TabsContent value="gestao-drivers">
-          <TabGestaoDrivers families={families} categories={categories} />
+          <TabGestaoDrivers categories={categories} />
         </TabsContent>
       </Tabs>
     </div>
