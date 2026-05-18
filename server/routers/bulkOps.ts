@@ -41,6 +41,7 @@ function buildWhere(filters: {
   familia?: string;
   categoria?: string;
   moduloLedContem?: string;
+  produtoContem?: string;
   driverAtual?: string;
   driverCol?: string;
 }): string {
@@ -48,6 +49,7 @@ function buildWhere(filters: {
   if (filters.familia?.trim()) clauses.push(`familia = '${filters.familia.replace(/'/g, "''")}'`);
   if (filters.categoria?.trim()) clauses.push(`categoria = '${filters.categoria.replace(/'/g, "''")}'`);
   if (filters.moduloLedContem?.trim()) clauses.push(`moduloLed LIKE '%${filters.moduloLedContem.replace(/'/g, "''")}%'`);
+  if (filters.produtoContem?.trim()) clauses.push(`produto LIKE '%${filters.produtoContem.replace(/'/g, "''")}%'`);
   if (filters.driverAtual?.trim() && filters.driverCol) {
     clauses.push(`\`${filters.driverCol}\` = '${filters.driverAtual.replace(/'/g, "''")}'`);
   }
@@ -154,6 +156,7 @@ export const bulkOpsRouter = router({
       familia: z.string().optional(),
       categoria: z.string().optional(),
       moduloLedContem: z.string().optional(),
+      produtoContem: z.string().optional(),
     }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -165,18 +168,20 @@ export const bulkOpsRouter = router({
       return { count, produtos: (listResult[0] as unknown as any[]) ?? [] };
     }),
 
+
   // ─── Apply: update custo da luminária em massa ─────────────────────────────
   applyCostLuminaria: publicProcedure
     .input(z.object({
       familia: z.string().optional(),
       categoria: z.string().optional(),
       moduloLedContem: z.string().optional(),
+      produtoContem: z.string().optional(),
       novoCusto: z.string().min(1, "Novo custo é obrigatório"),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database unavailable");
-      const where = buildWhere({ familia: input.familia, categoria: input.categoria, moduloLedContem: input.moduloLedContem });
+      const where = buildWhere({ familia: input.familia, categoria: input.categoria, moduloLedContem: input.moduloLedContem, produtoContem: input.produtoContem });
       const result = await db.execute(
         sql`UPDATE products SET custoLuminaria = ${input.novoCusto} WHERE ${sql.raw(where)}`
       );
@@ -190,13 +195,14 @@ export const bulkOpsRouter = router({
       familia: z.string().optional(),
       categoria: z.string().optional(),
       moduloLedContem: z.string().optional(),
+      produtoContem: z.string().optional(),
       driverAtual: z.string().optional(),
     }))
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return { count: 0, produtos: [] };
       const col = DRIVER_COL[input.tipo];
-      const where = buildWhere({ familia: input.familia, categoria: input.categoria, moduloLedContem: input.moduloLedContem, driverAtual: input.driverAtual, driverCol: col });
+      const where = buildWhere({ familia: input.familia, categoria: input.categoria, moduloLedContem: input.moduloLedContem, produtoContem: input.produtoContem, driverAtual: input.driverAtual, driverCol: col });
       const whereWithDriver = where + ` AND \`${col}\` IS NOT NULL AND \`${col}\` != ''`;
       const countResult = await db.execute(sql`SELECT COUNT(*) as cnt FROM products WHERE ${sql.raw(whereWithDriver)}`);
       const count = Number((countResult[0] as any)?.[0]?.cnt ?? 0);
@@ -212,6 +218,7 @@ export const bulkOpsRouter = router({
       familia: z.string().optional(),
       categoria: z.string().optional(),
       moduloLedContem: z.string().optional(),
+      produtoContem: z.string().optional(),
       driverAtual: z.string().optional(),
       novoCusto: z.string().min(1, "Novo custo é obrigatório"),
     }))
@@ -220,7 +227,7 @@ export const bulkOpsRouter = router({
       if (!db) throw new Error("Database unavailable");
       const col = DRIVER_COL[input.tipo];
       const custCol = DRIVER_CUSTO_COL[input.tipo];
-      const where = buildWhere({ familia: input.familia, categoria: input.categoria, moduloLedContem: input.moduloLedContem, driverAtual: input.driverAtual, driverCol: col });
+      const where = buildWhere({ familia: input.familia, categoria: input.categoria, moduloLedContem: input.moduloLedContem, produtoContem: input.produtoContem, driverAtual: input.driverAtual, driverCol: col });
       const whereWithDriver = where + ` AND \`${col}\` IS NOT NULL AND \`${col}\` != ''`;
       const result = await db.execute(
         sql`UPDATE products SET ${sql.raw(`\`${custCol}\``)} = ${input.novoCusto} WHERE ${sql.raw(whereWithDriver)}`
@@ -236,6 +243,7 @@ export const bulkOpsRouter = router({
       familia: z.string().optional(),
       categoria: z.string().optional(),
       moduloLedContem: z.string().optional(),
+      produtoContem: z.string().optional(),
       driverAtual: z.string().optional(),
     }))
     .query(async ({ input }) => {
@@ -254,7 +262,7 @@ export const bulkOpsRouter = router({
         extraClause = ` AND (\`${col}\` IS NULL OR \`${col}\` = '')`;
       }
 
-      const where = buildWhere({ familia: input.familia, categoria: input.categoria, moduloLedContem: input.moduloLedContem, driverAtual: input.driverAtual, driverCol: input.acao === "REMOVER" ? col : undefined });
+      const where = buildWhere({ familia: input.familia, categoria: input.categoria, moduloLedContem: input.moduloLedContem, produtoContem: input.produtoContem, driverAtual: input.driverAtual, driverCol: input.acao === "REMOVER" ? col : undefined });
       const fullWhere = where + extraClause;
 
       const countResult = await db.execute(sql`SELECT COUNT(*) as cnt FROM products WHERE ${sql.raw(fullWhere)}`);
@@ -271,6 +279,7 @@ export const bulkOpsRouter = router({
       familia: z.string().optional(),
       categoria: z.string().optional(),
       moduloLedContem: z.string().optional(),
+      produtoContem: z.string().optional(),
       driverAtual: z.string().optional(),
       novoDriver: z.string().optional(),
       novoCusto: z.string().optional(),
@@ -294,7 +303,7 @@ export const bulkOpsRouter = router({
         extraClause = ` AND (\`${col}\` IS NULL OR \`${col}\` = '')`;
       }
 
-      const where = buildWhere({ familia: input.familia, categoria: input.categoria, moduloLedContem: input.moduloLedContem, driverAtual: input.driverAtual, driverCol: input.acao === "REMOVER" ? col : undefined });
+      const where = buildWhere({ familia: input.familia, categoria: input.categoria, moduloLedContem: input.moduloLedContem, produtoContem: input.produtoContem, driverAtual: input.driverAtual, driverCol: input.acao === "REMOVER" ? col : undefined });
       const fullWhere = where + extraClause;
 
       let setClause = "";

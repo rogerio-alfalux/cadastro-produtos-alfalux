@@ -135,48 +135,65 @@ interface FilterBarProps {
   setCategoria: (v: string) => void;
   moduloLedContem: string;
   setModuloLedContem: (v: string) => void;
+  produtoContem: string;
+  setProdutoContem: (v: string) => void;
   families: string[];
   categories: string[];
 }
 
-function FilterBar({ familia, setFamilia, categoria, setCategoria, moduloLedContem, setModuloLedContem, families, categories }: FilterBarProps) {
+function FilterBar({ familia, setFamilia, categoria, setCategoria, moduloLedContem, setModuloLedContem, produtoContem, setProdutoContem, families, categories }: FilterBarProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <div className="space-y-1.5">
-        <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Categoria</Label>
-        <Select value={categoria} onValueChange={(v) => { setCategoria(v); setFamilia("__all__"); }}>
-          <SelectTrigger className="h-9">
-            <SelectValue placeholder="Todas as categorias" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">Todas as categorias</SelectItem>
-            {categories.map((c) => (
-              <SelectItem key={c} value={c}>{c}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="space-y-1.5">
+          <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Categoria</Label>
+          <Select value={categoria} onValueChange={(v) => { setCategoria(v); setFamilia("__all__"); }}>
+            <SelectTrigger className="h-9">
+              <SelectValue placeholder="Todas as categorias" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Todas as categorias</SelectItem>
+              {categories.map((c) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Família</Label>
+          <Select value={familia} onValueChange={setFamilia}>
+            <SelectTrigger className="h-9">
+              <SelectValue placeholder="Todas as famílias" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Todas as famílias</SelectItem>
+              {families.map((f) => (
+                <SelectItem key={f} value={f}>{f}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Módulos LED</Label>
+          <ModuloLedAutocomplete
+            value={moduloLedContem}
+            onChange={setModuloLedContem}
+            categoria={categoria}
+            familia={familia}
+          />
+        </div>
       </div>
       <div className="space-y-1.5">
-        <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Família</Label>
-        <Select value={familia} onValueChange={setFamilia}>
-          <SelectTrigger className="h-9">
-            <SelectValue placeholder="Todas as famílias" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">Todas as famílias</SelectItem>
-            {families.map((f) => (
-              <SelectItem key={f} value={f}>{f}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="space-y-1.5">
-        <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Módulos LED</Label>
-        <ModuloLedAutocomplete
-          value={moduloLedContem}
-          onChange={setModuloLedContem}
-          categoria={categoria}
-          familia={familia}
+        <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Nome do produto contém
+          <span className="ml-1 text-muted-foreground/60 font-normal normal-case">(ex: 2B, 3B, 4B para filtrar por nº de barras)</span>
+        </Label>
+        <Input
+          className="h-9"
+          placeholder="Ex: 2B, 3B, 18W, BIVOLT..."
+          value={produtoContem}
+          onChange={(e) => setProdutoContem(e.target.value)}
+          autoComplete="off"
         />
       </div>
     </div>
@@ -233,6 +250,7 @@ function TabCustoLuminaria({ categories }: { categories: string[] }) {
   const [familia, setFamilia] = useState("__all__");
   const [categoria, setCategoria] = useState("__all__");
   const [moduloLedContem, setModuloLedContem] = useState("");
+  const [produtoContem, setProdutoContem] = useState("");
   const [novoCusto, setNovoCusto] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -245,7 +263,8 @@ function TabCustoLuminaria({ categories }: { categories: string[] }) {
     familia: familia === "__all__" ? undefined : familia,
     categoria: categoria === "__all__" ? undefined : categoria,
     moduloLedContem: moduloLedContem.trim() || undefined,
-  }), [familia, categoria, moduloLedContem]);
+    produtoContem: produtoContem.trim() || undefined,
+  }), [familia, categoria, moduloLedContem, produtoContem]);
 
   const { data: preview, isLoading: previewLoading } = trpc.bulkOps.previewCostLuminaria.useQuery(filterInput);
   const utils = trpc.useUtils();
@@ -271,6 +290,7 @@ function TabCustoLuminaria({ categories }: { categories: string[] }) {
             familia={familia} setFamilia={setFamilia}
             categoria={categoria} setCategoria={(v) => { setCategoria(v); setFamilia("__all__"); }}
             moduloLedContem={moduloLedContem} setModuloLedContem={setModuloLedContem}
+            produtoContem={produtoContem} setProdutoContem={setProdutoContem}
             families={families} categories={categories}
           />
         </CardContent>
@@ -353,6 +373,7 @@ function TabCustoDriver({ categories }: { categories: string[] }) {
   const [familia, setFamilia] = useState("__all__");
   const [categoria, setCategoria] = useState("__all__");
   const [moduloLedContem, setModuloLedContem] = useState("");
+  const [produtoContem, setProdutoContem] = useState("");
   const [driverAtual, setDriverAtual] = useState("__all__");
   const [novoCusto, setNovoCusto] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -369,8 +390,9 @@ function TabCustoDriver({ categories }: { categories: string[] }) {
     familia: familia === "__all__" ? undefined : familia,
     categoria: categoria === "__all__" ? undefined : categoria,
     moduloLedContem: moduloLedContem.trim() || undefined,
+    produtoContem: produtoContem.trim() || undefined,
     driverAtual: driverAtual === "__all__" ? undefined : driverAtual,
-  }), [tipoDriver, familia, categoria, moduloLedContem, driverAtual]);
+  }), [tipoDriver, familia, categoria, moduloLedContem, produtoContem, driverAtual]);
 
   const { data: preview, isLoading: previewLoading } = trpc.bulkOps.previewCostDriver.useQuery(filterInput);
   const utils = trpc.useUtils();
@@ -416,6 +438,7 @@ function TabCustoDriver({ categories }: { categories: string[] }) {
             familia={familia} setFamilia={setFamilia}
             categoria={categoria} setCategoria={(v) => { setCategoria(v); setFamilia("__all__"); }}
             moduloLedContem={moduloLedContem} setModuloLedContem={setModuloLedContem}
+            produtoContem={produtoContem} setProdutoContem={setProdutoContem}
             families={families} categories={categories}
           />
           <div className="space-y-1.5">
@@ -515,6 +538,7 @@ function TabGestaoDrivers({ categories }: { categories: string[] }) {
   const [familia, setFamilia] = useState("__all__");
   const [categoria, setCategoria] = useState("__all__");
   const [moduloLedContem, setModuloLedContem] = useState("");
+  const [produtoContem, setProdutoContem] = useState("");
   const [driverAtual, setDriverAtual] = useState("__all__");
   const [novoDriver, setNovoDriver] = useState("");
   const [novoCusto, setNovoCusto] = useState("");
@@ -533,8 +557,9 @@ function TabGestaoDrivers({ categories }: { categories: string[] }) {
     familia: familia === "__all__" ? undefined : familia,
     categoria: categoria === "__all__" ? undefined : categoria,
     moduloLedContem: moduloLedContem.trim() || undefined,
+    produtoContem: produtoContem.trim() || undefined,
     driverAtual: (acao === "REMOVER" && driverAtual !== "__all__") ? driverAtual : undefined,
-  }), [tipoDriver, acao, familia, categoria, moduloLedContem, driverAtual]);
+  }), [tipoDriver, acao, familia, categoria, moduloLedContem, produtoContem, driverAtual]);
 
   const { data: preview, isLoading: previewLoading } = trpc.bulkOps.previewDriver.useQuery(filterInput);
   const utils = trpc.useUtils();
@@ -609,6 +634,7 @@ function TabGestaoDrivers({ categories }: { categories: string[] }) {
             familia={familia} setFamilia={setFamilia}
             categoria={categoria} setCategoria={(v) => { setCategoria(v); setFamilia("__all__"); }}
             moduloLedContem={moduloLedContem} setModuloLedContem={setModuloLedContem}
+            produtoContem={produtoContem} setProdutoContem={setProdutoContem}
             families={families} categories={categories}
           />
           {acao === "REMOVER" && (
