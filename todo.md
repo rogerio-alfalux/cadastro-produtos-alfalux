@@ -162,6 +162,11 @@
 - [ ] Identificar o que mudou no endpoint /api/products/all após o update de componentes
 - [ ] Corrigir o problema que causou a confusão entre ALE-3462 e ORBIT S
 
+## Bug Fix v15 — Problemas na família FOCO
+- [x] Investigar e corrigir erro ao editar produtos FOCO — causa: schema Zod rejeitava null nos campos opcionais (driverDim110v, fotoUrl, custoLuminaria etc.); corrigido com z.string().nullish()
+- [x] Atualizar fotos de todos os 156 downlights — 66 imagens enviadas, todas com upload e mapeamento correto para os produtos
+- [x] Verificar se outros produtos com múltiplas variantes do mesmo SKU têm o mesmo problema — não, o bug era no schema Zod, não na constraint
+
 ## Anti-duplicidade v3 — Chave composta SKU + Nome do Produto
 - [x] Alterar constraint de anti-duplicidade: de (sku, otica) para (sku, produto) no banco e schema Drizzle
 - [x] Atualizar bulkInsertProducts para usar chave composta SKU+produto no INSERT IGNORE
