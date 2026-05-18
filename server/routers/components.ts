@@ -68,7 +68,7 @@ export const componentsRouter = router({
         modelo: input.modelo.trim(),
         codigo: input.codigo?.trim() || null,
         observacao: input.observacao?.trim() || null,
-        custo: input.custo || null,
+        custo: (input.custo && input.custo.trim() !== '') ? input.custo.trim().replace(',', '.') : null,
       });
       return { id: (result as any).insertId };
     }),
@@ -92,7 +92,7 @@ export const componentsRouter = router({
         modelo: data.modelo?.trim(),
         codigo: data.codigo?.trim() || null,
         observacao: data.observacao?.trim() || null,
-        custo: data.custo ?? null,
+        custo: (data.custo && data.custo.trim() !== '') ? data.custo.trim().replace(',', '.') : null,
       }).where(eq(components.id, id));
       return { success: true };
     }),
