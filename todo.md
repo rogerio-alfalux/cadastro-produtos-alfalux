@@ -162,6 +162,10 @@
 - [ ] Identificar o que mudou no endpoint /api/products/all após o update de componentes
 - [ ] Corrigir o problema que causou a confusão entre ALE-3462 e ORBIT S
 
+## Bug Fix v20 — Campos de digitação livre bloqueados no formulário de edição
+- [x] Causa: ComponentSelect.handleOpen() resetava search para "" ao clicar no campo, apagando o texto existente e impedindo edição
+- [x] Correção: handleOpen() agora inicializa search com o valor atual (value || "") e seleciona todo o texto para facilitar substituição
+
 ## Fotos Painéis v1 — Upload e atualização de fotos de 23 famílias de painéis
 - [x] Upload das 23 imagens para o storage webdev (23/23 com sucesso)
 - [x] 49 produtos de painéis atualizados com foto correta

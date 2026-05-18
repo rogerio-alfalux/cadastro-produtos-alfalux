@@ -96,8 +96,13 @@ export function ComponentSelect({
   const handleOpen = () => {
     if (disabled) return;
     setOpen(true);
-    setSearch("");
-    setTimeout(() => inputRef.current?.focus(), 50);
+    // Inicializa o search com o valor atual para que o usuário possa editar o texto existente
+    setSearch(value || "");
+    setTimeout(() => {
+      inputRef.current?.focus();
+      // Seleciona todo o texto para facilitar a substituição
+      inputRef.current?.select();
+    }, 50);
   };
 
   const displayValue = open ? search : value;
