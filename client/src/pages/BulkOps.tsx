@@ -1,4 +1,5 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo } from "react";
+import { ComponentSelect } from "@/components/ComponentSelect";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -37,91 +38,6 @@ const DRIVER_LABELS: Record<DriverType, string> = {
   DRIVER_DIM_DALI: "DIM DALI",
 };
 
-// ─── DriverAutocomplete ───────────────────────────────────────────────────────
-// Campo de texto com autocomplete usando os valores do banco para o tipo de driver
-
-interface DriverAutocompleteProps {
-  tipo: DriverType;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  className?: string;
-}
-
-function DriverAutocomplete({ tipo, value, onChange, placeholder, className }: DriverAutocompleteProps) {
-  const [inputValue, setInputValue] = useState(value);
-  const [open, setOpen] = useState(false);
-  const suppressBlurRef = useRef(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // Sync external value → input (only when value changes from outside)
-  useEffect(() => {
-    setInputValue(value);
-  }, [value]);
-
-  const { data: suggestions = [] } = trpc.bulkOps.driverValuesByQuery.useQuery(
-    { tipo, query: inputValue },
-    { enabled: true }
-  );
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = e.target.value;
-    setInputValue(v);
-    onChange(v);
-    setOpen(true);
-  };
-
-  const handleSelect = (val: string) => {
-    suppressBlurRef.current = true;
-    setInputValue(val);
-    onChange(val);
-    setOpen(false);
-    setTimeout(() => {
-      suppressBlurRef.current = false;
-      inputRef.current?.focus();
-    }, 50);
-  };
-
-  const handleBlur = () => {
-    if (suppressBlurRef.current) return;
-    setTimeout(() => setOpen(false), 150);
-  };
-
-  const filtered = suggestions.filter((s: string) =>
-    inputValue.trim() === "" || s.toLowerCase().includes(inputValue.toLowerCase())
-  );
-
-  return (
-    <div className="relative">
-      <Input
-        ref={inputRef}
-        value={inputValue}
-        onChange={handleChange}
-        onFocus={() => setOpen(true)}
-        onBlur={handleBlur}
-        placeholder={placeholder}
-        className={className}
-        autoComplete="off"
-      />
-      {open && filtered.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 rounded-md border border-border bg-popover shadow-lg max-h-60 overflow-y-auto">
-          {filtered.map((s: string) => (
-            <div
-              key={s}
-              className="px-3 py-2 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                handleSelect(s);
-              }}
-            >
-              {s}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ─── Shared filter bar ────────────────────────────────────────────────────────
 
@@ -644,51 +560,50 @@ function TabGestaoDrivers({ categories }: { categories: string[] }) {
         </CardContent>
       </Card>
 
-      {/* Ação — só aparece se há produtos afetados */}
-      {(preview?.count ?? 0) > 0 && (
-        <Card className={acao === "REMOVER" ? "border-destructive/30 bg-destructive/5" : "border-primary/30 bg-primary/5"}>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">
-              {acao === "INSERIR" ? "Dados do Novo Driver" : "Confirmar Remoção"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {acao === "INSERIR" && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Modelo do Driver *</Label>
-                  <DriverAutocomplete
-                    tipo={tipoDriver}
-                    value={novoDriver}
-                    onChange={setNovoDriver}
-                    placeholder="Ex: LIFUD 40W 1000MA BIVOLT..."
-                    className="h-9"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Custo (R$) — opcional</Label>
-                  <Input
-                    placeholder="Ex: 32.00"
-                    value={novoCusto}
-                    onChange={(e) => setNovoCusto(e.target.value)}
-                    className="h-9"
-                  />
-                </div>
+      {/* Ação — sempre visível, botão desabilitado se não há produtos afetados */}
+      <Card className={acao === "REMOVER" ? "border-destructive/30 bg-destructive/5" : "border-primary/30 bg-primary/5"}>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">
+            {acao === "INSERIR" ? "Dados do Novo Driver" : "Confirmar Remoção"}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {acao === "INSERIR" && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Modelo do Driver *</Label>
+                <ComponentSelect
+                  tipo={tipoDriver}
+                  value={novoDriver}
+                  onChange={setNovoDriver}
+                  placeholder="Buscar driver..."
+                />
               </div>
-            )}
-            <Button
-              variant={acao === "REMOVER" ? "destructive" : "default"}
-              onClick={() => setConfirmOpen(true)}
-              disabled={!canApply || apply.isPending}
-              className="h-9"
-            >
-              {acao === "INSERIR"
-                ? `Inserir driver em ${preview?.count} produto(s)`
-                : `Remover driver de ${preview?.count} produto(s)`}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Custo (R$) — opcional</Label>
+                <Input
+                  placeholder="Ex: 32.00"
+                  value={novoCusto}
+                  onChange={(e) => setNovoCusto(e.target.value)}
+                  className="h-9"
+                />
+              </div>
+            </div>
+          )}
+          <Button
+            variant={acao === "REMOVER" ? "destructive" : "default"}
+            onClick={() => setConfirmOpen(true)}
+            disabled={!canApply || apply.isPending || (preview?.count ?? 0) === 0}
+            className="h-9"
+          >
+            {previewLoading
+              ? "Calculando..."
+              : acao === "INSERIR"
+                ? `Inserir driver em ${preview?.count ?? 0} produto(s)`
+                : `Remover driver de ${preview?.count ?? 0} produto(s)`}
+          </Button>
+        </CardContent>
+      </Card>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>

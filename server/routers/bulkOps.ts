@@ -230,9 +230,9 @@ export const bulkOpsRouter = router({
         // Only affect products that have the driver
         extraClause = ` AND \`${col}\` IS NOT NULL AND \`${col}\` != ''`;
       } else {
-        // INSERIR: only affect products that don't have the driver yet (or are empty)
+        // INSERIR: affect products that don't have the driver yet (or are empty)
+        // NOTE: do NOT filter by naoAplicavel — the user explicitly wants to insert
         extraClause = ` AND (\`${col}\` IS NULL OR \`${col}\` = '')`;
-        if (naoApCol) extraClause += ` AND \`${naoApCol}\` = 0`;
       }
 
       const where = buildWhere({ familia: input.familia, categoria: input.categoria, moduloLedContem: input.moduloLedContem, driverAtual: input.driverAtual, driverCol: input.acao === "REMOVER" ? col : undefined });
@@ -271,8 +271,8 @@ export const bulkOpsRouter = router({
       if (input.acao === "REMOVER") {
         extraClause = ` AND \`${col}\` IS NOT NULL AND \`${col}\` != ''`;
       } else {
+        // INSERIR: do NOT filter by naoAplicavel — user explicitly wants to insert
         extraClause = ` AND (\`${col}\` IS NULL OR \`${col}\` = '')`;
-        if (naoApCol) extraClause += ` AND \`${naoApCol}\` = 0`;
       }
 
       const where = buildWhere({ familia: input.familia, categoria: input.categoria, moduloLedContem: input.moduloLedContem, driverAtual: input.driverAtual, driverCol: input.acao === "REMOVER" ? col : undefined });
