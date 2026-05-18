@@ -162,6 +162,10 @@
 - [ ] Identificar o que mudou no endpoint /api/products/all após o update de componentes
 - [ ] Corrigir o problema que causou a confusão entre ALE-3462 e ORBIT S
 
+## Bug Fix v22 — ComponentSelect perde foco após cada caractere digitado
+- [x] Causa raiz: FieldWrapper e DriverRow eram definidos DENTRO do ProductForm — a cada setField() o React os recriava como novos componentes, desmontando o DOM e destruindo o foco
+- [x] Correção: FieldWrapper e DriverRow extraídos para fora do ProductForm com interfaces de props explícitas; todas as dependências passadas via props
+
 ## Bug Fix v21 — ComponentSelect: foco instável e cursor sai após digitar uma letra
 - [x] Causa 1: div wrapper com onClick={handleOpen} interceptava cliques e chamava setTimeout(focus,50), roubando o foco do input nativo
 - [x] Causa 2: displayValue = open ? search : value causava re-render ao mudar open, interrompendo a digitação

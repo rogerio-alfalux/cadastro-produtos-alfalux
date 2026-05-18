@@ -32,6 +32,162 @@ import {
   Copy,
 } from "lucide-react";
 
+// ─── Sub-components (defined OUTSIDE ProductForm to prevent remount on every render) ───
+
+interface FieldWrapperProps {
+  field?: keyof FormData;
+  label: string;
+  required?: boolean;
+  children: React.ReactNode;
+  className?: string;
+  touched?: Partial<Record<keyof FormData, boolean>>;
+  errors?: Partial<Record<keyof FormData, string>>;
+}
+
+const FieldWrapper = ({ field, label, required, children, className, touched, errors }: FieldWrapperProps) => {
+  const hasError = field && touched?.[field] && errors?.[field];
+  return (
+    <div className={cn("space-y-1.5", hasError && "field-error", className)}>
+      <Label className="field-label">
+        {label}
+        {required && <span className="required-star">*</span>}
+      </Label>
+      {children}
+      {hasError && (
+        <p className="field-error-msg">
+          <AlertCircle className="w-3 h-3" />
+          {errors![field!]}
+        </p>
+      )}
+    </div>
+  );
+};
+
+interface DriverRowProps {
+  driverField: keyof FormData;
+  custoField: keyof FormData;
+  naoAplicavelField?: keyof FormData;
+  label: string;
+  required?: boolean;
+  placeholder: string;
+  optional?: boolean;
+  form: FormData;
+  touched: Partial<Record<keyof FormData, boolean>>;
+  errors: Partial<Record<keyof FormData, string>>;
+  setField: (field: keyof FormData, value: any) => void;
+  setForm: React.Dispatch<React.SetStateAction<FormData>>;
+  setErrors: React.Dispatch<React.SetStateAction<Partial<Record<keyof FormData, string>>>>;
+  setTouched: React.Dispatch<React.SetStateAction<Partial<Record<keyof FormData, boolean>>>>;
+}
+
+const driverTypeMap: Record<string, "DRIVER_ONOFF_220" | "DRIVER_ONOFF_BIVOLT" | "DRIVER_DIM_110V" | "DRIVER_DIM_DALI"> = {
+  driverOnoff220: "DRIVER_ONOFF_220",
+  driverOnoffBivolt: "DRIVER_ONOFF_BIVOLT",
+  driverDim110v: "DRIVER_DIM_110V",
+  driverDimDali: "DRIVER_DIM_DALI",
+};
+
+const DriverRow = ({
+  driverField, custoField, naoAplicavelField, label, required, placeholder, optional,
+  form, touched, errors, setField, setForm, setErrors, setTouched,
+}: DriverRowProps) => {
+  const isNaoAplicavel = naoAplicavelField ? !!form[naoAplicavelField] : false;
+  const hasError = !isNaoAplicavel && touched[driverField] && errors[driverField];
+  const componentTipo = driverTypeMap[driverField as string];
+  return (
+    <div className={cn("space-y-1.5", hasError && "field-error")}>
+      <div className="flex items-center gap-2">
+        <Label className="field-label flex-1">
+          {label}
+          {required && !isNaoAplicavel && <span className="required-star">*</span>}
+        </Label>
+        {naoAplicavelField && (
+          <div className="flex items-center gap-1.5">
+            <Checkbox
+              id={`${String(driverField)}-na`}
+              checked={isNaoAplicavel}
+              onCheckedChange={(v) => {
+                const checked = !!v;
+                setForm((prev) => ({
+                  ...prev,
+                  [naoAplicavelField]: checked,
+                  [driverField]: checked ? "NÃO APLICÁVEL" : "",
+                }));
+                setErrors((p) => ({ ...p, [driverField]: undefined }));
+                setTouched((p) => ({ ...p, [driverField]: false }));
+              }}
+              className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary w-3.5 h-3.5"
+            />
+            <label
+              htmlFor={`${String(driverField)}-na`}
+              className="text-[10px] text-muted-foreground cursor-pointer select-none whitespace-nowrap"
+            >
+              NÃO APLICÁVEL
+            </label>
+          </div>
+        )}
+        {optional && !naoAplicavelField && (
+          <span className="text-[10px] text-muted-foreground/60 font-medium tracking-wider">OPCIONAL</span>
+        )}
+      </div>
+      {isNaoAplicavel ? (
+        <Input className="input-dark opacity-50" value="NÃO APLICÁVEL" disabled readOnly />
+      ) : (
+        <div className="flex gap-2 items-start">
+          <div className="flex-1">
+            {componentTipo ? (
+              <ComponentSelect
+                tipo={componentTipo}
+                value={form[driverField] as string}
+                onChange={(v) => {
+                  setField(driverField, v);
+                  setTouched((p) => ({ ...p, [driverField]: true }));
+                }}
+                onBlur={() => setTouched((p) => ({ ...p, [driverField]: true }))}
+                placeholder={placeholder}
+                hasError={!!hasError}
+              />
+            ) : (
+              <AutocompleteInput
+                field={driverField as any}
+                value={form[driverField] as string}
+                onChange={(v) => {
+                  setField(driverField, v);
+                  setTouched((p) => ({ ...p, [driverField]: true }));
+                }}
+                onBlur={() => setTouched((p) => ({ ...p, [driverField]: true }))}
+                placeholder={placeholder}
+                hasError={!!hasError}
+              />
+            )}
+          </div>
+          <div className="relative w-36 flex-shrink-0">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-medium pointer-events-none z-10">
+              R$
+            </span>
+            <Input
+              className="input-dark pl-8 text-sm"
+              type="number"
+              step="0.01"
+              min="0"
+              value={form[custoField] as string}
+              onChange={(e) => setField(custoField, e.target.value)}
+              placeholder="Custo"
+              title="Custo deste driver (R$)"
+            />
+          </div>
+        </div>
+      )}
+      {hasError && (
+        <p className="field-error-msg">
+          <AlertCircle className="w-3 h-3" />
+          {errors[driverField]}
+        </p>
+      )}
+    </div>
+  );
+};
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const CATEGORIAS = ["PERFIS", "DOWNLIGHTS", "PAINÉIS", "SPOTS", "ARANDELAS", "ÁREA EXTERNA", "BALIZADORES", "DECORATIVAS"];
@@ -358,163 +514,9 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
   const isLoading = createMutation.isPending || updateMutation.isPending;
   const formValid = isFormValid();
 
-  // ─── Field component ─────────────────────────────────────────────────────
-
-  const FieldWrapper = ({
-    field,
-    label,
-    required,
-    children,
-    className,
-  }: {
-    field?: keyof FormData;
-    label: string;
-    required?: boolean;
-    children: React.ReactNode;
-    className?: string;
-  }) => {
-    const hasError = field && touched[field] && errors[field];
-    return (
-      <div className={cn("space-y-1.5", hasError && "field-error", className)}>
-        <Label className="field-label">
-          {label}
-          {required && <span className="required-star">*</span>}
-        </Label>
-        {children}
-        {hasError && (
-          <p className="field-error-msg">
-            <AlertCircle className="w-3 h-3" />
-            {errors[field]}
-          </p>
-        )}
-      </div>
-    );
-  };
-
-  // ─── Driver Row: driver field + custo inline ──────────────────────────────
-
-  const DriverRow = ({
-    driverField,
-    custoField,
-    naoAplicavelField,
-    label,
-    required,
-    placeholder,
-    optional,
-  }: {
-    driverField: keyof FormData;
-    custoField: keyof FormData;
-    naoAplicavelField?: keyof FormData;
-    label: string;
-    required?: boolean;
-    placeholder: string;
-    optional?: boolean;
-  }) => {
-    const isNaoAplicavel = naoAplicavelField ? !!form[naoAplicavelField] : false;
-    const hasError = !isNaoAplicavel && touched[driverField] && errors[driverField];
-    // Map driverField to ComponentType
-    const driverTypeMap: Record<string, "DRIVER_ONOFF_220" | "DRIVER_ONOFF_BIVOLT" | "DRIVER_DIM_110V" | "DRIVER_DIM_DALI"> = {
-      driverOnoff220: "DRIVER_ONOFF_220",
-      driverOnoffBivolt: "DRIVER_ONOFF_BIVOLT",
-      driverDim110v: "DRIVER_DIM_110V",
-      driverDimDali: "DRIVER_DIM_DALI",
-    };
-    const componentTipo = driverTypeMap[driverField as string];
-    return (
-      <div className={cn("space-y-1.5", hasError && "field-error")}>
-        <div className="flex items-center gap-2">
-          <Label className="field-label flex-1">
-            {label}
-            {required && !isNaoAplicavel && <span className="required-star">*</span>}
-          </Label>
-          {naoAplicavelField && (
-            <div className="flex items-center gap-1.5">
-              <Checkbox
-                id={`${String(driverField)}-na`}
-                checked={isNaoAplicavel}
-                onCheckedChange={(v) => {
-                  const checked = !!v;
-                  setForm((prev) => ({
-                    ...prev,
-                    [naoAplicavelField]: checked,
-                    [driverField]: checked ? "NÃO APLICÁVEL" : "",
-                  }));
-                  setErrors((p) => ({ ...p, [driverField]: undefined }));
-                  setTouched((p) => ({ ...p, [driverField]: false }));
-                }}
-                className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary w-3.5 h-3.5"
-              />
-              <label
-                htmlFor={`${String(driverField)}-na`}
-                className="text-[10px] text-muted-foreground cursor-pointer select-none whitespace-nowrap"
-              >
-                NÃO APLICÁVEL
-              </label>
-            </div>
-          )}
-          {optional && !naoAplicavelField && (
-            <span className="text-[10px] text-muted-foreground/60 font-medium tracking-wider">OPCIONAL</span>
-          )}
-        </div>
-        {isNaoAplicavel ? (
-          <Input className="input-dark opacity-50" value="NÃO APLICÁVEL" disabled readOnly />
-        ) : (
-          <div className="flex gap-2 items-start">
-            {/* Driver name — ComponentSelect if tipo known, else AutocompleteInput */}
-            <div className="flex-1">
-              {componentTipo ? (
-                <ComponentSelect
-                  tipo={componentTipo}
-                  value={form[driverField] as string}
-                  onChange={(v) => {
-                    setField(driverField, v);
-                    setTouched((p) => ({ ...p, [driverField]: true }));
-                  }}
-                  onBlur={() => setTouched((p) => ({ ...p, [driverField]: true }))}
-                  placeholder={placeholder}
-                  hasError={!!hasError}
-                />
-              ) : (
-                <AutocompleteInput
-                  field={driverField as any}
-                  value={form[driverField] as string}
-                  onChange={(v) => {
-                    setField(driverField, v);
-                    setTouched((p) => ({ ...p, [driverField]: true }));
-                  }}
-                  onBlur={() => setTouched((p) => ({ ...p, [driverField]: true }))}
-                  placeholder={placeholder}
-                  hasError={!!hasError}
-                />
-              )}
-            </div>
-            {/* Cost input inline */}
-            <div className="relative w-36 flex-shrink-0">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-medium pointer-events-none z-10">
-                R$
-              </span>
-              <Input
-                className="input-dark pl-8 text-sm"
-                type="number"
-                step="0.01"
-                min="0"
-                value={form[custoField] as string}
-                onChange={(e) => setField(custoField, e.target.value)}
-                placeholder="Custo"
-                title="Custo deste driver (R$)"
-              />
-            </div>
-          </div>
-        )}
-        {hasError && (
-          <p className="field-error-msg">
-            <AlertCircle className="w-3 h-3" />
-            {errors[driverField]}
-          </p>
-        )}
-      </div>
-    );
-  };
+  // ─── FieldWrapper and DriverRow are defined OUTSIDE this component (above) ──
+  // to prevent React from remounting them on every state change (which would
+  // destroy input focus after each keystroke).
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
@@ -564,7 +566,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {/* Categoria */}
-            <FieldWrapper field="categoria" label="CATEGORIA">
+            <FieldWrapper field="categoria" label="CATEGORIA" touched={touched} errors={errors}>
               <Select key={form.categoria || "_empty"} value={form.categoria} onValueChange={(v) => setField("categoria", v)}>
                 <SelectTrigger className="input-dark">
                   <SelectValue placeholder="Selecione..." />
@@ -578,7 +580,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
             </FieldWrapper>
 
             {/* Instalação */}
-            <FieldWrapper field="instalacao" label="INSTALAÇÃO" required>
+            <FieldWrapper field="instalacao" label="INSTALAÇÃO" required touched={touched} errors={errors}>
               <Select
                 value={form.instalacao}
                 onValueChange={(v) => { setField("instalacao", v); setTouched((p) => ({ ...p, instalacao: true })); }}
@@ -595,7 +597,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
             </FieldWrapper>
 
             {/* Família */}
-            <FieldWrapper field="familia" label="FAMÍLIA" required>
+            <FieldWrapper field="familia" label="FAMÍLIA" required touched={touched} errors={errors}>
               <AutocompleteInput
                 field="familia"
                 value={form.familia}
@@ -607,7 +609,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
             </FieldWrapper>
 
             {/* SKU */}
-            <FieldWrapper field="sku" label="SKU" required>
+            <FieldWrapper field="sku" label="SKU" required touched={touched} errors={errors}>
               <Input
                 className={cn("input-dark", touched.sku && errors.sku && "border-destructive ring-1 ring-destructive")}
                 value={form.sku}
@@ -617,7 +619,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
             </FieldWrapper>
 
             {/* Produto */}
-            <FieldWrapper field="produto" label="PRODUTO" required className="lg:col-span-2">
+            <FieldWrapper field="produto" label="PRODUTO" required className="lg:col-span-2" touched={touched} errors={errors}>
               <AutocompleteInput
                 field="produto"
                 value={form.produto}
@@ -639,7 +641,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Módulo LED */}
-            <FieldWrapper field="moduloLed" label="MÓDULO LED" required className="md:col-span-2">
+            <FieldWrapper field="moduloLed" label="MÓDULO LED" required className="md:col-span-2" touched={touched} errors={errors}>
               <ComponentSelect
                 tipo="MODULO_LED"
                 value={form.moduloLed}
@@ -651,7 +653,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
             </FieldWrapper>
 
             {/* Ótica */}
-            <FieldWrapper field="otica" label="ÓTICA MÓDULO LED" required={!form.oticaNaoAplicavel}>
+            <FieldWrapper field="otica" label="ÓTICA MÓDULO LED" required={!form.oticaNaoAplicavel} touched={touched} errors={errors}>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Checkbox
@@ -689,7 +691,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
             </FieldWrapper>
 
             {/* Holder */}
-            <FieldWrapper field="holder" label="HOLDER" required={!form.holderNaoAplicavel}>
+            <FieldWrapper field="holder" label="HOLDER" required={!form.holderNaoAplicavel} touched={touched} errors={errors}>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Checkbox
@@ -727,7 +729,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
             </FieldWrapper>
 
             {/* Dissipador */}
-            <FieldWrapper field="dissipador" label="DISSIPADOR MÓDULO LED" required={!form.dissipadorNaoAplicavel}>
+            <FieldWrapper field="dissipador" label="DISSIPADOR MÓDULO LED" required={!form.dissipadorNaoAplicavel} touched={touched} errors={errors}>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Checkbox
@@ -794,6 +796,8 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
               label="ON/OFF DRIVER 220Vac"
               required
               placeholder="Ex: PHILIPS XITANIUM 19W 350MA (EQ00346)"
+              form={form} touched={touched} errors={errors}
+              setField={setField} setForm={setForm} setErrors={setErrors} setTouched={setTouched}
             />
 
             {/* ON/OFF BIVOLT — obrigatório (salvo se NaoAplicavel) */}
@@ -804,6 +808,8 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
               label="ON/OFF DRIVER BIVOLT"
               required
               placeholder="Ex: LIFUD 13W 350MA BIVOLT (EQ00236)"
+              form={form} touched={touched} errors={errors}
+              setField={setField} setForm={setForm} setErrors={setErrors} setTouched={setTouched}
             />
 
             <div className="border-t border-border/40 pt-4">
@@ -820,6 +826,8 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                   label="DIM 1-10V"
                   optional
                   placeholder="Driver DIM 1-10V"
+                  form={form} touched={touched} errors={errors}
+                  setField={setField} setForm={setForm} setErrors={setErrors} setTouched={setTouched}
                 />
 
                 {/* DIM DALI */}
@@ -830,6 +838,8 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                   label="DIM DALI"
                   optional
                   placeholder="Driver DIM DALI"
+                  form={form} touched={touched} errors={errors}
+                  setField={setField} setForm={setForm} setErrors={setErrors} setTouched={setTouched}
                 />
               </div>
             </div>
@@ -952,7 +962,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
           </div>
 
           <div className="max-w-xs">
-            <FieldWrapper label="CUSTO DO CORPO DA LUMINÁRIA (R$)">
+            <FieldWrapper label="CUSTO DO CORPO DA LUMINÁRIA (R$)" touched={touched} errors={errors}>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
                 <Input
