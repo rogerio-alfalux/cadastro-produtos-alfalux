@@ -162,6 +162,15 @@
 - [ ] Identificar o que mudou no endpoint /api/products/all após o update de componentes
 - [ ] Corrigir o problema que causou a confusão entre ALE-3462 e ORBIT S
 
+## Bug Fix v18 — ALE-2118 sem módulo LED e LUMIGRID sem driver
+- [x] ALE-2118: IDs 192, 194, 196 tinham moduloLed e driverOnoff220 vazios (dados estavam no campo errado: holder/otica). Corrigidos com valores exatos da planilha.
+- [x] LUMIGRID E/S: IDs 163, 164 tinham driverOnoff220 e driverOnoffBivolt vazios. Corrigidos com '1X LIFUD 40W 1000MA BIVOLT (LF-GIF040YCII1000U) (EQ00496)'.
+
+## Bug Fix v17 — Produtos FOCO retornam dados de outros produtos no Configurador
+- [ ] Investigar por que FOCO P RE 4.5W retorna dados do FOCO G COB 70 RE 18W 60°
+- [ ] Verificar se o problema é nos dados do banco (campos misturados) ou na lógica do Configurador
+- [ ] Corrigir os dados incorretos no banco e/ou a lógica de busca
+
 ## Bug Fix v16 — Drivers DIM habilitados indevidamente ao salvar produto
 - [x] Investigar causa: o payload do formulário sempre enviava driverDim110vNaoAplicavel=false, que o update procedure interpretava como "setar false no banco", sobrescrevendo o NULL original
 - [x] Corrigir frontend: payload não envia campos DIM quando estão vazios e não marcados como NÃO APLICÁVEL
