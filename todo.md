@@ -162,6 +162,18 @@
 - [ ] Identificar o que mudou no endpoint /api/products/all após o update de componentes
 - [ ] Corrigir o problema que causou a confusão entre ALE-3462 e ORBIT S
 
+## Varredura Completa v1 — Corrigir todos os produtos com campos divergentes da planilha
+- [x] Extrair todos os produtos da planilha (DOWNLIGHTS + PAÍNÉIS) — 208 produtos
+- [x] Comparar com banco e identificar todos os produtos com campos errados — 189 divergentes em 30 famílias
+- [x] Corrigir todos os 189 produtos divergentes (módulo LED, drivers, holder, ótica, dissipador, SKU)
+- [x] Limpar holder/ótica/dissipador de todos os 51 PAINÉIS (esses campos não existem em painéis)
+- [x] Office Comfort: moduloLed e drivers corrigidos, holder/ótica limpados
+
+## Bug Fix v19 — Categoria SPOTS não retorna resultados no Configurador
+- [ ] Verificar como os produtos SPOTS estão cadastrados no banco (campo categoria)
+- [ ] Verificar como o endpoint /api/products/all retorna os SPOTS
+- [ ] Corrigir o campo categoria dos produtos SPOTS se necessário
+
 ## Bug Fix v18 — ALE-2118 sem módulo LED e LUMIGRID sem driver
 - [x] ALE-2118: IDs 192, 194, 196 tinham moduloLed e driverOnoff220 vazios (dados estavam no campo errado: holder/otica). Corrigidos com valores exatos da planilha.
 - [x] LUMIGRID E/S: IDs 163, 164 tinham driverOnoff220 e driverOnoffBivolt vazios. Corrigidos com '1X LIFUD 40W 1000MA BIVOLT (LF-GIF040YCII1000U) (EQ00496)'.
