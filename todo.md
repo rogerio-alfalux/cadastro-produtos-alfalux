@@ -162,6 +162,12 @@
 - [ ] Identificar o que mudou no endpoint /api/products/all após o update de componentes
 - [ ] Corrigir o problema que causou a confusão entre ALE-3462 e ORBIT S
 
+## Bug Fix v16 — Drivers DIM habilitados indevidamente ao salvar produto
+- [x] Investigar causa: o payload do formulário sempre enviava driverDim110vNaoAplicavel=false, que o update procedure interpretava como "setar false no banco", sobrescrevendo o NULL original
+- [x] Corrigir frontend: payload não envia campos DIM quando estão vazios e não marcados como NÃO APLICÁVEL
+- [x] Corrigir backend: update procedure agora inclui tratamento dos campos NaoAplicavel (driverOnoffBivolt, driverDim110v, driverDimDali)
+- [x] Limpar banco: 13 produtos FOCO afetados foram corrigidos (driverDim110v/driverDimDali voltaram para NULL/false)
+
 ## Bug Fix v15 — Problemas na família FOCO
 - [x] Investigar e corrigir erro ao editar produtos FOCO — causa: schema Zod rejeitava null nos campos opcionais (driverDim110v, fotoUrl, custoLuminaria etc.); corrigido com z.string().nullish()
 - [x] Atualizar fotos de todos os 156 downlights — 66 imagens enviadas, todas com upload e mapeamento correto para os produtos

@@ -315,7 +315,8 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       return;
     }
 
-    const payload = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const payload: any = {
       ...form,
       temperaturasCor: JSON.stringify(form.temperaturasCor),
       custoLuminaria: form.custoLuminaria || undefined,
@@ -325,11 +326,27 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       custoDriverDimDali: form.custoDriverDimDali || undefined,
       fotoUrl: form.fotoUrl || undefined,
       fotoKey: form.fotoKey || undefined,
-      // Drivers: se NaoAplicavel, envia string vazia e flag true
+      // Drivers ON/OFF
       driverOnoffBivolt: form.driverOnoffBivoltNaoAplicavel ? "NÃO APLICÁVEL" : (form.driverOnoffBivolt || undefined),
-      driverDim110v: form.driverDim110vNaoAplicavel ? "NÃO APLICÁVEL" : (form.driverDim110v || undefined),
-      driverDimDali: form.driverDimDaliNaoAplicavel ? "NÃO APLICÁVEL" : (form.driverDimDali || undefined),
+      // Drivers DIM: só envia se o usuário explicitamente marcou NÃO APLICÁVEL ou preencheu o campo.
+      // Se ambos estão vazios/false, nÃo envia para não sobrescrever o estado do banco.
+      driverDim110v: form.driverDim110vNaoAplicavel
+        ? "NÃO APLICÁVEL"
+        : (form.driverDim110v || undefined),
+      driverDimDali: form.driverDimDaliNaoAplicavel
+        ? "NÃO APLICÁVEL"
+        : (form.driverDimDali || undefined),
     };
+    // Se os campos DIM estão vazios E não marcados como NÃO APLICÁVEL,
+    // remove os campos NaoAplicavel do payload para não sobrescrever o banco com false
+    if (!form.driverDim110vNaoAplicavel && !form.driverDim110v) {
+      delete payload.driverDim110vNaoAplicavel;
+      delete payload.driverDim110v;
+    }
+    if (!form.driverDimDaliNaoAplicavel && !form.driverDimDali) {
+      delete payload.driverDimDaliNaoAplicavel;
+      delete payload.driverDimDali;
+    }
 
     if (isEdit && editId) {
       updateMutation.mutate({ id: editId, data: payload });

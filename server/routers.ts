@@ -188,7 +188,13 @@ export const appRouter = router({
         if (d.dissipadorNaoAplicavel !== undefined) update.dissipadorNaoAplicavel = d.dissipadorNaoAplicavel;
         if (d.driverOnoff220 !== undefined) update.driverOnoff220 = d.driverOnoff220.toUpperCase();
         if (d.driverOnoffBivolt !== undefined) update.driverOnoffBivolt = d.driverOnoffBivolt.toUpperCase();
+        if (d.driverOnoffBivoltNaoAplicavel !== undefined) update.driverOnoffBivoltNaoAplicavel = d.driverOnoffBivoltNaoAplicavel;
+        // DIM 1-10V: só atualiza se o campo foi explicitamente enviado pelo frontend
+        // Nunca sobrescreve com false se o produto já tinha o campo não configurado
+        if (d.driverDim110vNaoAplicavel !== undefined) update.driverDim110vNaoAplicavel = d.driverDim110vNaoAplicavel;
         if (d.driverDim110v !== undefined) update.driverDim110v = d.driverDim110v?.toUpperCase() || null;
+        // DIM DALI: idem
+        if (d.driverDimDaliNaoAplicavel !== undefined) update.driverDimDaliNaoAplicavel = d.driverDimDaliNaoAplicavel;
         if (d.driverDimDali !== undefined) update.driverDimDali = d.driverDimDali?.toUpperCase() || null;
         if (d.temperaturasCor !== undefined) update.temperaturasCor = d.temperaturasCor;
         if (d.fotoUrl !== undefined) update.fotoUrl = d.fotoUrl || null;
