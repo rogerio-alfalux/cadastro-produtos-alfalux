@@ -5,6 +5,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { componentsRouter } from "./routers/components";
+import { bulkOpsRouter } from "./routers/bulkOps";
 import {
   bulkInsertProducts,
   countProducts,
@@ -103,6 +104,7 @@ const bulkProductSchema = z.object({
 export const appRouter = router({
   system: systemRouter,
   components: componentsRouter,
+  bulkOps: bulkOpsRouter,
   auth: router({
     me: publicProcedure.query((opts) => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {

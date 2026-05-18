@@ -162,6 +162,31 @@
 - [ ] Identificar o que mudou no endpoint /api/products/all após o update de componentes
 - [ ] Corrigir o problema que causou a confusão entre ALE-3462 e ORBIT S
 
+## Feature v23 — Módulo de Operações em Massa
+
+### Alteração em Massa de Custos
+- [x] Endpoint tRPC `bulkOps.previewCostLuminaria` + `bulkOps.applyCostLuminaria`: alterar custo de luminária em massa (filtros: família, categoria, módulo LED contém)
+- [x] Endpoint tRPC `bulkOps.previewCostDriver` + `bulkOps.applyCostDriver`: alterar custo de driver específico em massa (filtros: família, categoria, tipo de driver, modelo do driver)
+- [x] Frontend: aba "Custo da Luminária" na página de Operações em Massa
+  - [x] Filtros por família/categoria/módulo LED + campo novo valor + prévia de quantos produtos serão afetados
+  - [x] Confirmação antes de aplicar com resumo do impacto
+- [x] Frontend: aba "Custo de Driver" na página de Operações em Massa
+  - [x] Filtros por família/categoria/tipo de driver/modelo do driver + campo novo valor + prévia
+  - [x] Confirmação antes de aplicar com resumo do impacto
+
+### Gestão de Drivers em Massa
+- [x] Endpoint tRPC `bulkOps.previewDriver` + `bulkOps.applyDriver`: inserir ou remover driver em massa (filtros: família, categoria, módulo LED parcial, driver atual)
+- [x] Frontend: aba "Gestão de Drivers" na página de Operações em Massa
+  - [x] Filtros: família, categoria, tipo de driver (ON/OFF 220V, BIVOLT, DIM 1-10V, DIM DALI), modelo do driver atual (opcional), módulo LED contém
+  - [x] Ação: Inserir driver (campo modelo + custo opcional) ou Remover driver
+  - [x] Prévia: lista de produtos que serão afetados antes de confirmar
+  - [x] Confirmação e feedback de quantos produtos foram alterados
+
+### Infraestrutura
+- [x] Adicionar rota `/operacoes-em-massa` no App.tsx
+- [x] Adicionar link "EM MASSA" no menu de navegação
+- [x] Testes vitest para os novos endpoints (22 testes passando em bulkOps.test.ts)
+
 ## Bug Fix v22 — ComponentSelect perde foco após cada caractere digitado
 - [x] Causa raiz: FieldWrapper e DriverRow eram definidos DENTRO do ProductForm — a cada setField() o React os recriava como novos componentes, desmontando o DOM e destruindo o foco
 - [x] Correção: FieldWrapper e DriverRow extraídos para fora do ProductForm com interfaces de props explícitas; todas as dependências passadas via props
