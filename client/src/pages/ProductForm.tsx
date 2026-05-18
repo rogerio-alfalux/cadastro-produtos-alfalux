@@ -316,12 +316,14 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         sku: existingProduct.sku || "",
         produto: existingProduct.produto || "",
         moduloLed: existingProduct.moduloLed || "",
-        otica: existingProduct.oticaNaoAplicavel ? "" : (existingProduct.otica || ""),
-        oticaNaoAplicavel: existingProduct.oticaNaoAplicavel || false,
-        holder: existingProduct.holderNaoAplicavel ? "" : (existingProduct.holder || ""),
-        holderNaoAplicavel: existingProduct.holderNaoAplicavel || false,
-        dissipador: existingProduct.dissipadorNaoAplicavel ? "" : (existingProduct.dissipador || ""),
-        dissipadorNaoAplicavel: existingProduct.dissipadorNaoAplicavel || false,
+        // Se o campo está vazio no banco (sem valor e sem flag naoAplicavel), trata como naoAplicavel=true
+        // para evitar que o formulário fique bloqueado por campos obrigatórios vazios
+        otica: (existingProduct.oticaNaoAplicavel || !existingProduct.otica) ? "" : existingProduct.otica,
+        oticaNaoAplicavel: existingProduct.oticaNaoAplicavel || !existingProduct.otica || false,
+        holder: (existingProduct.holderNaoAplicavel || !existingProduct.holder) ? "" : existingProduct.holder,
+        holderNaoAplicavel: existingProduct.holderNaoAplicavel || !existingProduct.holder || false,
+        dissipador: (existingProduct.dissipadorNaoAplicavel || !existingProduct.dissipador) ? "" : existingProduct.dissipador,
+        dissipadorNaoAplicavel: existingProduct.dissipadorNaoAplicavel || !existingProduct.dissipador || false,
         driverOnoff220: existingProduct.driverOnoff220 || "",
         custoDriverOnoff220: p.custoDriverOnoff220 ? String(p.custoDriverOnoff220) : "",
         driverOnoffBivolt: existingProduct.driverOnoffBivoltNaoAplicavel ? "" : (existingProduct.driverOnoffBivolt || ""),
@@ -512,7 +514,8 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
   };
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
-  const formValid = isFormValid();
+  // formValid: campos obrigatórios preenchidos E nenhum erro real (com mensagem) no estado
+  const formValid = isFormValid() && !Object.values(errors).some((msg) => !!msg);
 
   // ─── FieldWrapper and DriverRow are defined OUTSIDE this component (above) ──
   // to prevent React from remounting them on every state change (which would
@@ -980,14 +983,14 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         </section>
 
         {/* ─── Validation Summary ───────────────────────────────────────── */}
-        {Object.keys(errors).length > 0 && (
+        {Object.entries(errors).some(([, msg]) => !!msg) && (
           <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 animate-fade-in">
             <div className="flex items-center gap-2 mb-2">
               <AlertCircle className="w-4 h-4 text-destructive" />
               <span className="text-sm font-semibold text-destructive">CAMPOS OBRIGATÓRIOS FALTANDO</span>
             </div>
             <div className="flex flex-wrap gap-2 mt-2">
-              {Object.entries(errors).map(([field, msg]) => (
+              {Object.entries(errors).filter(([, msg]) => !!msg).map(([field, msg]) => (
                 <span key={field} className="text-xs bg-destructive/20 text-destructive px-2 py-1 rounded-md">
                   {FIELD_LABELS[field] || field}
                 </span>
