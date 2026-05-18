@@ -162,6 +162,11 @@
 - [ ] Identificar o que mudou no endpoint /api/products/all após o update de componentes
 - [ ] Corrigir o problema que causou a confusão entre ALE-3462 e ORBIT S
 
+## Fotos Painéis v1 — Upload e atualização de fotos de 23 famílias de painéis
+- [x] Upload das 23 imagens para o storage webdev (23/23 com sucesso)
+- [x] 49 produtos de painéis atualizados com foto correta
+- [ ] LUMIGRID E e LUMIGRID S ainda sem foto (não foram enviadas fotos para essas famílias)
+
 ## Varredura Completa v1 — Corrigir todos os produtos com campos divergentes da planilha
 - [x] Extrair todos os produtos da planilha (DOWNLIGHTS + PAÍNÉIS) — 208 produtos
 - [x] Comparar com banco e identificar todos os produtos com campos errados — 189 divergentes em 30 famílias
