@@ -182,8 +182,12 @@ export const bulkOpsRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database unavailable");
       const where = buildWhere({ familia: input.familia, categoria: input.categoria, moduloLedContem: input.moduloLedContem, produtoContem: input.produtoContem });
+      // Normalizar valor: aceitar vírgula (formato BR) ou ponto como separador decimal
+      const custoNormalizado = input.novoCusto.replace(',', '.');
+      const custoNum = parseFloat(custoNormalizado);
+      if (isNaN(custoNum)) throw new Error("Valor inválido: " + input.novoCusto);
       const result = await db.execute(
-        sql`UPDATE products SET custoLuminaria = ${input.novoCusto} WHERE ${sql.raw(where)}`
+        sql`UPDATE products SET custoLuminaria = ${custoNum} WHERE ${sql.raw(where)}`
       );
       return { updated: Number((result[0] as any)?.affectedRows ?? 0) };
     }),
@@ -229,8 +233,12 @@ export const bulkOpsRouter = router({
       const custCol = DRIVER_CUSTO_COL[input.tipo];
       const where = buildWhere({ familia: input.familia, categoria: input.categoria, moduloLedContem: input.moduloLedContem, produtoContem: input.produtoContem, driverAtual: input.driverAtual, driverCol: col });
       const whereWithDriver = where + ` AND \`${col}\` IS NOT NULL AND \`${col}\` != ''`;
+      // Normalizar valor: aceitar vírgula (formato BR) ou ponto como separador decimal
+      const custoNormalizado = input.novoCusto.replace(',', '.');
+      const custoNum = parseFloat(custoNormalizado);
+      if (isNaN(custoNum)) throw new Error("Valor inválido: " + input.novoCusto);
       const result = await db.execute(
-        sql`UPDATE products SET ${sql.raw(`\`${custCol}\``)} = ${input.novoCusto} WHERE ${sql.raw(whereWithDriver)}`
+        sql`UPDATE products SET ${sql.raw(`\`${custCol}\``)} = ${custoNum} WHERE ${sql.raw(whereWithDriver)}`
       );
       return { updated: Number((result[0] as any)?.affectedRows ?? 0) };
     }),
