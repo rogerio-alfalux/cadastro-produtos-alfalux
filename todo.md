@@ -162,6 +162,12 @@
 - [ ] Identificar o que mudou no endpoint /api/products/all após o update de componentes
 - [ ] Corrigir o problema que causou a confusão entre ALE-3462 e ORBIT S
 
+## Bug Fix v21 — ComponentSelect: foco instável e cursor sai após digitar uma letra
+- [x] Causa 1: div wrapper com onClick={handleOpen} interceptava cliques e chamava setTimeout(focus,50), roubando o foco do input nativo
+- [x] Causa 2: displayValue = open ? search : value causava re-render ao mudar open, interrompendo a digitação
+- [x] Causa 3: onFocus={() => setOpen(true)} disparava re-render que podia mover o foco
+- [x] Solução: reescrita completa com estado inputValue local sincronizado com value, sem div wrapper, sem setTimeout, com suppressBlurRef para evitar fechamento prematuro do dropdown
+
 ## Bug Fix v20 — Campos de digitação livre bloqueados no formulário de edição
 - [x] Causa: ComponentSelect.handleOpen() resetava search para "" ao clicar no campo, apagando o texto existente e impedindo edição
 - [x] Correção: handleOpen() agora inicializa search com o valor atual (value || "") e seleciona todo o texto para facilitar substituição

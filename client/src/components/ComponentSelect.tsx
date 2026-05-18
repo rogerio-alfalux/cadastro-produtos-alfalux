@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 import { ChevronDown, X } from "lucide-react";
@@ -34,116 +34,130 @@ export function ComponentSelect({
   className,
   hasError,
 }: ComponentSelectProps) {
+  // `inputValue` é o que aparece no input enquanto o usuário digita.
+  // É inicializado com `value` e sincronizado quando `value` muda externamente.
+  const [inputValue, setInputValue] = useState(value);
   const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const suppressBlurRef = useRef(false);
 
-  // Debounce search
+  // Sincroniza inputValue quando value muda externamente (ex: ao carregar produto)
   useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => setDebouncedSearch(search), 250);
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [search]);
+    setInputValue(value);
+  }, [value]);
 
   const { data: allComponents = [] } = trpc.components.list.useQuery(
     { tipo },
     { staleTime: 60_000 }
   );
 
-  // Filter locally by search
-  const filtered = debouncedSearch.trim()
+  // Filtra localmente pelo que o usuário digitou
+  const query = inputValue.trim().toUpperCase();
+  const filtered = query
     ? allComponents.filter((c) =>
-        c.modelo.toUpperCase().includes(debouncedSearch.toUpperCase()) ||
-        (c.codigo && c.codigo.toUpperCase().includes(debouncedSearch.toUpperCase()))
+        c.modelo.toUpperCase().includes(query) ||
+        (c.codigo && c.codigo.toUpperCase().includes(query))
       )
     : allComponents;
 
-  // Close on outside click
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-        onBlur?.();
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [onBlur]);
-
-  const handleSelect = (modelo: string) => {
+  const handleSelect = useCallback((modelo: string) => {
+    suppressBlurRef.current = true;
     onChange(modelo);
-    setSearch("");
+    setInputValue(modelo);
     setOpen(false);
-  };
+    // Devolve o foco ao input após seleção
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+      suppressBlurRef.current = false;
+    });
+  }, [onChange]);
 
-  const handleClear = (e: React.MouseEvent) => {
+  const handleClear = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
+    suppressBlurRef.current = true;
     onChange("");
-    setSearch("");
-  };
+    setInputValue("");
+    setOpen(false);
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+      suppressBlurRef.current = false;
+    });
+  }, [onChange]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const upper = e.target.value.toUpperCase();
-    setSearch(upper);
-    // If user types something not in the list, allow free text
+    setInputValue(upper);
     onChange(upper);
     setOpen(true);
   };
 
-  const handleOpen = () => {
-    if (disabled) return;
-    setOpen(true);
-    // Inicializa o search com o valor atual para que o usuário possa editar o texto existente
-    setSearch(value || "");
-    setTimeout(() => {
-      inputRef.current?.focus();
-      // Seleciona todo o texto para facilitar a substituição
-      inputRef.current?.select();
-    }, 50);
+  const handleFocus = () => {
+    if (!disabled) setOpen(true);
   };
 
-  const displayValue = open ? search : value;
+  const handleBlur = () => {
+    if (suppressBlurRef.current) return;
+    // Pequeno delay para permitir que o clique no item da lista seja processado
+    setTimeout(() => {
+      if (!suppressBlurRef.current) {
+        setOpen(false);
+        onBlur?.();
+      }
+    }, 150);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Escape") {
+      setOpen(false);
+      inputRef.current?.blur();
+    } else if (e.key === "Enter" && filtered.length > 0) {
+      e.preventDefault();
+      handleSelect(filtered[0].modelo);
+    }
+  };
 
   return (
     <div ref={containerRef} className="relative w-full">
-      {/* Trigger / Input */}
+      {/* Input principal — sem div wrapper interceptando cliques */}
       <div
         className={cn(
-          "flex h-9 w-full items-center rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors cursor-text",
+          "flex h-9 w-full items-center rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors",
           "focus-within:ring-1 focus-within:ring-ring",
           disabled && "cursor-not-allowed opacity-50",
           hasError && "border-destructive ring-1 ring-destructive",
           className
         )}
-        onClick={handleOpen}
       >
         <input
           ref={inputRef}
           type="text"
-          value={displayValue}
+          value={inputValue}
           onChange={handleInputChange}
-          onFocus={() => setOpen(true)}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
           placeholder={open ? "Buscar componente..." : (placeholder || "Selecionar...")}
           disabled={disabled}
           autoComplete="off"
           spellCheck={false}
-          className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground text-sm min-w-0"
+          className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground text-sm min-w-0 cursor-text"
         />
         <div className="flex items-center gap-1 ml-1 shrink-0">
           {value && !disabled && (
             <button
               type="button"
-              onClick={handleClear}
+              onMouseDown={handleClear}
               className="text-muted-foreground hover:text-foreground transition-colors"
               tabIndex={-1}
             >
               <X className="w-3.5 h-3.5" />
             </button>
           )}
-          <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform", open && "rotate-180")} />
+          <ChevronDown
+            className={cn("w-4 h-4 text-muted-foreground transition-transform", open && "rotate-180")}
+          />
         </div>
       </div>
 
@@ -151,6 +165,8 @@ export function ComponentSelect({
       {open && !disabled && (
         <ul
           role="listbox"
+          // onMouseDown com preventDefault impede que o clique no item tire o foco do input
+          onMouseDown={(e) => e.preventDefault()}
           className="absolute z-50 left-0 right-0 top-full mt-1 max-h-64 overflow-auto rounded-md border border-border bg-card shadow-lg"
         >
           {filtered.length === 0 ? (
@@ -164,7 +180,6 @@ export function ComponentSelect({
               <li
                 key={c.id}
                 role="option"
-                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => handleSelect(c.modelo)}
                 className={cn(
                   "px-3 py-2 text-sm cursor-pointer select-none transition-colors",
