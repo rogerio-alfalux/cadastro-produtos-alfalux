@@ -246,12 +246,20 @@
 - [x] Verificar contagem final por família após importação — 1101 produtos (156 DL, 51 Painéis, 891 Perfis, 3 Spots)
 
 ## Melhorias v24 — Componentes, Drivers e Alteração em Massa
-- [ ] Corrigir aba Componentes para exibir todos os componentes do banco (incluindo os importados via planilha, não só os cadastrados manualmente)
-- [ ] Adicionar campo de quantidade de driver por tipo no ProductForm (default 1, afeta ON/OFF 220V, BIVOLT, DIM 1-10V, DIM DALI)
-- [ ] Salvar quantidade de driver no banco (schema + migração SQL)
-- [ ] Implementar alteração em massa de componente: substituir um componente em todos os produtos que o utilizam
-  - [ ] Autocomplete no campo "Componente Atual" com sugestões do banco
-  - [ ] Autocomplete no campo "Novo Componente" com sugestões do banco
-  - [ ] Prévia dos produtos afetados antes de confirmar
-  - [ ] Filtro opcional por família
-  - [ ] Suporte a todos os tipos: Módulo LED, Ótica, Holder, Dissipador, Driver ON/OFF 220V, Driver BIVOLT, Driver DIM 1-10V, Driver DIM DALI
+- [x] Corrigir aba Componentes para exibir todos os 221 componentes do banco (incluindo os importados via planilha)
+- [x] Adicionar campo de quantidade de driver por tipo no ProductForm (default 1, afeta ON/OFF 220V, BIVOLT, DIM 1-10V, DIM DALI)
+- [x] Salvar quantidade de driver no banco (schema + migração SQL aplicada)
+- [x] Implementar alteração em massa de componente: substituir um componente em todos os produtos que o utilizam
+  - [x] Autocomplete no campo "Componente Atual" com sugestões do banco (por tipo)
+  - [x] Autocomplete no campo "Novo Componente" com sugestões do banco
+  - [x] Prévia dos produtos afetados antes de confirmar
+  - [x] Filtro opcional por família
+  - [x] Suporte a todos os tipos: Módulo LED, Ótica, Holder, Dissipador, Driver ON/OFF 220V, Driver BIVOLT, Driver DIM 1-10V, Driver DIM DALI
+
+## Feature v25 — Quantidade de componentes (Módulo LED, Ótica, Holder, Dissipador)
+- [x] Schema Drizzle: adicionar qtdModuloLed, qtdOtica, qtdHolder, qtdDissipador (int, default 1)
+- [x] Migração SQL aplicada via webdev_execute_sql
+- [x] Router tRPC: adicionar campos ao productSchema e bulkProductSchema
+- [x] ProductForm: campo de quantidade ao lado de Módulo LED, Ótica, Holder e Dissipador
+- [x] Campo de quantidade só aparece quando o componente não está marcado como NÃO APLICÁVEL
+- [x] Carregamento dos valores do banco ao editar produto

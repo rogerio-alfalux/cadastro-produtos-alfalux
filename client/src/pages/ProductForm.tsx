@@ -219,11 +219,15 @@ interface FormData {
   sku: string;
   produto: string;
   moduloLed: string;
+  qtdModuloLed: number;
   otica: string;
+  qtdOtica: number;
   oticaNaoAplicavel: boolean;
   holder: string;
+  qtdHolder: number;
   holderNaoAplicavel: boolean;
   dissipador: string;
+  qtdDissipador: number;
   dissipadorNaoAplicavel: boolean;
   driverOnoff220: string;
   qtdDriverOnoff220: number;
@@ -253,11 +257,15 @@ const defaultForm: FormData = {
   sku: "",
   produto: "",
   moduloLed: "",
+  qtdModuloLed: 1,
   otica: "",
+  qtdOtica: 1,
   oticaNaoAplicavel: false,
   holder: "",
+  qtdHolder: 1,
   holderNaoAplicavel: false,
   dissipador: "",
+  qtdDissipador: 1,
   dissipadorNaoAplicavel: false,
   driverOnoff220: "",
   qtdDriverOnoff220: 1,
@@ -342,13 +350,17 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         sku: existingProduct.sku || "",
         produto: existingProduct.produto || "",
         moduloLed: existingProduct.moduloLed || "",
+        qtdModuloLed: (p.qtdModuloLed != null ? Number(p.qtdModuloLed) : 1),
         // Se o campo está vazio no banco (sem valor e sem flag naoAplicavel), trata como naoAplicavel=true
         // para evitar que o formulário fique bloqueado por campos obrigatórios vazios
         otica: (existingProduct.oticaNaoAplicavel || !existingProduct.otica) ? "" : existingProduct.otica,
+        qtdOtica: (p.qtdOtica != null ? Number(p.qtdOtica) : 1),
         oticaNaoAplicavel: existingProduct.oticaNaoAplicavel || !existingProduct.otica || false,
         holder: (existingProduct.holderNaoAplicavel || !existingProduct.holder) ? "" : existingProduct.holder,
+        qtdHolder: (p.qtdHolder != null ? Number(p.qtdHolder) : 1),
         holderNaoAplicavel: existingProduct.holderNaoAplicavel || !existingProduct.holder || false,
         dissipador: (existingProduct.dissipadorNaoAplicavel || !existingProduct.dissipador) ? "" : existingProduct.dissipador,
+        qtdDissipador: (p.qtdDissipador != null ? Number(p.qtdDissipador) : 1),
         dissipadorNaoAplicavel: existingProduct.dissipadorNaoAplicavel || !existingProduct.dissipador || false,
         driverOnoff220: existingProduct.driverOnoff220 || "",
         qtdDriverOnoff220: (p.qtdDriverOnoff220 != null ? Number(p.qtdDriverOnoff220) : 1),
@@ -675,14 +687,31 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Módulo LED */}
             <FieldWrapper field="moduloLed" label="MÓDULO LED" required className="md:col-span-2" touched={touched} errors={errors}>
-              <ComponentSelect
-                tipo="MODULO_LED"
-                value={form.moduloLed}
-                onChange={(v) => { setField("moduloLed", v); setTouched((p) => ({ ...p, moduloLed: true })); }}
-                onBlur={() => setTouched((p) => ({ ...p, moduloLed: true }))}
-                placeholder="Ex: TRACE CIRCULAR 6 LEDS Ø50MM [CCT]"
-                hasError={!!(touched.moduloLed && errors.moduloLed)}
-              />
+              <div className="flex gap-2 items-start">
+                <div className="flex-1">
+                  <ComponentSelect
+                    tipo="MODULO_LED"
+                    value={form.moduloLed}
+                    onChange={(v) => { setField("moduloLed", v); setTouched((p) => ({ ...p, moduloLed: true })); }}
+                    onBlur={() => setTouched((p) => ({ ...p, moduloLed: true }))}
+                    placeholder="Ex: TRACE CIRCULAR 6 LEDS Ø50MM [CCT]"
+                    hasError={!!(touched.moduloLed && errors.moduloLed)}
+                  />
+                </div>
+                <div className="relative flex-shrink-0 w-16">
+                  <Input
+                    className="input-dark text-sm text-center px-2"
+                    type="number"
+                    min="1"
+                    max="99"
+                    step="1"
+                    value={form.qtdModuloLed ?? 1}
+                    onChange={(e) => setField("qtdModuloLed", Math.max(1, parseInt(e.target.value) || 1))}
+                    title="Quantidade de módulos LED por produto"
+                  />
+                  <span className="absolute -top-4 left-0 right-0 text-center text-[9px] text-muted-foreground/50 uppercase tracking-wider whitespace-nowrap">Qtd</span>
+                </div>
+              </div>
             </FieldWrapper>
 
             {/* Ótica */}
@@ -711,14 +740,31 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                 {form.oticaNaoAplicavel ? (
                   <Input className="input-dark" value="NÃO APLICÁVEL" disabled readOnly />
                 ) : (
-                  <ComponentSelect
-                    tipo="OTICA"
-                    value={form.otica}
-                    onChange={(v) => { setField("otica", v); setTouched((p) => ({ ...p, otica: true })); }}
-                    onBlur={() => setTouched((p) => ({ ...p, otica: true }))}
-                    placeholder="Ex: LENTE SPOT 24°"
-                    hasError={!!(touched.otica && errors.otica && !form.oticaNaoAplicavel)}
-                  />
+                  <div className="flex gap-2 items-start">
+                    <div className="flex-1">
+                      <ComponentSelect
+                        tipo="OTICA"
+                        value={form.otica}
+                        onChange={(v) => { setField("otica", v); setTouched((p) => ({ ...p, otica: true })); }}
+                        onBlur={() => setTouched((p) => ({ ...p, otica: true }))}
+                        placeholder="Ex: LENTE SPOT 24°"
+                        hasError={!!(touched.otica && errors.otica && !form.oticaNaoAplicavel)}
+                      />
+                    </div>
+                    <div className="relative flex-shrink-0 w-16">
+                      <Input
+                        className="input-dark text-sm text-center px-2"
+                        type="number"
+                        min="1"
+                        max="99"
+                        step="1"
+                        value={form.qtdOtica ?? 1}
+                        onChange={(e) => setField("qtdOtica", Math.max(1, parseInt(e.target.value) || 1))}
+                        title="Quantidade de óticas por produto"
+                      />
+                      <span className="absolute -top-4 left-0 right-0 text-center text-[9px] text-muted-foreground/50 uppercase tracking-wider whitespace-nowrap">Qtd</span>
+                    </div>
+                  </div>
                 )}
               </div>
             </FieldWrapper>
@@ -749,14 +795,31 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                 {form.holderNaoAplicavel ? (
                   <Input className="input-dark" value="NÃO APLICÁVEL" disabled readOnly />
                 ) : (
-                  <ComponentSelect
-                    tipo="HOLDER"
-                    value={form.holder}
-                    onChange={(v) => { setField("holder", v); setTouched((p) => ({ ...p, holder: true })); }}
-                    onBlur={() => setTouched((p) => ({ ...p, holder: true }))}
-                    placeholder="Ex: HOLDER ALUMÍNIO"
-                    hasError={!!(touched.holder && errors.holder && !form.holderNaoAplicavel)}
-                  />
+                  <div className="flex gap-2 items-start">
+                    <div className="flex-1">
+                      <ComponentSelect
+                        tipo="HOLDER"
+                        value={form.holder}
+                        onChange={(v) => { setField("holder", v); setTouched((p) => ({ ...p, holder: true })); }}
+                        onBlur={() => setTouched((p) => ({ ...p, holder: true }))}
+                        placeholder="Ex: HOLDER ALUMÍNIO"
+                        hasError={!!(touched.holder && errors.holder && !form.holderNaoAplicavel)}
+                      />
+                    </div>
+                    <div className="relative flex-shrink-0 w-16">
+                      <Input
+                        className="input-dark text-sm text-center px-2"
+                        type="number"
+                        min="1"
+                        max="99"
+                        step="1"
+                        value={form.qtdHolder ?? 1}
+                        onChange={(e) => setField("qtdHolder", Math.max(1, parseInt(e.target.value) || 1))}
+                        title="Quantidade de holders por produto"
+                      />
+                      <span className="absolute -top-4 left-0 right-0 text-center text-[9px] text-muted-foreground/50 uppercase tracking-wider whitespace-nowrap">Qtd</span>
+                    </div>
+                  </div>
                 )}
               </div>
             </FieldWrapper>
@@ -787,14 +850,31 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                 {form.dissipadorNaoAplicavel ? (
                   <Input className="input-dark" value="NÃO APLICÁVEL" disabled readOnly />
                 ) : (
-                  <ComponentSelect
-                    tipo="DISSIPADOR"
-                    value={form.dissipador}
-                    onChange={(v) => { setField("dissipador", v); setTouched((p) => ({ ...p, dissipador: true })); }}
-                    onBlur={() => setTouched((p) => ({ ...p, dissipador: true }))}
-                    placeholder="Ex: DISSIPADOR ALUMÍNIO"
-                    hasError={!!(touched.dissipador && errors.dissipador && !form.dissipadorNaoAplicavel)}
-                  />
+                  <div className="flex gap-2 items-start">
+                    <div className="flex-1">
+                      <ComponentSelect
+                        tipo="DISSIPADOR"
+                        value={form.dissipador}
+                        onChange={(v) => { setField("dissipador", v); setTouched((p) => ({ ...p, dissipador: true })); }}
+                        onBlur={() => setTouched((p) => ({ ...p, dissipador: true }))}
+                        placeholder="Ex: DISSIPADOR ALUMÍNIO"
+                        hasError={!!(touched.dissipador && errors.dissipador && !form.dissipadorNaoAplicavel)}
+                      />
+                    </div>
+                    <div className="relative flex-shrink-0 w-16">
+                      <Input
+                        className="input-dark text-sm text-center px-2"
+                        type="number"
+                        min="1"
+                        max="99"
+                        step="1"
+                        value={form.qtdDissipador ?? 1}
+                        onChange={(e) => setField("qtdDissipador", Math.max(1, parseInt(e.target.value) || 1))}
+                        title="Quantidade de dissipadores por produto"
+                      />
+                      <span className="absolute -top-4 left-0 right-0 text-center text-[9px] text-muted-foreground/50 uppercase tracking-wider whitespace-nowrap">Qtd</span>
+                    </div>
+                  </div>
                 )}
               </div>
             </FieldWrapper>
