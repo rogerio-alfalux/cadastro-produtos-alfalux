@@ -244,3 +244,14 @@
 - [x] Atualizar importador Excel para preservar nome do produto como chave de deduplicação
 - [x] Importar todos os produtos faltantes da planilha DRIVER_LOOKUP (variantes FOCO, VIRGO, ORBITAL, etc.)
 - [x] Verificar contagem final por família após importação — 1101 produtos (156 DL, 51 Painéis, 891 Perfis, 3 Spots)
+
+## Melhorias v24 — Componentes, Drivers e Alteração em Massa
+- [ ] Corrigir aba Componentes para exibir todos os componentes do banco (incluindo os importados via planilha, não só os cadastrados manualmente)
+- [ ] Adicionar campo de quantidade de driver por tipo no ProductForm (default 1, afeta ON/OFF 220V, BIVOLT, DIM 1-10V, DIM DALI)
+- [ ] Salvar quantidade de driver no banco (schema + migração SQL)
+- [ ] Implementar alteração em massa de componente: substituir um componente em todos os produtos que o utilizam
+  - [ ] Autocomplete no campo "Componente Atual" com sugestões do banco
+  - [ ] Autocomplete no campo "Novo Componente" com sugestões do banco
+  - [ ] Prévia dos produtos afetados antes de confirmar
+  - [ ] Filtro opcional por família
+  - [ ] Suporte a todos os tipos: Módulo LED, Ótica, Holder, Dissipador, Driver ON/OFF 220V, Driver BIVOLT, Driver DIM 1-10V, Driver DIM DALI

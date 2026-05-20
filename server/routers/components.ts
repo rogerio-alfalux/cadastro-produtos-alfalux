@@ -157,6 +157,32 @@ export const componentsRouter = router({
       return { updated: Number(affectedRows) };
     }),
 
+  // ─── Search components by tipo + query string (autocomplete) ───────────────
+  searchByTipo: publicProcedure
+    .input(z.object({
+      tipo: z.enum(COMPONENT_TYPES),
+      query: z.string().default(""),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const q = input.query.trim();
+      const rows = q
+        ? await db
+            .select({ modelo: components.modelo })
+            .from(components)
+            .where(and(eq(components.tipo, input.tipo), like(components.modelo, `%${q}%`)))
+            .orderBy(asc(components.modelo))
+            .limit(30)
+        : await db
+            .select({ modelo: components.modelo })
+            .from(components)
+            .where(eq(components.tipo, input.tipo))
+            .orderBy(asc(components.modelo))
+            .limit(30);
+      return rows.map((r) => r.modelo).filter(Boolean);
+    }),
+
   // ─── List distinct families (for filter dropdown) ────────────────────────
   families: publicProcedure.query(async () => {
     const db = await getDb();

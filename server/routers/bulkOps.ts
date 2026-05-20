@@ -279,6 +279,67 @@ export const bulkOpsRouter = router({
       return { count, produtos: (listResult[0] as unknown as any[]) ?? [] };
     }),
 
+  // ─── Preview: substituição de componente em massa ─────────────────────────
+  previewReplaceComponent: publicProcedure
+    .input(z.object({
+      tipo: z.enum(["MODULO_LED", "OTICA", "HOLDER", "DISSIPADOR", "DRIVER_ONOFF_220", "DRIVER_ONOFF_BIVOLT", "DRIVER_DIM_110V", "DRIVER_DIM_DALI"] as const),
+      componenteAtual: z.string().min(1),
+      familia: z.string().optional(),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { count: 0, produtos: [] };
+      const COL_MAP: Record<string, string> = {
+        MODULO_LED: "moduloLed",
+        OTICA: "otica",
+        HOLDER: "holder",
+        DISSIPADOR: "dissipador",
+        DRIVER_ONOFF_220: "driverOnoff220",
+        DRIVER_ONOFF_BIVOLT: "driverOnoffBivolt",
+        DRIVER_DIM_110V: "driverDim110v",
+        DRIVER_DIM_DALI: "driverDimDali",
+      };
+      const col = COL_MAP[input.tipo];
+      const familiaClause = input.familia?.trim() ? ` AND familia = '${input.familia.replace(/'/g, "''")}'` : "";
+      const countResult = await db.execute(
+        sql`SELECT COUNT(*) as cnt FROM products WHERE ${sql.raw(`\`${col}\``)} = ${input.componenteAtual}${sql.raw(familiaClause)}`
+      );
+      const count = Number((countResult[0] as any)?.[0]?.cnt ?? 0);
+      const listResult = await db.execute(
+        sql`SELECT id, produto, familia, sku, ${sql.raw(`\`${col}\``)} as componenteAtual FROM products WHERE ${sql.raw(`\`${col}\``)} = ${input.componenteAtual}${sql.raw(familiaClause)} ORDER BY familia, produto LIMIT 20`
+      );
+      return { count, produtos: (listResult[0] as unknown as any[]) ?? [] };
+    }),
+
+  // ─── Apply: substituir componente em massa ────────────────────────────────
+  applyReplaceComponent: publicProcedure
+    .input(z.object({
+      tipo: z.enum(["MODULO_LED", "OTICA", "HOLDER", "DISSIPADOR", "DRIVER_ONOFF_220", "DRIVER_ONOFF_BIVOLT", "DRIVER_DIM_110V", "DRIVER_DIM_DALI"] as const),
+      componenteAtual: z.string().min(1),
+      novoComponente: z.string().min(1),
+      familia: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database unavailable");
+      const COL_MAP: Record<string, string> = {
+        MODULO_LED: "moduloLed",
+        OTICA: "otica",
+        HOLDER: "holder",
+        DISSIPADOR: "dissipador",
+        DRIVER_ONOFF_220: "driverOnoff220",
+        DRIVER_ONOFF_BIVOLT: "driverOnoffBivolt",
+        DRIVER_DIM_110V: "driverDim110v",
+        DRIVER_DIM_DALI: "driverDimDali",
+      };
+      const col = COL_MAP[input.tipo];
+      const familiaClause = input.familia?.trim() ? ` AND familia = '${input.familia.replace(/'/g, "''")}'` : "";
+      const result = await db.execute(
+        sql`UPDATE products SET ${sql.raw(`\`${col}\``)} = ${input.novoComponente} WHERE ${sql.raw(`\`${col}\``)} = ${input.componenteAtual}${sql.raw(familiaClause)}`
+      );
+      return { updated: Number((result[0] as any)?.affectedRows ?? 0) };
+    }),
+
   // ─── Apply: inserir ou remover driver em massa ─────────────────────────────
   applyDriver: publicProcedure
     .input(z.object({

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,6 +77,275 @@ const EMPTY_FORM: FormState = {
   custo: "",
 };
 
+// ─── Autocomplete for Modelo field ───────────────────────────────────────────
+function ModeloAutocomplete({
+  value,
+  tipo,
+  onChange,
+  placeholder,
+  disabled,
+}: {
+  value: string;
+  tipo: ComponentType | "";
+  onChange: (v: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [rect, setRect] = useState<DOMRect | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const { data: suggestions = [] } = trpc.components.searchByTipo.useQuery(
+    { tipo: tipo as ComponentType, query: value },
+    { enabled: !!tipo && value.length >= 1, staleTime: 10_000 }
+  );
+
+  const filtered = suggestions.filter(
+    (s) => s.toUpperCase() !== value.toUpperCase()
+  );
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const updateRect = () => {
+    if (inputRef.current) setRect(inputRef.current.getBoundingClientRect());
+  };
+
+  return (
+    <div ref={containerRef} className="relative">
+      <Input
+        ref={inputRef}
+        value={value}
+        disabled={disabled}
+        placeholder={placeholder}
+        onChange={(e) => {
+          onChange(e.target.value.toUpperCase());
+          updateRect();
+          setOpen(true);
+        }}
+        onFocus={() => {
+          updateRect();
+          if (value.length >= 1) setOpen(true);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") setOpen(false);
+        }}
+      />
+      {open && filtered.length > 0 && rect && (
+        <ul
+          style={{
+            position: "fixed",
+            top: rect.bottom + 4,
+            left: rect.left,
+            width: rect.width,
+            zIndex: 9999,
+          }}
+          className="bg-popover border border-border rounded-lg shadow-xl max-h-56 overflow-y-auto py-1"
+        >
+          {filtered.map((s) => (
+            <li
+              key={s}
+              className="px-3 py-2 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                onChange(s);
+                setOpen(false);
+              }}
+            >
+              {s}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+// ─── Bulk Replace Modal ───────────────────────────────────────────────────────
+function BulkReplaceModal({
+  open,
+  onClose,
+  families,
+  onSuccess,
+}: {
+  open: boolean;
+  onClose: () => void;
+  families: string[];
+  onSuccess: () => void;
+}) {
+  const [tipo, setTipo] = useState<ComponentType | "">("");
+  const [componenteAtual, setComponenteAtual] = useState("");
+  const [novoComponente, setNovoComponente] = useState("");
+  const [familia, setFamilia] = useState("");
+  const [confirmed, setConfirmed] = useState(false);
+
+  const { data: preview } = trpc.bulkOps.previewReplaceComponent.useQuery(
+    { tipo: tipo as ComponentType, componenteAtual, familia: familia || undefined },
+    { enabled: !!tipo && componenteAtual.length >= 2, staleTime: 5_000 }
+  );
+
+  const applyMut = trpc.bulkOps.applyReplaceComponent.useMutation({
+    onSuccess: (data) => {
+      toast.success(`${data.updated} produto(s) atualizado(s) com sucesso!`);
+      onSuccess();
+      handleClose();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const handleClose = () => {
+    setTipo("");
+    setComponenteAtual("");
+    setNovoComponente("");
+    setFamilia("");
+    setConfirmed(false);
+    onClose();
+  };
+
+  const count = preview?.count ?? 0;
+  const canApply = !!tipo && componenteAtual.length >= 2 && novoComponente.length >= 2 && count > 0;
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Alteração em Massa de Componente</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <p className="text-sm text-muted-foreground">
+            Substitua um componente em todos os produtos que o utilizam, com opção de filtrar por família.
+          </p>
+
+          {/* Tipo */}
+          <div className="space-y-1.5">
+            <Label>Tipo de Componente *</Label>
+            <Select
+              value={tipo}
+              onValueChange={(v) => { setTipo(v as ComponentType); setComponenteAtual(""); setNovoComponente(""); }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o tipo..." />
+              </SelectTrigger>
+              <SelectContent>
+                {COMPONENT_TYPES.map((t) => (
+                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Modelo Antigo */}
+          <div className="space-y-1.5">
+            <Label>Componente Atual (a substituir) *</Label>
+            <ModeloAutocomplete
+              value={componenteAtual}
+              tipo={tipo}
+              onChange={setComponenteAtual}
+              placeholder="Digite para buscar..."
+              disabled={!tipo}
+            />
+            {preview !== undefined && componenteAtual.length >= 2 && (
+              <p className={cn("text-xs mt-1", count > 0 ? "text-amber-400" : "text-muted-foreground")}>
+                {count > 0
+                  ? `⚠ ${count} produto(s) utilizam este componente${familia ? ` na família ${familia}` : ""}` 
+                  : "Nenhum produto encontrado com este componente"}
+              </p>
+            )}
+          </div>
+
+          {/* Modelo Novo */}
+          <div className="space-y-1.5">
+            <Label>Novo Componente *</Label>
+            <ModeloAutocomplete
+              value={novoComponente}
+              tipo={tipo}
+              onChange={setNovoComponente}
+              placeholder="Digite para buscar ou inserir novo..."
+              disabled={!tipo}
+            />
+          </div>
+
+          {/* Família (opcional) */}
+          <div className="space-y-1.5">
+            <Label>Filtrar por Família <span className="text-muted-foreground text-xs">(opcional — deixe em branco para alterar em todos)</span></Label>
+            <Select
+              value={familia || "ALL"}
+              onValueChange={(v) => setFamilia(v === "ALL" ? "" : v)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Todas as famílias" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Todas as famílias</SelectItem>
+                {families.map((f) => (
+                  <SelectItem key={f} value={f}>{f}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Preview table */}
+          {preview && count > 0 && (
+            <div className="space-y-2">
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+                <strong>Resumo:</strong> O componente <em>{componenteAtual}</em> será substituído por <em>{novoComponente}</em> em{" "}
+                <strong>{count} produto(s)</strong>{familia ? ` da família ${familia}` : ""}.
+              </div>
+              {preview.produtos.length > 0 && (
+                <div className="rounded-lg border border-border overflow-hidden">
+                  <div className="bg-muted/30 px-4 py-2 text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                    Produtos afetados (primeiros {preview.produtos.length} de {count})
+                  </div>
+                  <div className="max-h-40 overflow-y-auto divide-y divide-border/50">
+                    {preview.produtos.map((p: { produto: string; familia: string }) => (
+                      <div key={p.produto} className="px-4 py-2 text-sm flex justify-between">
+                        <span className="text-foreground">{p.produto}</span>
+                        <span className="text-muted-foreground text-xs">{p.familia}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Confirmation checkbox */}
+          {canApply && (
+            <label className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={confirmed}
+                onChange={(e) => setConfirmed(e.target.checked)}
+                className="rounded"
+              />
+              Confirmo que desejo substituir o componente nos {count} produto(s) listados
+            </label>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={handleClose}>Cancelar</Button>
+          <Button
+            onClick={() => applyMut.mutate({ tipo: tipo as ComponentType, componenteAtual, novoComponente, familia: familia || undefined })}
+            disabled={applyMut.isPending || !canApply || !confirmed}
+            className="bg-amber-600 hover:bg-amber-700"
+          >
+            {applyMut.isPending ? "Atualizando..." : `Substituir em ${count} produto(s)`}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function Components() {
   const utils = trpc.useUtils();
 
@@ -114,15 +383,6 @@ export default function Components() {
   });
   const deleteMut = trpc.components.delete.useMutation({
     onSuccess: () => { utils.components.list.invalidate(); toast.success("Componente excluído!"); setDeleteTarget(null); },
-    onError: (e) => toast.error(e.message),
-  });
-  const bulkReplaceMut = trpc.components.bulkReplace.useMutation({
-    onSuccess: (data) => {
-      utils.components.list.invalidate();
-      toast.success(`${data.updated} produto(s) atualizado(s) com sucesso!`);
-      setShowBulk(false);
-      setBulkForm({ tipo: "", modeloAntigo: "", modeloNovo: "", familia: "" });
-    },
     onError: (e) => toast.error(e.message),
   });
 
@@ -166,32 +426,6 @@ export default function Components() {
 
   // ─── Bulk replace dialog ──────────────────────────────────────────────────
   const [showBulk, setShowBulk] = useState(false);
-  const [bulkForm, setBulkForm] = useState({ tipo: "", modeloAntigo: "", modeloNovo: "", familia: "" });
-
-  const { data: usageCount } = trpc.components.countUsage.useQuery(
-    {
-      tipo: bulkForm.tipo as ComponentType,
-      modelo: bulkForm.modeloAntigo,
-      familia: bulkForm.familia || undefined,
-    },
-    {
-      enabled: !!bulkForm.tipo && !!bulkForm.modeloAntigo,
-      staleTime: 5_000,
-    }
-  );
-
-  const handleBulkReplace = () => {
-    if (!bulkForm.tipo || !bulkForm.modeloAntigo || !bulkForm.modeloNovo) {
-      toast.error("Preencha todos os campos obrigatórios.");
-      return;
-    }
-    bulkReplaceMut.mutate({
-      tipo: bulkForm.tipo as ComponentType,
-      modeloAntigo: bulkForm.modeloAntigo,
-      modeloNovo: bulkForm.modeloNovo,
-      familia: bulkForm.familia || undefined,
-    });
-  };
 
   // ─── Group by tipo ────────────────────────────────────────────────────────
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(COMPONENT_TYPES.map((t) => t.value)));
@@ -350,7 +584,7 @@ export default function Components() {
               <Label>Tipo *</Label>
               <Select
                 value={form.tipo}
-                onValueChange={(v) => setForm((p) => ({ ...p, tipo: v as ComponentType }))}
+                onValueChange={(v) => setForm((p) => ({ ...p, tipo: v as ComponentType, modelo: "" }))}
                 disabled={!!editTarget}
               >
                 <SelectTrigger>
@@ -364,13 +598,15 @@ export default function Components() {
               </Select>
             </div>
 
-            {/* Modelo */}
+            {/* Modelo com autocomplete */}
             <div className="space-y-1.5">
               <Label>Modelo *</Label>
-              <Input
+              <ModeloAutocomplete
                 value={form.modelo}
-                onChange={(e) => setForm((p) => ({ ...p, modelo: e.target.value.toUpperCase() }))}
+                tipo={form.tipo}
+                onChange={(v) => setForm((p) => ({ ...p, modelo: v }))}
                 placeholder="Ex: PHILIPS CERTADRIVE 20W 500MA"
+                disabled={!form.tipo}
               />
             </div>
 
@@ -441,102 +677,13 @@ export default function Components() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* ─── Bulk Replace Dialog ─────────────────────────────────────────────── */}
-      <Dialog open={showBulk} onOpenChange={setShowBulk}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Alteração em Massa de Componente</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <p className="text-sm text-muted-foreground">
-              Substitua um componente em todos os produtos que o utilizam, com opção de filtrar por família.
-            </p>
-
-            {/* Tipo */}
-            <div className="space-y-1.5">
-              <Label>Tipo de Componente *</Label>
-              <Select
-                value={bulkForm.tipo}
-                onValueChange={(v) => setBulkForm((p) => ({ ...p, tipo: v, modeloAntigo: "", modeloNovo: "" }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o tipo..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {COMPONENT_TYPES.map((t) => (
-                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Modelo Antigo */}
-            <div className="space-y-1.5">
-              <Label>Componente Atual (a substituir) *</Label>
-              <Input
-                value={bulkForm.modeloAntigo}
-                onChange={(e) => setBulkForm((p) => ({ ...p, modeloAntigo: e.target.value.toUpperCase() }))}
-                placeholder="Ex: PHILIPS CERTADRIVE 20W 500MA"
-              />
-              {usageCount !== undefined && bulkForm.modeloAntigo && (
-                <p className={cn("text-xs mt-1", usageCount.count > 0 ? "text-amber-400" : "text-muted-foreground")}>
-                  {usageCount.count > 0
-                    ? `⚠ ${usageCount.count} produto(s) utilizam este componente${bulkForm.familia ? ` na família ${bulkForm.familia}` : ""}`
-                    : "Nenhum produto encontrado com este componente"}
-                </p>
-              )}
-            </div>
-
-            {/* Modelo Novo */}
-            <div className="space-y-1.5">
-              <Label>Novo Componente *</Label>
-              <Input
-                value={bulkForm.modeloNovo}
-                onChange={(e) => setBulkForm((p) => ({ ...p, modeloNovo: e.target.value.toUpperCase() }))}
-                placeholder="Ex: PHILIPS CERTADRIVE 25W 700MA"
-              />
-            </div>
-
-            {/* Família (opcional) */}
-            <div className="space-y-1.5">
-              <Label>Filtrar por Família <span className="text-muted-foreground text-xs">(opcional — deixe em branco para alterar em todos)</span></Label>
-              <Select
-                value={bulkForm.familia || "ALL"}
-                onValueChange={(v) => setBulkForm((p) => ({ ...p, familia: v === "ALL" ? "" : v }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Todas as famílias" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">Todas as famílias</SelectItem>
-                  {families.map((f) => (
-                    <SelectItem key={f} value={f}>{f}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Summary */}
-            {usageCount && usageCount.count > 0 && bulkForm.modeloNovo && (
-              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
-                <strong>Resumo:</strong> O componente <em>{bulkForm.modeloAntigo}</em> será substituído por <em>{bulkForm.modeloNovo}</em> em{" "}
-                <strong>{usageCount.count} produto(s)</strong>
-                {bulkForm.familia ? ` da família ${bulkForm.familia}` : ""}.
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowBulk(false)}>Cancelar</Button>
-            <Button
-              onClick={handleBulkReplace}
-              disabled={bulkReplaceMut.isPending || !bulkForm.tipo || !bulkForm.modeloAntigo || !bulkForm.modeloNovo}
-              className="bg-amber-600 hover:bg-amber-700"
-            >
-              {bulkReplaceMut.isPending ? "Atualizando..." : `Substituir em ${usageCount?.count ?? "?"} produto(s)`}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* ─── Bulk Replace Modal ───────────────────────────────────────────────── */}
+      <BulkReplaceModal
+        open={showBulk}
+        onClose={() => setShowBulk(false)}
+        families={families}
+        onSuccess={() => utils.components.list.invalidate()}
+      />
     </>
   );
 }

@@ -66,6 +66,7 @@ const FieldWrapper = ({ field, label, required, children, className, touched, er
 interface DriverRowProps {
   driverField: keyof FormData;
   custoField: keyof FormData;
+  qtdField: keyof FormData;
   naoAplicavelField?: keyof FormData;
   label: string;
   required?: boolean;
@@ -88,7 +89,7 @@ const driverTypeMap: Record<string, "DRIVER_ONOFF_220" | "DRIVER_ONOFF_BIVOLT" |
 };
 
 const DriverRow = ({
-  driverField, custoField, naoAplicavelField, label, required, placeholder, optional,
+  driverField, custoField, qtdField, naoAplicavelField, label, required, placeholder, optional,
   form, touched, errors, setField, setForm, setErrors, setTouched,
 }: DriverRowProps) => {
   const isNaoAplicavel = naoAplicavelField ? !!form[naoAplicavelField] : false;
@@ -161,20 +162,37 @@ const DriverRow = ({
               />
             )}
           </div>
-          <div className="relative w-36 flex-shrink-0">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-medium pointer-events-none z-10">
-              R$
-            </span>
-            <Input
-              className="input-dark pl-8 text-sm"
-              type="number"
-              step="0.01"
-              min="0"
-              value={form[custoField] as string}
-              onChange={(e) => setField(custoField, e.target.value)}
-              placeholder="Custo"
-              title="Custo deste driver (R$)"
-            />
+          <div className="flex flex-col gap-1 flex-shrink-0">
+            <div className="flex items-center gap-1.5">
+              <div className="relative w-16">
+                <Input
+                  className="input-dark text-sm text-center px-2"
+                  type="number"
+                  min="1"
+                  max="99"
+                  step="1"
+                  value={form[qtdField] as number ?? 1}
+                  onChange={(e) => setField(qtdField, Math.max(1, parseInt(e.target.value) || 1))}
+                  title="Quantidade de drivers por produto"
+                />
+                <span className="absolute -top-4 left-0 right-0 text-center text-[9px] text-muted-foreground/50 uppercase tracking-wider whitespace-nowrap">Qtd</span>
+              </div>
+              <div className="relative w-28">
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-medium pointer-events-none z-10">
+                  R$
+                </span>
+                <Input
+                  className="input-dark pl-7 text-sm"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={form[custoField] as string}
+                  onChange={(e) => setField(custoField, e.target.value)}
+                  placeholder="Custo"
+                  title="Custo unitário deste driver (R$)"
+                />
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -208,14 +226,18 @@ interface FormData {
   dissipador: string;
   dissipadorNaoAplicavel: boolean;
   driverOnoff220: string;
+  qtdDriverOnoff220: number;
   custoDriverOnoff220: string;
   driverOnoffBivolt: string;
+  qtdDriverOnoffBivolt: number;
   driverOnoffBivoltNaoAplicavel: boolean;
   custoDriverOnoffBivolt: string;
   driverDim110v: string;
+  qtdDriverDim110v: number;
   driverDim110vNaoAplicavel: boolean;
   custoDriverDim110v: string;
   driverDimDali: string;
+  qtdDriverDimDali: number;
   driverDimDaliNaoAplicavel: boolean;
   custoDriverDimDali: string;
   temperaturasCor: string[];
@@ -238,14 +260,18 @@ const defaultForm: FormData = {
   dissipador: "",
   dissipadorNaoAplicavel: false,
   driverOnoff220: "",
+  qtdDriverOnoff220: 1,
   custoDriverOnoff220: "",
   driverOnoffBivolt: "",
+  qtdDriverOnoffBivolt: 1,
   driverOnoffBivoltNaoAplicavel: false,
   custoDriverOnoffBivolt: "",
   driverDim110v: "",
+  qtdDriverDim110v: 1,
   driverDim110vNaoAplicavel: false,
   custoDriverDim110v: "",
   driverDimDali: "",
+  qtdDriverDimDali: 1,
   driverDimDaliNaoAplicavel: false,
   custoDriverDimDali: "",
   temperaturasCor: ["2700", "3000", "4000", "5000"],
@@ -325,14 +351,18 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         dissipador: (existingProduct.dissipadorNaoAplicavel || !existingProduct.dissipador) ? "" : existingProduct.dissipador,
         dissipadorNaoAplicavel: existingProduct.dissipadorNaoAplicavel || !existingProduct.dissipador || false,
         driverOnoff220: existingProduct.driverOnoff220 || "",
+        qtdDriverOnoff220: (p.qtdDriverOnoff220 != null ? Number(p.qtdDriverOnoff220) : 1),
         custoDriverOnoff220: p.custoDriverOnoff220 ? String(p.custoDriverOnoff220) : "",
         driverOnoffBivolt: existingProduct.driverOnoffBivoltNaoAplicavel ? "" : (existingProduct.driverOnoffBivolt || ""),
+        qtdDriverOnoffBivolt: (p.qtdDriverOnoffBivolt != null ? Number(p.qtdDriverOnoffBivolt) : 1),
         driverOnoffBivoltNaoAplicavel: existingProduct.driverOnoffBivoltNaoAplicavel || false,
         custoDriverOnoffBivolt: p.custoDriverOnoffBivolt ? String(p.custoDriverOnoffBivolt) : "",
         driverDim110v: existingProduct.driverDim110vNaoAplicavel ? "" : (existingProduct.driverDim110v || ""),
+        qtdDriverDim110v: (p.qtdDriverDim110v != null ? Number(p.qtdDriverDim110v) : 1),
         driverDim110vNaoAplicavel: existingProduct.driverDim110vNaoAplicavel || false,
         custoDriverDim110v: p.custoDriverDim110v ? String(p.custoDriverDim110v) : "",
         driverDimDali: existingProduct.driverDimDaliNaoAplicavel ? "" : (existingProduct.driverDimDali || ""),
+        qtdDriverDimDali: (p.qtdDriverDimDali != null ? Number(p.qtdDriverDimDali) : 1),
         driverDimDaliNaoAplicavel: existingProduct.driverDimDaliNaoAplicavel || false,
         custoDriverDimDali: p.custoDriverDimDali ? String(p.custoDriverDimDali) : "",
         temperaturasCor: temps,
@@ -796,6 +826,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
             <DriverRow
               driverField="driverOnoff220"
               custoField="custoDriverOnoff220"
+              qtdField="qtdDriverOnoff220"
               label="ON/OFF DRIVER 220Vac"
               required
               placeholder="Ex: PHILIPS XITANIUM 19W 350MA (EQ00346)"
@@ -807,6 +838,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
             <DriverRow
               driverField="driverOnoffBivolt"
               custoField="custoDriverOnoffBivolt"
+              qtdField="qtdDriverOnoffBivolt"
               naoAplicavelField="driverOnoffBivoltNaoAplicavel"
               label="ON/OFF DRIVER BIVOLT"
               required
@@ -825,6 +857,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                 <DriverRow
                   driverField="driverDim110v"
                   custoField="custoDriverDim110v"
+                  qtdField="qtdDriverDim110v"
                   naoAplicavelField="driverDim110vNaoAplicavel"
                   label="DIM 1-10V"
                   optional
@@ -837,6 +870,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                 <DriverRow
                   driverField="driverDimDali"
                   custoField="custoDriverDimDali"
+                  qtdField="qtdDriverDimDali"
                   naoAplicavelField="driverDimDaliNaoAplicavel"
                   label="DIM DALI"
                   optional

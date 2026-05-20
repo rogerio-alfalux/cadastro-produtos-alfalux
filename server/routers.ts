@@ -36,11 +36,15 @@ const productSchema = z.object({
   dissipador: z.string().optional().default(""),
   dissipadorNaoAplicavel: z.boolean().default(false),
   driverOnoff220: z.string().min(1, "ON/OFF DRIVER 220Vac é obrigatório"),
+  qtdDriverOnoff220: z.number().int().min(1).default(1),
   driverOnoffBivolt: z.string().optional().default(""),
+  qtdDriverOnoffBivolt: z.number().int().min(1).default(1),
   driverOnoffBivoltNaoAplicavel: z.boolean().default(false),
   driverDim110v: z.string().nullish(),
+  qtdDriverDim110v: z.number().int().min(1).default(1),
   driverDim110vNaoAplicavel: z.boolean().default(false),
   driverDimDali: z.string().nullish(),
+  qtdDriverDimDali: z.number().int().min(1).default(1),
   driverDimDaliNaoAplicavel: z.boolean().default(false),
   temperaturasCor: z.string().default('["2700","3000","4000","5000"]'),
   fotoUrl: z.string().nullish(),
@@ -83,11 +87,15 @@ const bulkProductSchema = z.object({
   dissipador: z.string().default(""),
   dissipadorNaoAplicavel: z.boolean().default(false),
   driverOnoff220: z.string().default(""),
+  qtdDriverOnoff220: z.number().int().min(1).default(1),
   driverOnoffBivolt: z.string().optional().default(""),
+  qtdDriverOnoffBivolt: z.number().int().min(1).default(1),
   driverOnoffBivoltNaoAplicavel: z.boolean().default(false),
   driverDim110v: z.string().optional(),
+  qtdDriverDim110v: z.number().int().min(1).default(1),
   driverDim110vNaoAplicavel: z.boolean().default(false),
   driverDimDali: z.string().optional(),
+  qtdDriverDimDali: z.number().int().min(1).default(1),
   driverDimDaliNaoAplicavel: z.boolean().default(false),
   temperaturasCor: z.string().default('["2700","3000","4000","5000"]'),
   fotoUrl: z.string().optional(),
@@ -151,9 +159,13 @@ export const appRouter = router({
           holder: input.holderNaoAplicavel ? "NÃO APLICÁVEL" : input.holder.toUpperCase(),
           dissipador: input.dissipadorNaoAplicavel ? "NÃO APLICÁVEL" : input.dissipador.toUpperCase(),
           driverOnoff220: input.driverOnoff220.toUpperCase(),
+          qtdDriverOnoff220: input.qtdDriverOnoff220 ?? 1,
           driverOnoffBivolt: input.driverOnoffBivolt.toUpperCase(),
+          qtdDriverOnoffBivolt: input.qtdDriverOnoffBivolt ?? 1,
           driverDim110v: input.driverDim110v?.toUpperCase() || null,
+          qtdDriverDim110v: input.qtdDriverDim110v ?? 1,
           driverDimDali: input.driverDimDali?.toUpperCase() || null,
+          qtdDriverDimDali: input.qtdDriverDimDali ?? 1,
           temperaturasCor: input.temperaturasCor || '["2700","3000","4000","5000"]',
           custoLuminaria: input.custoLuminaria || null,
           custoDriverOnoff220: input.custoDriverOnoff220 || null,
@@ -189,15 +201,19 @@ export const appRouter = router({
         if (d.dissipador !== undefined) update.dissipador = d.dissipadorNaoAplicavel ? "NÃO APLICÁVEL" : d.dissipador.toUpperCase();
         if (d.dissipadorNaoAplicavel !== undefined) update.dissipadorNaoAplicavel = d.dissipadorNaoAplicavel;
         if (d.driverOnoff220 !== undefined) update.driverOnoff220 = d.driverOnoff220.toUpperCase();
+        if (d.qtdDriverOnoff220 !== undefined) update.qtdDriverOnoff220 = d.qtdDriverOnoff220;
         if (d.driverOnoffBivolt !== undefined) update.driverOnoffBivolt = d.driverOnoffBivolt.toUpperCase();
+        if (d.qtdDriverOnoffBivolt !== undefined) update.qtdDriverOnoffBivolt = d.qtdDriverOnoffBivolt;
         if (d.driverOnoffBivoltNaoAplicavel !== undefined) update.driverOnoffBivoltNaoAplicavel = d.driverOnoffBivoltNaoAplicavel;
         // DIM 1-10V: só atualiza se o campo foi explicitamente enviado pelo frontend
         // Nunca sobrescreve com false se o produto já tinha o campo não configurado
         if (d.driverDim110vNaoAplicavel !== undefined) update.driverDim110vNaoAplicavel = d.driverDim110vNaoAplicavel;
         if (d.driverDim110v !== undefined) update.driverDim110v = d.driverDim110v?.toUpperCase() || null;
+        if (d.qtdDriverDim110v !== undefined) update.qtdDriverDim110v = d.qtdDriverDim110v;
         // DIM DALI: idem
         if (d.driverDimDaliNaoAplicavel !== undefined) update.driverDimDaliNaoAplicavel = d.driverDimDaliNaoAplicavel;
         if (d.driverDimDali !== undefined) update.driverDimDali = d.driverDimDali?.toUpperCase() || null;
+        if (d.qtdDriverDimDali !== undefined) update.qtdDriverDimDali = d.qtdDriverDimDali;
         if (d.temperaturasCor !== undefined) update.temperaturasCor = d.temperaturasCor;
         if (d.fotoUrl !== undefined) update.fotoUrl = d.fotoUrl || null;
         if (d.fotoKey !== undefined) update.fotoKey = d.fotoKey || null;
