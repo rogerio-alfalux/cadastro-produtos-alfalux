@@ -263,3 +263,10 @@
 - [x] ProductForm: campo de quantidade ao lado de Módulo LED, Ótica, Holder e Dissipador
 - [x] Campo de quantidade só aparece quando o componente não está marcado como NÃO APLICÁVEL
 - [x] Carregamento dos valores do banco ao editar produto
+
+## Feature v26 — Ver produtos que usam um componente
+- [x] Endpoint tRPC `components.getProductsUsing`: retorna lista de produtos que usam um componente pelo modelo/tipo
+- [x] Botão de lupa/olho em cada linha da tabela de componentes
+- [x] Modal "Produtos que usam este componente" com tabela: Produto, SKU, Família
+- [x] Loading state no modal enquanto carrega
+- [x] Mensagem de "nenhum produto" quando count = 0

@@ -183,6 +183,33 @@ export const componentsRouter = router({
       return rows.map((r) => r.modelo).filter(Boolean);
     }),
 
+  // ─── List products using a specific component ────────────────────────────
+  getProductsUsing: publicProcedure
+    .input(
+      z.object({
+        tipo: z.enum(COMPONENT_TYPES),
+        modelo: z.string(),
+      })
+    )
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const col = TYPE_TO_COLUMN[input.tipo];
+      if (!col) return [];
+
+      const rows = await db.execute(
+        sql`SELECT id, produto, sku, familia, categoria FROM products WHERE ${sql.raw(`\`${col}\``)} = ${input.modelo} ORDER BY familia ASC, produto ASC`
+      );
+      const data = (rows[0] as unknown as any[]) ?? [];
+      return data.map((r: any) => ({
+        id: r.id as number,
+        produto: r.produto as string,
+        sku: r.sku as string,
+        familia: r.familia as string,
+        categoria: r.categoria as string,
+      }));
+    }),
+
   // ─── List distinct families (for filter dropdown) ────────────────────────
   families: publicProcedure.query(async () => {
     const db = await getDb();

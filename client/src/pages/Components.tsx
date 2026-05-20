@@ -28,7 +28,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, RefreshCw, Search, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Pencil, Trash2, RefreshCw, Search, ChevronDown, ChevronUp, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type ComponentType =
@@ -427,6 +427,13 @@ export default function Components() {
   // ─── Bulk replace dialog ──────────────────────────────────────────────────
   const [showBulk, setShowBulk] = useState(false);
 
+  // ─── "Ver produtos" modal ──────────────────────────────────────────────────
+  const [productsTarget, setProductsTarget] = useState<ComponentRow | null>(null);
+  const { data: productsUsing = [], isFetching: loadingProducts } = trpc.components.getProductsUsing.useQuery(
+    { tipo: productsTarget?.tipo as ComponentType, modelo: productsTarget?.modelo ?? "" },
+    { enabled: !!productsTarget, staleTime: 10_000 }
+  );
+
   // ─── Group by tipo ────────────────────────────────────────────────────────
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(COMPONENT_TYPES.map((t) => t.value)));
   const toggleGroup = (tipo: string) => {
@@ -548,6 +555,13 @@ export default function Components() {
                         </div>
                         <div className="col-span-1 flex justify-end gap-1">
                           <button
+                            onClick={() => setProductsTarget(c)}
+                            className="p-1.5 rounded text-muted-foreground hover:text-blue-400 hover:bg-blue-400/10 transition-colors"
+                            title="Ver produtos que usam este componente"
+                          >
+                            <Package className="w-3.5 h-3.5" />
+                          </button>
+                          <button
                             onClick={() => openEdit(c)}
                             className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
                             title="Editar"
@@ -571,6 +585,60 @@ export default function Components() {
           </div>
         )}
       </div>
+
+
+      {/* ─── Ver Produtos Modal ─────────────────────────────────────────────────── */}
+      <Dialog open={!!productsTarget} onOpenChange={(o) => !o && setProductsTarget(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="w-5 h-5 text-blue-400" />
+              Produtos que usam este componente
+            </DialogTitle>
+          </DialogHeader>
+          {productsTarget && (
+            <div className="space-y-3 py-1">
+              <div className="rounded-lg bg-muted/30 border border-border px-4 py-3">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-0.5">{tipoLabel(productsTarget.tipo)}</p>
+                <p className="text-sm font-medium text-foreground">{productsTarget.modelo}</p>
+              </div>
+
+              {loadingProducts ? (
+                <div className="text-center py-8 text-muted-foreground text-sm">Carregando produtos...</div>
+              ) : productsUsing.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground text-sm">
+                  Nenhum produto utiliza este componente.
+                </div>
+              ) : (
+                <>
+                  <p className="text-xs text-muted-foreground">
+                    <strong className="text-foreground">{productsUsing.length}</strong> produto(s) utilizam este componente
+                  </p>
+                  <div className="rounded-lg border border-border overflow-hidden">
+                    <div className="grid grid-cols-12 gap-2 px-4 py-2 bg-muted/30 text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
+                      <div className="col-span-5">Produto</div>
+                      <div className="col-span-4">SKU</div>
+                      <div className="col-span-3">Família</div>
+                    </div>
+                    <div className="max-h-80 overflow-y-auto divide-y divide-border/50">
+                      {productsUsing.map((p) => (
+                        <div key={p.id} className="grid grid-cols-12 gap-2 px-4 py-2.5 items-center hover:bg-muted/10 transition-colors">
+                          <div className="col-span-5 text-sm text-foreground truncate" title={p.produto}>{p.produto}</div>
+                          <div className="col-span-4 text-xs text-muted-foreground font-mono truncate">{p.sku}</div>
+                          <div className="col-span-3 text-xs text-muted-foreground truncate">{p.familia}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setProductsTarget(null)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* ─── Create/Edit Dialog ─────────────────────────────────────────────── */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
