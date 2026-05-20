@@ -468,7 +468,8 @@ function withQty(modelo: string | null | undefined, qty: number): string | null 
 /** Extrai código EQ do nome do driver, ex: "PHILIPS XITANIUM 44W (EQ00347)" → "EQ00347" */
 function extractEqCode(model: string | null | undefined): string | null {
   if (!model) return null;
-  const m = model.match(/\(?(EQ\d{5,})\)?/i);
+  // Captura EQ seguido de 4+ dígitos, com ou sem parênteses
+  const m = model.match(/\b(EQ\d{4,})\b/i);
   return m ? m[1].toUpperCase() : null;
 }
 
