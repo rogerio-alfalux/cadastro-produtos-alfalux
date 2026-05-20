@@ -279,3 +279,13 @@
 - [x] Cada driver extra tem: ComponentSelect, campo Qtd e campo Custo
 - [x] Botão de remover driver extra (X)
 - [ ] Endpoint /api/products/all: incluir drivers extras na resposta para o Configurador (pendente)
+
+## Feature v31 — Múltiplas óticas (primária + secundárias)
+- [ ] Schema Drizzle: adicionar coluna oticaExtra (JSON array [{modelo, qtd}])
+- [ ] Migração SQL aplicada
+- [ ] Router tRPC: adicionar oticaExtra ao productSchema
+- [ ] ProductForm: botão "+ Adicionar ótica" abaixo da ótica primária
+- [ ] Cada ótica extra tem: ComponentSelect e campo Qtd
+- [ ] Botão de remover ótica extra (lixeira)
+- [ ] Migração de dados: separar valores compostos "LENTE X + NxLOUVER Y" em primária + extras
+- [ ] API continua retornando dados corretamente

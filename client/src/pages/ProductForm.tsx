@@ -282,6 +282,55 @@ const defaultDriversExtra: DriversExtraState = {
   dimDali: [],
 };
 
+// ─── Otica extra types ───────────────────────────────────────────────────────
+
+interface OticaExtra {
+  modelo: string;
+  qtd: number;
+}
+
+const emptyOticaExtra = (): OticaExtra => ({ modelo: "", qtd: 1 });
+
+// ─── OticaExtraRow component ─────────────────────────────────────────────────
+
+interface OticaExtraRowProps {
+  index: number;
+  item: OticaExtra;
+  onChange: (updated: OticaExtra) => void;
+  onRemove: () => void;
+}
+
+const OticaExtraRow = ({ index, item, onChange, onRemove }: OticaExtraRowProps) => (
+  <div className="flex gap-3 items-center pl-3 border-l-2 border-primary/30 mt-2">
+    <div className="flex-shrink-0 text-[10px] text-muted-foreground/60 uppercase tracking-wider font-medium w-16 text-right">
+      {index === 0 ? "SECUNDÁRIA" : `EXTRA ${index + 1}`}
+    </div>
+    <div className="flex-1 min-w-0">
+      <ComponentSelect
+        tipo="OTICA"
+        value={item.modelo}
+        onChange={(v) => onChange({ ...item, modelo: v })}
+        placeholder="Selecione a ótica adicional..."
+      />
+    </div>
+    <div className="flex flex-col items-center gap-1 flex-shrink-0">
+      <span className="text-[10px] text-muted-foreground uppercase tracking-wider">QTD</span>
+      <Input
+        className="input-dark text-sm text-center px-2 w-16"
+        type="number" min="1" max="99" step="1"
+        value={item.qtd}
+        onChange={(e) => onChange({ ...item, qtd: Math.max(1, parseInt(e.target.value) || 1) })}
+        title="Quantidade"
+      />
+    </div>
+    <button type="button" onClick={onRemove}
+      className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors flex-shrink-0"
+      title="Remover ótica">
+      <Trash2 className="w-3.5 h-3.5" />
+    </button>
+  </div>
+);
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const CATEGORIAS = ["PERFIS", "DOWNLIGHTS", "PAINÉIS", "SPOTS", "ARANDELAS", "ÁREA EXTERNA", "BALIZADORES", "DECORATIVAS"];
@@ -398,6 +447,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [produtoOriginalNome, setProdutoOriginalNome] = useState<string | null>(null);
   const [driversExtra, setDriversExtra] = useState<DriversExtraState>(defaultDriversExtra);
+  const [oticasExtra, setOticasExtra] = useState<OticaExtra[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   // Keep a ref that always points to the latest form state so validate()
   // never reads a stale closure value
@@ -471,6 +521,12 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         dim110v: parseExtra((p as any).driverDim110vExtra),
         dimDali: parseExtra((p as any).driverDimDaliExtra),
       });
+      // Carregar óticas extras do banco
+      const parseOticaExtra = (raw: string | null | undefined): OticaExtra[] => {
+        if (!raw) return [];
+        try { return JSON.parse(raw) as OticaExtra[]; } catch { return []; }
+      };
+      setOticasExtra(parseOticaExtra((p as any).oticaExtra));
 
       if (isDuplicate) {
         // When duplicating: keep SKU (same SKU can have multiple variants), clear only PRODUTO
@@ -644,6 +700,9 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
     payload.driverOnoffBivoltExtra = serializeExtra(driversExtra.onoffBivolt);
     payload.driverDim110vExtra = serializeExtra(driversExtra.dim110v);
     payload.driverDimDaliExtra = serializeExtra(driversExtra.dimDali);
+    // Serializar óticas extras como JSON
+    const validOticasExtra = oticasExtra.filter((o) => o.modelo.trim());
+    payload.oticaExtra = validOticasExtra.length > 0 ? JSON.stringify(validOticasExtra) : undefined;
 
     if (isEdit && editId) {
       updateMutation.mutate({ id: editId, data: payload });
@@ -825,6 +884,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                         oticaNaoAplicavel: checked,
                         otica: checked ? "NÃO APLICÁVEL" : "",
                       }));
+                      if (checked) setOticasExtra([]);
                       setErrors((p) => ({ ...p, otica: undefined }));
                       setTouched((p) => ({ ...p, otica: false }));
                     }}
@@ -834,7 +894,11 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                     NÃO APLICÁVEL
                   </label>
                 </div>
+                {/* Ótica primária */}
                 <div className="flex gap-3 items-center">
+                  <div className="flex-shrink-0 text-[10px] text-muted-foreground/60 uppercase tracking-wider font-medium w-16 text-right">
+                    {!form.oticaNaoAplicavel && oticasExtra.length > 0 ? "PRIMÁRIA" : ""}
+                  </div>
                   <div className="flex-1 min-w-0">
                     {form.oticaNaoAplicavel ? (
                       <Input className="input-dark" value="NÃO APLICÁVEL" disabled readOnly />
@@ -863,6 +927,26 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                     />
                   </div>
                 </div>
+                {/* Óticas extras */}
+                {!form.oticaNaoAplicavel && oticasExtra.map((oe, idx) => (
+                  <OticaExtraRow
+                    key={idx}
+                    index={idx}
+                    item={oe}
+                    onChange={(updated) => setOticasExtra((prev) => prev.map((x, i) => i === idx ? updated : x))}
+                    onRemove={() => setOticasExtra((prev) => prev.filter((_, i) => i !== idx))}
+                  />
+                ))}
+                {/* Botão adicionar ótica */}
+                {!form.oticaNaoAplicavel && (
+                  <button
+                    type="button"
+                    onClick={() => setOticasExtra((prev) => [...prev, emptyOticaExtra()])}
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors mt-1 ml-[76px]"
+                  >
+                    <PlusCircle className="w-3.5 h-3.5" /> Adicionar ótica
+                  </button>
+                )}
               </div>
             </FieldWrapper>
 

@@ -63,6 +63,8 @@ const productSchema = z.object({
   driverOnoffBivoltExtra: z.string().nullish(),
   driverDim110vExtra: z.string().nullish(),
   driverDimDaliExtra: z.string().nullish(),
+  // Óticas extras (JSON string de array [{modelo, qtd}])
+  oticaExtra: z.string().nullish(),
 }).superRefine((data, ctx) => {
   // Validar Ótica: obrigatório se não for NaoAplicavel
   if (!data.oticaNaoAplicavel && (!data.otica || data.otica.trim() === "")) {
@@ -122,6 +124,7 @@ const bulkProductSchema = z.object({
   driverOnoffBivoltExtra: z.string().optional(),
   driverDim110vExtra: z.string().optional(),
   driverDimDaliExtra: z.string().optional(),
+  oticaExtra: z.string().optional(),
 });
 
 // ─── Router ───────────────────────────────────────────────────────────────────
@@ -197,6 +200,7 @@ export const appRouter = router({
           driverOnoffBivoltExtra: input.driverOnoffBivoltExtra || null,
           driverDim110vExtra: input.driverDim110vExtra || null,
           driverDimDaliExtra: input.driverDimDaliExtra || null,
+          oticaExtra: input.oticaExtra || null,
           fotoUrl: input.fotoUrl || null,
           fotoKey: input.fotoKey || null,
         };
@@ -255,6 +259,7 @@ export const appRouter = router({
         if (d.driverOnoffBivoltExtra !== undefined) update.driverOnoffBivoltExtra = d.driverOnoffBivoltExtra || null;
         if (d.driverDim110vExtra !== undefined) update.driverDim110vExtra = d.driverDim110vExtra || null;
         if (d.driverDimDaliExtra !== undefined) update.driverDimDaliExtra = d.driverDimDaliExtra || null;
+        if (d.oticaExtra !== undefined) update.oticaExtra = d.oticaExtra || null;
 
         await updateProduct(input.id, update as any);
         return { success: true };

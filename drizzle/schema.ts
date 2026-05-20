@@ -68,6 +68,9 @@ export const products = mysqlTable("products", {
   driverDim110vExtra: text("driverDim110vExtra"),
   driverDimDaliExtra: text("driverDimDaliExtra"),
 
+  // Óticas extras (JSON array: [{modelo, qtd}])
+  oticaExtra: text("oticaExtra"),
+
   // Temperatura de cor (JSON array com valores selecionados) - default aplicado na aplicação
   temperaturasCor: text("temperaturasCor").notNull(),
 
