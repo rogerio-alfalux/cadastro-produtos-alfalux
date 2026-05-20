@@ -580,11 +580,13 @@ router.get("/all", async (_req, res) => {
         custoDriverDimDali: (p as any).custoDriverDimDali ? Number((p as any).custoDriverDimDali) : null,
       };
 
-      // Campos extras de ótica apenas para DOWNLIGHTS e SPOTS
-      if (includeOticaExtras) {
-        result.oticaPrimaria = oticaPrimaria;
-        result.oticaSecundaria = oticaSecundaria;
-      }
+      // oticaPrimaria e oticaSecundaria: sempre retornados (não apenas DOWNLIGHTS/SPOTS)
+      result.oticaPrimaria = oticaPrimaria;
+      result.oticaSecundaria = oticaSecundaria;
+
+      // Quantidades numéricas explícitas para ledModule e holder
+      result.ledModuleQtd = p.moduloLed ? qtdLed : null;
+      result.holderQtd = p.holderNaoAplicavel ? null : qtdHolder;
 
       return result;
     });
