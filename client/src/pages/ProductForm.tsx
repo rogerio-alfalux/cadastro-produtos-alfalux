@@ -737,11 +737,11 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                     NÃO APLICÁVEL
                   </label>
                 </div>
-                {form.oticaNaoAplicavel ? (
-                  <Input className="input-dark" value="NÃO APLICÁVEL" disabled readOnly />
-                ) : (
-                  <div className="flex gap-2 items-start">
-                    <div className="flex-1">
+                <div className="flex gap-2 items-start">
+                  <div className="flex-1">
+                    {form.oticaNaoAplicavel ? (
+                      <Input className="input-dark" value="NÃO APLICÁVEL" disabled readOnly />
+                    ) : (
                       <ComponentSelect
                         tipo="OTICA"
                         value={form.otica}
@@ -750,22 +750,22 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                         placeholder="Ex: LENTE SPOT 24°"
                         hasError={!!(touched.otica && errors.otica && !form.oticaNaoAplicavel)}
                       />
-                    </div>
-                    <div className="relative flex-shrink-0 w-16">
-                      <Input
-                        className="input-dark text-sm text-center px-2"
-                        type="number"
-                        min="1"
-                        max="99"
-                        step="1"
-                        value={form.qtdOtica ?? 1}
-                        onChange={(e) => setField("qtdOtica", Math.max(1, parseInt(e.target.value) || 1))}
-                        title="Quantidade de óticas por produto"
-                      />
-                      <span className="absolute -top-4 left-0 right-0 text-center text-[9px] text-muted-foreground/50 uppercase tracking-wider whitespace-nowrap">Qtd</span>
-                    </div>
+                    )}
                   </div>
-                )}
+                  <div className="relative flex-shrink-0 w-16">
+                    <Input
+                      className="input-dark text-sm text-center px-2"
+                      type="number"
+                      min="1"
+                      max="99"
+                      step="1"
+                      value={form.qtdOtica ?? 1}
+                      onChange={(e) => setField("qtdOtica", Math.max(1, parseInt(e.target.value) || 1))}
+                      title="Quantidade de óticas por produto"
+                    />
+                    <span className="absolute -top-4 left-0 right-0 text-center text-[9px] text-muted-foreground/50 uppercase tracking-wider whitespace-nowrap">Qtd</span>
+                  </div>
+                </div>
               </div>
             </FieldWrapper>
 
@@ -792,11 +792,11 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                     NÃO APLICÁVEL
                   </label>
                 </div>
-                {form.holderNaoAplicavel ? (
-                  <Input className="input-dark" value="NÃO APLICÁVEL" disabled readOnly />
-                ) : (
-                  <div className="flex gap-2 items-start">
-                    <div className="flex-1">
+                <div className="flex gap-2 items-start">
+                  <div className="flex-1">
+                    {form.holderNaoAplicavel ? (
+                      <Input className="input-dark" value="NÃO APLICÁVEL" disabled readOnly />
+                    ) : (
                       <ComponentSelect
                         tipo="HOLDER"
                         value={form.holder}
@@ -805,22 +805,22 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                         placeholder="Ex: HOLDER ALUMÍNIO"
                         hasError={!!(touched.holder && errors.holder && !form.holderNaoAplicavel)}
                       />
-                    </div>
-                    <div className="relative flex-shrink-0 w-16">
-                      <Input
-                        className="input-dark text-sm text-center px-2"
-                        type="number"
-                        min="1"
-                        max="99"
-                        step="1"
-                        value={form.qtdHolder ?? 1}
-                        onChange={(e) => setField("qtdHolder", Math.max(1, parseInt(e.target.value) || 1))}
-                        title="Quantidade de holders por produto"
-                      />
-                      <span className="absolute -top-4 left-0 right-0 text-center text-[9px] text-muted-foreground/50 uppercase tracking-wider whitespace-nowrap">Qtd</span>
-                    </div>
+                    )}
                   </div>
-                )}
+                  <div className="relative flex-shrink-0 w-16">
+                    <Input
+                      className="input-dark text-sm text-center px-2"
+                      type="number"
+                      min="1"
+                      max="99"
+                      step="1"
+                      value={form.qtdHolder ?? 1}
+                      onChange={(e) => setField("qtdHolder", Math.max(1, parseInt(e.target.value) || 1))}
+                      title="Quantidade de holders por produto"
+                    />
+                    <span className="absolute -top-4 left-0 right-0 text-center text-[9px] text-muted-foreground/50 uppercase tracking-wider whitespace-nowrap">Qtd</span>
+                  </div>
+                </div>
               </div>
             </FieldWrapper>
 
@@ -847,11 +847,11 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                     NÃO APLICÁVEL
                   </label>
                 </div>
-                {form.dissipadorNaoAplicavel ? (
-                  <Input className="input-dark" value="NÃO APLICÁVEL" disabled readOnly />
-                ) : (
-                  <div className="flex gap-2 items-start">
-                    <div className="flex-1">
+                <div className="flex gap-2 items-start">
+                  <div className="flex-1">
+                    {form.dissipadorNaoAplicavel ? (
+                      <Input className="input-dark" value="NÃO APLICÁVEL" disabled readOnly />
+                    ) : (
                       <ComponentSelect
                         tipo="DISSIPADOR"
                         value={form.dissipador}
@@ -860,22 +860,22 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                         placeholder="Ex: DISSIPADOR ALUMÍNIO"
                         hasError={!!(touched.dissipador && errors.dissipador && !form.dissipadorNaoAplicavel)}
                       />
-                    </div>
-                    <div className="relative flex-shrink-0 w-16">
-                      <Input
-                        className="input-dark text-sm text-center px-2"
-                        type="number"
-                        min="1"
-                        max="99"
-                        step="1"
-                        value={form.qtdDissipador ?? 1}
-                        onChange={(e) => setField("qtdDissipador", Math.max(1, parseInt(e.target.value) || 1))}
-                        title="Quantidade de dissipadores por produto"
-                      />
-                      <span className="absolute -top-4 left-0 right-0 text-center text-[9px] text-muted-foreground/50 uppercase tracking-wider whitespace-nowrap">Qtd</span>
-                    </div>
+                    )}
                   </div>
-                )}
+                  <div className="relative flex-shrink-0 w-16">
+                    <Input
+                      className="input-dark text-sm text-center px-2"
+                      type="number"
+                      min="1"
+                      max="99"
+                      step="1"
+                      value={form.qtdDissipador ?? 1}
+                      onChange={(e) => setField("qtdDissipador", Math.max(1, parseInt(e.target.value) || 1))}
+                      title="Quantidade de dissipadores por produto"
+                    />
+                    <span className="absolute -top-4 left-0 right-0 text-center text-[9px] text-muted-foreground/50 uppercase tracking-wider whitespace-nowrap">Qtd</span>
+                  </div>
+                </div>
               </div>
             </FieldWrapper>
           </div>
