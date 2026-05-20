@@ -30,6 +30,8 @@ import {
   ArrowLeft,
   Save,
   Copy,
+  PlusCircle,
+  Trash2,
 } from "lucide-react";
 
 // ─── Sub-components (defined OUTSIDE ProductForm to prevent remount on every render) ───
@@ -206,6 +208,80 @@ const DriverRow = ({
   );
 };
 
+// ─── DriverExtraRow component ───────────────────────────────────────────────────
+
+interface DriverExtraRowProps {
+  tipo: "DRIVER_ONOFF_220" | "DRIVER_ONOFF_BIVOLT" | "DRIVER_DIM_110V" | "DRIVER_DIM_DALI";
+  item: { modelo: string; qtd: number; custo: string };
+  onChange: (updated: { modelo: string; qtd: number; custo: string }) => void;
+  onRemove: () => void;
+}
+
+const DriverExtraRow = ({ tipo, item, onChange, onRemove }: DriverExtraRowProps) => (
+  <div className="flex gap-2 items-start pl-3 border-l-2 border-primary/30">
+    <div className="flex-1">
+      <ComponentSelect
+        tipo={tipo}
+        value={item.modelo}
+        onChange={(v) => onChange({ ...item, modelo: v })}
+        placeholder="Selecione o driver adicional..."
+      />
+    </div>
+    <div className="flex items-center gap-1.5 flex-shrink-0">
+      <div className="relative w-16">
+        <Input
+          className="input-dark text-sm text-center px-2"
+          type="number" min="1" max="99" step="1"
+          value={item.qtd}
+          onChange={(e) => onChange({ ...item, qtd: Math.max(1, parseInt(e.target.value) || 1) })}
+          title="Quantidade"
+        />
+        <span className="absolute -top-4 left-0 right-0 text-center text-[9px] text-muted-foreground/50 uppercase tracking-wider whitespace-nowrap">Qtd</span>
+      </div>
+      <div className="relative w-28">
+        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-medium pointer-events-none z-10">R$</span>
+        <Input
+          className="input-dark pl-7 text-sm"
+          type="number" step="0.01" min="0"
+          value={item.custo}
+          onChange={(e) => onChange({ ...item, custo: e.target.value })}
+          placeholder="Custo"
+          title="Custo unitário (R$)"
+        />
+      </div>
+      <button type="button" onClick={onRemove}
+        className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors flex-shrink-0"
+        title="Remover driver">
+        <Trash2 className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  </div>
+);
+
+// ─── Driver extra types ─────────────────────────────────────────────────────
+
+interface DriverExtra {
+  modelo: string;
+  qtd: number;
+  custo: string;
+}
+
+type DriversExtraState = {
+  onoff220: DriverExtra[];
+  onoffBivolt: DriverExtra[];
+  dim110v: DriverExtra[];
+  dimDali: DriverExtra[];
+};
+
+const emptyDriverExtra = (): DriverExtra => ({ modelo: "", qtd: 1, custo: "" });
+
+const defaultDriversExtra: DriversExtraState = {
+  onoff220: [],
+  onoffBivolt: [],
+  dim110v: [],
+  dimDali: [],
+};
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const CATEGORIAS = ["PERFIS", "DOWNLIGHTS", "PAINÉIS", "SPOTS", "ARANDELAS", "ÁREA EXTERNA", "BALIZADORES", "DECORATIVAS"];
@@ -321,6 +397,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
   const [uploading, setUploading] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [produtoOriginalNome, setProdutoOriginalNome] = useState<string | null>(null);
+  const [driversExtra, setDriversExtra] = useState<DriversExtraState>(defaultDriversExtra);
   const fileInputRef = useRef<HTMLInputElement>(null);
   // Keep a ref that always points to the latest form state so validate()
   // never reads a stale closure value
@@ -382,6 +459,18 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         fotoKey: existingProduct.fotoKey || "",
         custoLuminaria: existingProduct.custoLuminaria ? String(existingProduct.custoLuminaria) : "",
       };
+
+      // Carregar drivers extras do banco
+      const parseExtra = (raw: string | null | undefined): DriverExtra[] => {
+        if (!raw) return [];
+        try { return JSON.parse(raw) as DriverExtra[]; } catch { return []; }
+      };
+      setDriversExtra({
+        onoff220: parseExtra((p as any).driverOnoff220Extra),
+        onoffBivolt: parseExtra((p as any).driverOnoffBivoltExtra),
+        dim110v: parseExtra((p as any).driverDim110vExtra),
+        dimDali: parseExtra((p as any).driverDimDaliExtra),
+      });
 
       if (isDuplicate) {
         // When duplicating: keep SKU (same SKU can have multiple variants), clear only PRODUTO
@@ -547,6 +636,14 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       delete payload.driverDimDaliNaoAplicavel;
       delete payload.driverDimDali;
     }
+
+    // Serializar drivers extras como JSON
+    const serializeExtra = (arr: DriverExtra[]) =>
+      arr.length > 0 ? JSON.stringify(arr.filter((d) => d.modelo.trim())) : undefined;
+    payload.driverOnoff220Extra = serializeExtra(driversExtra.onoff220);
+    payload.driverOnoffBivoltExtra = serializeExtra(driversExtra.onoffBivolt);
+    payload.driverDim110vExtra = serializeExtra(driversExtra.dim110v);
+    payload.driverDimDaliExtra = serializeExtra(driversExtra.dimDali);
 
     if (isEdit && editId) {
       updateMutation.mutate({ id: editId, data: payload });
@@ -903,29 +1000,53 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
             </div>
 
             {/* ON/OFF 220Vac — obrigatório */}
-            <DriverRow
-              driverField="driverOnoff220"
-              custoField="custoDriverOnoff220"
-              qtdField="qtdDriverOnoff220"
-              label="ON/OFF DRIVER 220Vac"
-              required
-              placeholder="Ex: PHILIPS XITANIUM 19W 350MA (EQ00346)"
-              form={form} touched={touched} errors={errors}
-              setField={setField} setForm={setForm} setErrors={setErrors} setTouched={setTouched}
-            />
+            <div className="space-y-2">
+              <DriverRow
+                driverField="driverOnoff220"
+                custoField="custoDriverOnoff220"
+                qtdField="qtdDriverOnoff220"
+                label="ON/OFF DRIVER 220Vac"
+                required
+                placeholder="Ex: PHILIPS XITANIUM 19W 350MA (EQ00346)"
+                form={form} touched={touched} errors={errors}
+                setField={setField} setForm={setForm} setErrors={setErrors} setTouched={setTouched}
+              />
+              {driversExtra.onoff220.map((de, idx) => (
+                <DriverExtraRow key={idx} tipo="DRIVER_ONOFF_220" item={de}
+                  onChange={(updated) => setDriversExtra((prev) => ({ ...prev, onoff220: prev.onoff220.map((x, i) => i === idx ? updated : x) }))}
+                  onRemove={() => setDriversExtra((prev) => ({ ...prev, onoff220: prev.onoff220.filter((_, i) => i !== idx) }))}
+                />
+              ))}
+              <button type="button" onClick={() => setDriversExtra((prev) => ({ ...prev, onoff220: [...prev.onoff220, emptyDriverExtra()] }))}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors mt-1">
+                <PlusCircle className="w-3.5 h-3.5" /> Adicionar driver
+              </button>
+            </div>
 
             {/* ON/OFF BIVOLT — obrigatório (salvo se NaoAplicavel) */}
-            <DriverRow
-              driverField="driverOnoffBivolt"
-              custoField="custoDriverOnoffBivolt"
-              qtdField="qtdDriverOnoffBivolt"
-              naoAplicavelField="driverOnoffBivoltNaoAplicavel"
-              label="ON/OFF DRIVER BIVOLT"
-              required
-              placeholder="Ex: LIFUD 13W 350MA BIVOLT (EQ00236)"
-              form={form} touched={touched} errors={errors}
-              setField={setField} setForm={setForm} setErrors={setErrors} setTouched={setTouched}
-            />
+            <div className="space-y-2">
+              <DriverRow
+                driverField="driverOnoffBivolt"
+                custoField="custoDriverOnoffBivolt"
+                qtdField="qtdDriverOnoffBivolt"
+                naoAplicavelField="driverOnoffBivoltNaoAplicavel"
+                label="ON/OFF DRIVER BIVOLT"
+                required
+                placeholder="Ex: LIFUD 13W 350MA BIVOLT (EQ00236)"
+                form={form} touched={touched} errors={errors}
+                setField={setField} setForm={setForm} setErrors={setErrors} setTouched={setTouched}
+              />
+              {driversExtra.onoffBivolt.map((de, idx) => (
+                <DriverExtraRow key={idx} tipo="DRIVER_ONOFF_BIVOLT" item={de}
+                  onChange={(updated) => setDriversExtra((prev) => ({ ...prev, onoffBivolt: prev.onoffBivolt.map((x, i) => i === idx ? updated : x) }))}
+                  onRemove={() => setDriversExtra((prev) => ({ ...prev, onoffBivolt: prev.onoffBivolt.filter((_, i) => i !== idx) }))}
+                />
+              ))}
+              <button type="button" onClick={() => setDriversExtra((prev) => ({ ...prev, onoffBivolt: [...prev.onoffBivolt, emptyDriverExtra()] }))}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors mt-1">
+                <PlusCircle className="w-3.5 h-3.5" /> Adicionar driver
+              </button>
+            </div>
 
             <div className="border-t border-border/40 pt-4">
               <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider font-medium mb-4">
@@ -934,30 +1055,54 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
 
               {/* DIM 1-10V */}
               <div className="space-y-4">
-                <DriverRow
-                  driverField="driverDim110v"
-                  custoField="custoDriverDim110v"
-                  qtdField="qtdDriverDim110v"
-                  naoAplicavelField="driverDim110vNaoAplicavel"
-                  label="DIM 1-10V"
-                  optional
-                  placeholder="Driver DIM 1-10V"
-                  form={form} touched={touched} errors={errors}
-                  setField={setField} setForm={setForm} setErrors={setErrors} setTouched={setTouched}
-                />
+                <div className="space-y-2">
+                  <DriverRow
+                    driverField="driverDim110v"
+                    custoField="custoDriverDim110v"
+                    qtdField="qtdDriverDim110v"
+                    naoAplicavelField="driverDim110vNaoAplicavel"
+                    label="DIM 1-10V"
+                    optional
+                    placeholder="Driver DIM 1-10V"
+                    form={form} touched={touched} errors={errors}
+                    setField={setField} setForm={setForm} setErrors={setErrors} setTouched={setTouched}
+                  />
+                  {driversExtra.dim110v.map((de, idx) => (
+                    <DriverExtraRow key={idx} tipo="DRIVER_DIM_110V" item={de}
+                      onChange={(updated) => setDriversExtra((prev) => ({ ...prev, dim110v: prev.dim110v.map((x, i) => i === idx ? updated : x) }))}
+                      onRemove={() => setDriversExtra((prev) => ({ ...prev, dim110v: prev.dim110v.filter((_, i) => i !== idx) }))}
+                    />
+                  ))}
+                  <button type="button" onClick={() => setDriversExtra((prev) => ({ ...prev, dim110v: [...prev.dim110v, emptyDriverExtra()] }))}
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors mt-1">
+                    <PlusCircle className="w-3.5 h-3.5" /> Adicionar driver
+                  </button>
+                </div>
 
                 {/* DIM DALI */}
-                <DriverRow
-                  driverField="driverDimDali"
-                  custoField="custoDriverDimDali"
-                  qtdField="qtdDriverDimDali"
-                  naoAplicavelField="driverDimDaliNaoAplicavel"
-                  label="DIM DALI"
-                  optional
-                  placeholder="Driver DIM DALI"
-                  form={form} touched={touched} errors={errors}
-                  setField={setField} setForm={setForm} setErrors={setErrors} setTouched={setTouched}
-                />
+                <div className="space-y-2">
+                  <DriverRow
+                    driverField="driverDimDali"
+                    custoField="custoDriverDimDali"
+                    qtdField="qtdDriverDimDali"
+                    naoAplicavelField="driverDimDaliNaoAplicavel"
+                    label="DIM DALI"
+                    optional
+                    placeholder="Driver DIM DALI"
+                    form={form} touched={touched} errors={errors}
+                    setField={setField} setForm={setForm} setErrors={setErrors} setTouched={setTouched}
+                  />
+                  {driversExtra.dimDali.map((de, idx) => (
+                    <DriverExtraRow key={idx} tipo="DRIVER_DIM_DALI" item={de}
+                      onChange={(updated) => setDriversExtra((prev) => ({ ...prev, dimDali: prev.dimDali.map((x, i) => i === idx ? updated : x) }))}
+                      onRemove={() => setDriversExtra((prev) => ({ ...prev, dimDali: prev.dimDali.filter((_, i) => i !== idx) }))}
+                    />
+                  ))}
+                  <button type="button" onClick={() => setDriversExtra((prev) => ({ ...prev, dimDali: [...prev.dimDali, emptyDriverExtra()] }))}
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors mt-1">
+                    <PlusCircle className="w-3.5 h-3.5" /> Adicionar driver
+                  </button>
+                </div>
               </div>
             </div>
           </div>

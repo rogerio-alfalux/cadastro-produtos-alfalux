@@ -270,3 +270,12 @@
 - [x] Modal "Produtos que usam este componente" com tabela: Produto, SKU, Família
 - [x] Loading state no modal enquanto carrega
 - [x] Mensagem de "nenhum produto" quando count = 0
+
+## Feature v27 — Múltiplos drivers por tipo
+- [x] Schema Drizzle: adicionar colunas JSON para drivers extras (driverOnoff220Extra, driverOnoffBivoltExtra, driverDim110vExtra, driverDimDaliExtra) — array de {modelo, qtd, custo}
+- [x] Migração SQL aplicada
+- [x] Router tRPC: adicionar campos extras ao productSchema e db helpers
+- [x] ProductForm: botão "+ Adicionar driver" por tipo, recolhido por padrão
+- [x] Cada driver extra tem: ComponentSelect, campo Qtd e campo Custo
+- [x] Botão de remover driver extra (X)
+- [ ] Endpoint /api/products/all: incluir drivers extras na resposta para o Configurador (pendente)

@@ -58,6 +58,11 @@ const productSchema = z.object({
   custoDriverOnoffBivolt: z.string().nullish(),
   custoDriverDim110v: z.string().nullish(),
   custoDriverDimDali: z.string().nullish(),
+  // Drivers extras (JSON string de array [{modelo, qtd, custo}])
+  driverOnoff220Extra: z.string().nullish(),
+  driverOnoffBivoltExtra: z.string().nullish(),
+  driverDim110vExtra: z.string().nullish(),
+  driverDimDaliExtra: z.string().nullish(),
 }).superRefine((data, ctx) => {
   // Validar Ótica: obrigatório se não for NaoAplicavel
   if (!data.oticaNaoAplicavel && (!data.otica || data.otica.trim() === "")) {
@@ -113,6 +118,10 @@ const bulkProductSchema = z.object({
   custoDriverOnoffBivolt: z.string().optional(),
   custoDriverDim110v: z.string().optional(),
   custoDriverDimDali: z.string().optional(),
+  driverOnoff220Extra: z.string().optional(),
+  driverOnoffBivoltExtra: z.string().optional(),
+  driverDim110vExtra: z.string().optional(),
+  driverDimDaliExtra: z.string().optional(),
 });
 
 // ─── Router ───────────────────────────────────────────────────────────────────
@@ -184,6 +193,10 @@ export const appRouter = router({
           custoDriverOnoffBivolt: input.custoDriverOnoffBivolt || null,
           custoDriverDim110v: input.custoDriverDim110v || null,
           custoDriverDimDali: input.custoDriverDimDali || null,
+          driverOnoff220Extra: input.driverOnoff220Extra || null,
+          driverOnoffBivoltExtra: input.driverOnoffBivoltExtra || null,
+          driverDim110vExtra: input.driverDim110vExtra || null,
+          driverDimDaliExtra: input.driverDimDaliExtra || null,
           fotoUrl: input.fotoUrl || null,
           fotoKey: input.fotoKey || null,
         };
@@ -238,6 +251,10 @@ export const appRouter = router({
         if (d.custoDriverOnoffBivolt !== undefined) update.custoDriverOnoffBivolt = d.custoDriverOnoffBivolt || null;
         if (d.custoDriverDim110v !== undefined) update.custoDriverDim110v = d.custoDriverDim110v || null;
         if (d.custoDriverDimDali !== undefined) update.custoDriverDimDali = d.custoDriverDimDali || null;
+        if (d.driverOnoff220Extra !== undefined) update.driverOnoff220Extra = d.driverOnoff220Extra || null;
+        if (d.driverOnoffBivoltExtra !== undefined) update.driverOnoffBivoltExtra = d.driverOnoffBivoltExtra || null;
+        if (d.driverDim110vExtra !== undefined) update.driverDim110vExtra = d.driverDim110vExtra || null;
+        if (d.driverDimDaliExtra !== undefined) update.driverDimDaliExtra = d.driverDimDaliExtra || null;
 
         await updateProduct(input.id, update as any);
         return { success: true };
