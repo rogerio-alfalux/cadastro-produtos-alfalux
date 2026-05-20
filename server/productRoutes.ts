@@ -455,6 +455,26 @@ router.post("/import-excel", uploadExcel.single("file"), async (req, res) => {
   }
 });
 
+// ─── Helpers para o endpoint /api/products/all ──────────────────────────────
+
+/** Formata "NX MODELO" quando qty > 1, ou só "MODELO" quando qty = 1 */
+function withQty(modelo: string | null | undefined, qty: number): string | null {
+  if (!modelo) return null;
+  const m = modelo.trim();
+  if (!m) return null;
+  return qty > 1 ? `${qty}x ${m}` : m;
+}
+
+/** Extrai código EQ do nome do driver, ex: "PHILIPS XITANIUM 44W (EQ00347)" → "EQ00347" */
+function extractEqCode(model: string | null | undefined): string | null {
+  if (!model) return null;
+  const m = model.match(/\(?(EQ\d{5,})\)?/i);
+  return m ? m[1].toUpperCase() : null;
+}
+
+/** Categorias que recebem campos extras de ótica */
+const CATS_OTICA_EXTRA = new Set(["DOWNLIGHTS", "SPOTS"]);
+
 // ─── Endpoint público para o Configurador ───────────────────────────────────
 // Retorna todos os produtos no formato esperado pelo Configurador de Produtos
 // GET /api/products/all  (sem autenticação — consumido pelo Configurador)
@@ -476,42 +496,97 @@ router.get("/all", async (_req, res) => {
         temps.push("2700", "3000", "4000", "5000");
       }
 
-      return {
+      // ── Quantidades dos componentes ──────────────────────────────────────
+      const qtdLed    = Number((p as any).qtdModuloLed)  || 1;
+      const qtdOtica  = Number((p as any).qtdOtica)      || 1;
+      const qtdHolder = Number((p as any).qtdHolder)     || 1;
+      const qtdDiss   = Number((p as any).qtdDissipador) || 1;
+
+      // ── Campos base com quantidade embutida ──────────────────────────────
+      const ledModuleVal = p.moduloLed ? withQty(p.moduloLed, qtdLed) : null;
+      const holderVal    = p.holderNaoAplicavel ? null : withQty(p.holder, qtdHolder);
+      const dissipadorVal = p.dissipadorNaoAplicavel ? null : withQty(p.dissipador, qtdDiss);
+
+      // ── Ótica: montar campo otica com primária + secundárias ─────────────
+      let oticaVal: string | null = null;
+      let oticaPrimaria: string | null = null;
+      let oticaSecundaria: string | null = null;
+
+      if (!p.oticaNaoAplicavel && p.otica) {
+        // Parsear extras
+        let extras: Array<{ modelo: string; qtd: number }> = [];
+        try {
+          const raw = (p as any).oticaExtra;
+          if (raw) extras = JSON.parse(raw);
+        } catch { extras = []; }
+
+        // Ótica primária com quantidade
+        oticaPrimaria = withQty(p.otica, qtdOtica);
+
+        if (extras.length > 0) {
+          // Ótica secundária: concatenar todos os extras com " + "
+          oticaSecundaria = extras
+            .filter((e) => e.modelo?.trim())
+            .map((e) => withQty(e.modelo, e.qtd || 1))
+            .filter(Boolean)
+            .join(" + ");
+          if (!oticaSecundaria) oticaSecundaria = null;
+
+          // Campo otica legado: primária + secundárias concatenadas
+          const partes = [oticaPrimaria, oticaSecundaria].filter(Boolean);
+          oticaVal = partes.join(" + ");
+        } else {
+          // Sem extras: otica = oticaPrimaria
+          oticaVal = oticaPrimaria;
+          oticaSecundaria = null;
+        }
+      }
+
+      // ── Helpers para drivers com código EQ ──────────────────────────────
+      const makeDriver = (model: string | null | undefined) => {
+        if (!model) return null;
+        return { model, code: extractEqCode(model) };
+      };
+
+      const cat = (p.categoria || "").toUpperCase();
+      const includeOticaExtras = CATS_OTICA_EXTRA.has(cat);
+
+      const result: Record<string, any> = {
         instalacao: p.instalacao,
         familia: p.familia,
         sku: p.sku,
         name: p.produto,
         categoria: p.categoria || null,
-        holder: p.holderNaoAplicavel ? null : (p.holder || null),
-        otica: p.oticaNaoAplicavel ? null : (p.otica || null),
-        dissipador: p.dissipadorNaoAplicavel ? null : (p.dissipador || null),
-        ledModule: p.moduloLed,
+        holder: holderVal,
+        otica: oticaVal,
+        dissipador: dissipadorVal,
+        ledModule: ledModuleVal,
         fotoUrl: p.fotoUrl || null,
         temperaturasCor: temps,
-        driver220: p.driverOnoff220
-          ? { model: p.driverOnoff220, code: null }
-          : null,
+        driver220: p.driverOnoff220 ? makeDriver(p.driverOnoff220) : null,
         driverBivolt: p.driverOnoffBivoltNaoAplicavel
           ? null
-          : p.driverOnoffBivolt
-            ? { model: p.driverOnoffBivolt, code: null }
-            : null,
+          : makeDriver(p.driverOnoffBivolt),
         driverDim110v: p.driverDim110vNaoAplicavel
           ? null
-          : p.driverDim110v
-            ? { model: p.driverDim110v, code: null }
-            : null,
+          : makeDriver(p.driverDim110v),
         driverDimDali: p.driverDimDaliNaoAplicavel
           ? null
-          : p.driverDimDali
-            ? { model: p.driverDimDali, code: null }
-            : null,
+          : makeDriver(p.driverDimDali),
         custoLuminaria: p.custoLuminaria ? Number(p.custoLuminaria) : null,
         custoDriver220: (p as any).custoDriverOnoff220 ? Number((p as any).custoDriverOnoff220) : null,
         custoDriverBivolt: (p as any).custoDriverOnoffBivolt ? Number((p as any).custoDriverOnoffBivolt) : null,
         custoDriverDim110v: (p as any).custoDriverDim110v ? Number((p as any).custoDriverDim110v) : null,
         custoDriverDimDali: (p as any).custoDriverDimDali ? Number((p as any).custoDriverDimDali) : null,
       };
+
+      // Campos extras de ótica apenas para DOWNLIGHTS e SPOTS
+      if (includeOticaExtras) {
+        result.oticaPrimaria = oticaPrimaria;
+        result.oticaSecundaria = oticaSecundaria;
+      }
+
+      return result;
     });
 
     return res.json({
