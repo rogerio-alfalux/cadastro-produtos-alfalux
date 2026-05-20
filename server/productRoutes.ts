@@ -544,9 +544,16 @@ router.get("/all", async (_req, res) => {
       }
 
       // ── Helpers para drivers com código EQ ──────────────────────────────
+      // Verifica se um valor de driver é válido (não nulo e não "NÃO APLICÁVEL")
+      const isValidDriver = (model: string | null | undefined): boolean => {
+        if (!model) return false;
+        const m = model.trim().toUpperCase();
+        return m !== "NÃO APLICÁVEL" && m !== "NAO APLICAVEL" && m !== "NÃO ESPECIFICADO" && m !== "";
+      };
+
       const makeDriver = (model: string | null | undefined) => {
-        if (!model) return null;
-        return { model, code: extractEqCode(model) };
+        if (!isValidDriver(model)) return null;
+        return { model: model!.trim(), code: extractEqCode(model) };
       };
 
       const cat = (p.categoria || "").toUpperCase();
@@ -564,14 +571,14 @@ router.get("/all", async (_req, res) => {
         ledModule: ledModuleVal,
         fotoUrl: p.fotoUrl || null,
         temperaturasCor: temps,
-        driver220: p.driverOnoff220 ? makeDriver(p.driverOnoff220) : null,
-        driverBivolt: p.driverOnoffBivoltNaoAplicavel
+        driver220: isValidDriver(p.driverOnoff220) ? makeDriver(p.driverOnoff220) : null,
+        driverBivolt: (p.driverOnoffBivoltNaoAplicavel || !isValidDriver(p.driverOnoffBivolt))
           ? null
           : makeDriver(p.driverOnoffBivolt),
-        driverDim110v: p.driverDim110vNaoAplicavel
+        driverDim110v: (p.driverDim110vNaoAplicavel || !isValidDriver(p.driverDim110v))
           ? null
           : makeDriver(p.driverDim110v),
-        driverDimDali: p.driverDimDaliNaoAplicavel
+        driverDimDali: (p.driverDimDaliNaoAplicavel || !isValidDriver(p.driverDimDali))
           ? null
           : makeDriver(p.driverDimDali),
         custoLuminaria: p.custoLuminaria ? Number(p.custoLuminaria) : null,
