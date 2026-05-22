@@ -596,6 +596,20 @@ router.get("/all", async (_req, res) => {
       result.ledModuleQtd = p.moduloLed ? qtdLed : null;
       result.holderQtd = p.holderNaoAplicavel ? null : qtdHolder;
 
+      // Quantidades numéricas de drivers
+      result.driverQtd220 = isValidDriver(p.driverOnoff220)
+        ? (p.qtdDriverOnoff220 != null ? Number(p.qtdDriverOnoff220) : 1)
+        : null;
+      result.driverQtdBivolt = (!p.driverOnoffBivoltNaoAplicavel && isValidDriver(p.driverOnoffBivolt))
+        ? (p.qtdDriverOnoffBivolt != null ? Number(p.qtdDriverOnoffBivolt) : 1)
+        : null;
+      result.driverQtdDim110v = (!p.driverDim110vNaoAplicavel && isValidDriver(p.driverDim110v))
+        ? (p.qtdDriverDim110v != null ? Number(p.qtdDriverDim110v) : 1)
+        : null;
+      result.driverQtdDimDali = (!p.driverDimDaliNaoAplicavel && isValidDriver(p.driverDimDali))
+        ? (p.qtdDriverDimDali != null ? Number(p.qtdDriverDimDali) : 1)
+        : null;
+
       return result;
     });
 
