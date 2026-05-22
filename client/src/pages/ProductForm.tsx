@@ -860,11 +860,29 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                     className="input-dark text-sm text-center px-2 w-16"
                     type="number"
                     min="1"
-                    max="99"
-                    step="1"
+                    max="999"
+                    step="0.1"
                     value={form.qtdModuloLed ?? 1}
-                    onChange={(e) => setField("qtdModuloLed", Math.max(1, parseInt(e.target.value) || 1))}
-                    title="Quantidade de módulos LED por produto"
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(',', '.');
+                      const parsed = parseFloat(raw);
+                      setField("qtdModuloLed", isNaN(parsed) ? 1 : Math.max(0.1, Math.round(parsed * 100) / 100));
+                    }}
+                    onKeyDown={(e) => {
+                      // Permitir vírgula como separador decimal
+                      if (e.key === ',') {
+                        e.preventDefault();
+                        const el = e.target as HTMLInputElement;
+                        const pos = el.selectionStart ?? el.value.length;
+                        const val = el.value;
+                        if (!val.includes('.')) {
+                          el.value = val.slice(0, pos) + '.' + val.slice(pos);
+                          el.setSelectionRange(pos + 1, pos + 1);
+                          el.dispatchEvent(new Event('input', { bubbles: true }));
+                        }
+                      }
+                    }}
+                    title="Quantidade de módulos LED por produto (aceita decimais, ex: 1,5)"
                   />
                 </div>
               </div>
