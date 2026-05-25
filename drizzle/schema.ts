@@ -38,7 +38,7 @@ export const products = mysqlTable("products", {
 
   // Componentes
   moduloLed: text("moduloLed").notNull(),
-  qtdModuloLed: int("qtdModuloLed").default(1).notNull(),
+  qtdModuloLed: decimal("qtdModuloLed", { precision: 10, scale: 2 }).default("1.00").notNull(),
   otica: text("otica").notNull(),
   qtdOtica: int("qtdOtica").default(1).notNull(),
   oticaNaoAplicavel: boolean("oticaNaoAplicavel").default(false).notNull(),

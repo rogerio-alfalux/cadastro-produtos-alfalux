@@ -26,7 +26,7 @@ const productSchema = z.object({
   sku: z.string().min(1, "SKU é obrigatório"),
   produto: z.string().min(1, "PRODUTO é obrigatório"),
   moduloLed: z.string().min(1, "MÓDULO LED é obrigatório"),
-  qtdModuloLed: z.number().int().min(1).default(1),
+  qtdModuloLed: z.number().min(0.1).default(1),
   // Ótica: obrigatório a menos que NaoAplicavel=true
   otica: z.string().optional().default(""),
   qtdOtica: z.number().int().min(1).default(1),
@@ -91,7 +91,7 @@ const bulkProductSchema = z.object({
   sku: z.string().default(""),
   produto: z.string().default(""),
   moduloLed: z.string().default(""),
-  qtdModuloLed: z.number().int().min(1).default(1),
+  qtdModuloLed: z.number().min(0.1).default(1),
   otica: z.string().default(""),
   qtdOtica: z.number().int().min(1).default(1),
   oticaNaoAplicavel: z.boolean().default(false),
@@ -175,7 +175,7 @@ export const appRouter = router({
           sku: input.sku.toUpperCase(),
           produto: input.produto.toUpperCase(),
           moduloLed: input.moduloLed.toUpperCase(),
-          qtdModuloLed: input.qtdModuloLed ?? 1,
+          qtdModuloLed: String(input.qtdModuloLed ?? 1),
           otica: input.oticaNaoAplicavel ? "NÃO APLICÁVEL" : input.otica.toUpperCase(),
           qtdOtica: input.qtdOtica ?? 1,
           holder: input.holderNaoAplicavel ? "NÃO APLICÁVEL" : input.holder.toUpperCase(),
@@ -223,7 +223,7 @@ export const appRouter = router({
         if (d.sku !== undefined) update.sku = d.sku.toUpperCase();
         if (d.produto !== undefined) update.produto = d.produto.toUpperCase();
         if (d.moduloLed !== undefined) update.moduloLed = d.moduloLed.toUpperCase();
-        if (d.qtdModuloLed !== undefined) update.qtdModuloLed = d.qtdModuloLed;
+        if (d.qtdModuloLed !== undefined) update.qtdModuloLed = String(d.qtdModuloLed);
         if (d.otica !== undefined) update.otica = d.oticaNaoAplicavel ? "NÃO APLICÁVEL" : d.otica.toUpperCase();
         if (d.qtdOtica !== undefined) update.qtdOtica = d.qtdOtica;
         if (d.oticaNaoAplicavel !== undefined) update.oticaNaoAplicavel = d.oticaNaoAplicavel;
