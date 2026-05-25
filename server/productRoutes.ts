@@ -1,7 +1,7 @@
 import express from "express";
 import multer from "multer";
 import * as XLSX from "xlsx";
-import { storagePut } from "./storage";
+import { storagePut, storageGetSignedUrl } from "./storage";
 import { bulkInsertProducts, listProducts } from "./db";
 
 const router = express.Router();
@@ -487,8 +487,35 @@ router.get("/all", async (_req, res) => {
 
     const { items } = await listProducts({ limit: 10000, offset: 0 });
 
+    // Resolver URLs públicas do S3 para todos os produtos com foto em paralelo
+    const extractKey = (url: string | null | undefined): string | null => {
+      if (!url) return null;
+      // Suporta tanto "/manus-storage/{key}" quanto chaves diretas
+      const match = url.match(/^\/manus-storage\/(.+)$/);
+      return match ? match[1] : (url.startsWith("http") ? null : url);
+    };
+
+    const signedUrlMap = new Map<string, string>();
+    const keysToSign = items
+      .map((p) => extractKey(p.fotoUrl))
+      .filter((k): k is string => !!k);
+    const uniqueKeys = Array.from(new Set(keysToSign));
+
+    await Promise.all(
+      uniqueKeys.map(async (key) => {
+        try {
+          const publicUrl = await storageGetSignedUrl(key);
+          signedUrlMap.set(key, publicUrl);
+        } catch {
+          // Se falhar, mantém null — não bloqueia o endpoint
+        }
+      })
+    );
+
     // Mapear para o formato que o Configurador espera
     const formatted = items.map((p) => {
+      const rawKey = extractKey(p.fotoUrl);
+      const resolvedFotoUrl = rawKey ? (signedUrlMap.get(rawKey) ?? null) : null;
       const temps: string[] = [];
       try {
         const parsed = JSON.parse(p.temperaturasCor || "[]");
@@ -569,7 +596,7 @@ router.get("/all", async (_req, res) => {
         otica: oticaVal,
         dissipador: dissipadorVal,
         ledModule: ledModuleVal,
-        fotoUrl: p.fotoUrl || null,
+        fotoUrl: resolvedFotoUrl,
         temperaturasCor: temps,
         driver220: isValidDriver(p.driverOnoff220) ? makeDriver(p.driverOnoff220) : null,
         driverBivolt: (p.driverOnoffBivoltNaoAplicavel || !isValidDriver(p.driverOnoffBivolt))
