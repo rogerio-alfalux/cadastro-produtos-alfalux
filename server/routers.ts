@@ -187,8 +187,10 @@ export const appRouter = router({
           driverOnoffBivolt: input.driverOnoffBivolt.toUpperCase(),
           qtdDriverOnoffBivolt: input.qtdDriverOnoffBivolt ?? 1,
           driverDim110v: input.driverDim110v?.toUpperCase() || null,
+          driverDim110vNaoAplicavel: !input.driverDim110v || input.driverDim110vNaoAplicavel === true,
           qtdDriverDim110v: input.qtdDriverDim110v ?? 1,
           driverDimDali: input.driverDimDali?.toUpperCase() || null,
+          driverDimDaliNaoAplicavel: !input.driverDimDali || input.driverDimDaliNaoAplicavel === true,
           qtdDriverDimDali: input.qtdDriverDimDali ?? 1,
           temperaturasCor: input.temperaturasCor || '["2700","3000","4000","5000"]',
           custoLuminaria: input.custoLuminaria || null,
@@ -238,14 +240,22 @@ export const appRouter = router({
         if (d.driverOnoffBivolt !== undefined) update.driverOnoffBivolt = d.driverOnoffBivolt.toUpperCase();
         if (d.qtdDriverOnoffBivolt !== undefined) update.qtdDriverOnoffBivolt = d.qtdDriverOnoffBivolt;
         if (d.driverOnoffBivoltNaoAplicavel !== undefined) update.driverOnoffBivoltNaoAplicavel = d.driverOnoffBivoltNaoAplicavel;
-        // DIM 1-10V: só atualiza se o campo foi explicitamente enviado pelo frontend
-        // Nunca sobrescreve com false se o produto já tinha o campo não configurado
-        if (d.driverDim110vNaoAplicavel !== undefined) update.driverDim110vNaoAplicavel = d.driverDim110vNaoAplicavel;
-        if (d.driverDim110v !== undefined) update.driverDim110v = d.driverDim110v?.toUpperCase() || null;
+        // DIM 1-10V: ao atualizar o campo, sincroniza a flag NaoAplicavel automaticamente
+        if (d.driverDim110v !== undefined) {
+          update.driverDim110v = d.driverDim110v?.toUpperCase() || null;
+          // Se o campo foi enviado, a flag é derivada do valor: vazio = NaoAplicavel
+          update.driverDim110vNaoAplicavel = !d.driverDim110v || d.driverDim110vNaoAplicavel === true;
+        } else if (d.driverDim110vNaoAplicavel !== undefined) {
+          update.driverDim110vNaoAplicavel = d.driverDim110vNaoAplicavel;
+        }
         if (d.qtdDriverDim110v !== undefined) update.qtdDriverDim110v = d.qtdDriverDim110v;
         // DIM DALI: idem
-        if (d.driverDimDaliNaoAplicavel !== undefined) update.driverDimDaliNaoAplicavel = d.driverDimDaliNaoAplicavel;
-        if (d.driverDimDali !== undefined) update.driverDimDali = d.driverDimDali?.toUpperCase() || null;
+        if (d.driverDimDali !== undefined) {
+          update.driverDimDali = d.driverDimDali?.toUpperCase() || null;
+          update.driverDimDaliNaoAplicavel = !d.driverDimDali || d.driverDimDaliNaoAplicavel === true;
+        } else if (d.driverDimDaliNaoAplicavel !== undefined) {
+          update.driverDimDaliNaoAplicavel = d.driverDimDaliNaoAplicavel;
+        }
         if (d.qtdDriverDimDali !== undefined) update.qtdDriverDimDali = d.qtdDriverDimDali;
         if (d.temperaturasCor !== undefined) update.temperaturasCor = d.temperaturasCor;
         if (d.fotoUrl !== undefined) update.fotoUrl = d.fotoUrl || null;

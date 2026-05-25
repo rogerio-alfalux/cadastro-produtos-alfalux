@@ -385,13 +385,13 @@ export default function ProductList() {
                             <span className="w-1.5 h-1.5 rounded-full bg-green-400/60 inline-block" />
                             ON/OFF
                           </span>
-                          {product.driverDim110v && (
+                          {!product.driverDim110vNaoAplicavel && product.driverDim110v && (
                             <span className="text-[10px] text-blue-400/80 flex items-center gap-1">
                               <span className="w-1.5 h-1.5 rounded-full bg-blue-400/60 inline-block" />
                               DIM 1-10V
                             </span>
                           )}
-                          {product.driverDimDali && (
+                          {!product.driverDimDaliNaoAplicavel && product.driverDimDali && (
                             <span className="text-[10px] text-purple-400/80 flex items-center gap-1">
                               <span className="w-1.5 h-1.5 rounded-full bg-purple-400/60 inline-block" />
                               DALI
@@ -642,7 +642,7 @@ function ProductDetail({ id }: { id: number }) {
           </div>
         </div>
         {/* DIM 1-10V */}
-        {product.driverDim110v && (
+        {!product.driverDim110vNaoAplicavel && product.driverDim110v && (
           <div className="flex items-start justify-between py-1.5 border-b border-border/30 last:border-0">
             <span className="text-xs text-muted-foreground uppercase tracking-wide">DIM 1-10V</span>
             <div className="text-right">
@@ -654,7 +654,7 @@ function ProductDetail({ id }: { id: number }) {
           </div>
         )}
         {/* DIM DALI */}
-        {product.driverDimDali && (
+        {!product.driverDimDaliNaoAplicavel && product.driverDimDali && (
           <div className="flex items-start justify-between py-1.5 last:border-0">
             <span className="text-xs text-muted-foreground uppercase tracking-wide">DIM DALI</span>
             <div className="text-right">
