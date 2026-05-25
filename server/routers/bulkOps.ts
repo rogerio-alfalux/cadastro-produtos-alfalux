@@ -262,12 +262,17 @@ export const bulkOpsRouter = router({
 
       let extraClause = "";
       if (input.acao === "REMOVER") {
-        // Only affect products that have the driver
-        extraClause = ` AND \`${col}\` IS NOT NULL AND \`${col}\` != ''`;
+        // Only affect products that have the driver (non-empty, non-null, not 'NÃO APLICÁVEL')
+        extraClause = ` AND \`${col}\` IS NOT NULL AND \`${col}\` != '' AND UPPER(TRIM(\`${col}\`)) NOT IN ('NÃO APLICÁVEL','NAO APLICAVEL','NÃO ESPECIFICADO')`;
+        if (naoApCol) extraClause += ` AND \`${naoApCol}\` = 0`;
       } else {
-        // INSERIR: affect products that don't have the driver yet (or are empty)
-        // NOTE: do NOT filter by naoAplicavel — the user explicitly wants to insert
-        extraClause = ` AND (\`${col}\` IS NULL OR \`${col}\` = '')`;
+        // INSERIR: affect products that don't have the driver yet
+        // Includes: NULL, empty string, 'NÃO APLICÁVEL', or naoAplicavel=1
+        if (naoApCol) {
+          extraClause = ` AND (\`${naoApCol}\` = 1 OR \`${col}\` IS NULL OR \`${col}\` = '' OR UPPER(TRIM(\`${col}\`)) IN ('NÃO APLICÁVEL','NAO APLICAVEL','NÃO ESPECIFICADO'))`;
+        } else {
+          extraClause = ` AND (\`${col}\` IS NULL OR \`${col}\` = '' OR UPPER(TRIM(\`${col}\`)) IN ('NÃO APLICÁVEL','NAO APLICAVEL','NÃO ESPECIFICADO'))`;
+        }
       }
 
       const where = buildWhere({ familia: input.familia, categoria: input.categoria, moduloLedContem: input.moduloLedContem, produtoContem: input.produtoContem, driverAtual: input.driverAtual, driverCol: input.acao === "REMOVER" ? col : undefined });
@@ -366,10 +371,15 @@ export const bulkOpsRouter = router({
 
       let extraClause = "";
       if (input.acao === "REMOVER") {
-        extraClause = ` AND \`${col}\` IS NOT NULL AND \`${col}\` != ''`;
+        extraClause = ` AND \`${col}\` IS NOT NULL AND \`${col}\` != '' AND UPPER(TRIM(\`${col}\`)) NOT IN ('NÃO APLICÁVEL','NAO APLICAVEL','NÃO ESPECIFICADO')`;
+        if (naoApCol) extraClause += ` AND \`${naoApCol}\` = 0`;
       } else {
-        // INSERIR: do NOT filter by naoAplicavel — user explicitly wants to insert
-        extraClause = ` AND (\`${col}\` IS NULL OR \`${col}\` = '')`;
+        // INSERIR: inclui produtos sem driver (null, vazio, 'NÃO APLICÁVEL', ou flag NaoAplicavel=1)
+        if (naoApCol) {
+          extraClause = ` AND (\`${naoApCol}\` = 1 OR \`${col}\` IS NULL OR \`${col}\` = '' OR UPPER(TRIM(\`${col}\`)) IN ('NÃO APLICÁVEL','NAO APLICAVEL','NÃO ESPECIFICADO'))`;
+        } else {
+          extraClause = ` AND (\`${col}\` IS NULL OR \`${col}\` = '' OR UPPER(TRIM(\`${col}\`)) IN ('NÃO APLICÁVEL','NAO APLICAVEL','NÃO ESPECIFICADO'))`;
+        }
       }
 
       const where = buildWhere({ familia: input.familia, categoria: input.categoria, moduloLedContem: input.moduloLedContem, produtoContem: input.produtoContem, driverAtual: input.driverAtual, driverCol: input.acao === "REMOVER" ? col : undefined });
@@ -378,12 +388,15 @@ export const bulkOpsRouter = router({
       let setClause = "";
       if (input.acao === "REMOVER") {
         setClause = `\`${col}\` = NULL, \`${custCol}\` = NULL`;
-        if (naoApCol) setClause += `, \`${naoApCol}\` = 0`;
+        // Ao remover driver, marcar flag NaoAplicavel como 1 (sem driver)
+        if (naoApCol) setClause += `, \`${naoApCol}\` = 1`;
       } else {
         setClause = `\`${col}\` = '${(input.novoDriver ?? "").replace(/'/g, "''")}'`;
         if (input.novoCusto?.trim()) {
           setClause += `, \`${custCol}\` = '${input.novoCusto.replace(/'/g, "''")}'`;
         }
+        // Ao inserir driver, marcar flag NaoAplicavel como 0 (driver disponivel)
+        if (naoApCol) setClause += `, \`${naoApCol}\` = 0`;
       }
 
       const result = await db.execute(
