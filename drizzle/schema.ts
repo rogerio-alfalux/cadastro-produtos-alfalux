@@ -87,6 +87,13 @@ export const products = mysqlTable("products", {
   custoDriverDim110v: decimal("custoDriverDim110v", { precision: 10, scale: 2 }),
   custoDriverDimDali: decimal("custoDriverDimDali", { precision: 10, scale: 2 }),
 
+  // Preço de venda por tipo de driver
+  // Categoria "PERFIS": preço por metro linear; demais categorias: preço por peça
+  precoVendaOnoff220: decimal("precoVendaOnoff220", { precision: 10, scale: 2 }),
+  precoVendaOnoffBivolt: decimal("precoVendaOnoffBivolt", { precision: 10, scale: 2 }),
+  precoVendaDim110v: decimal("precoVendaDim110v", { precision: 10, scale: 2 }),
+  precoVendaDimDali: decimal("precoVendaDimDali", { precision: 10, scale: 2 }),
+
   // Metadados
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

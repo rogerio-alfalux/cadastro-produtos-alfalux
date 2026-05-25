@@ -65,6 +65,11 @@ const productSchema = z.object({
   driverDimDaliExtra: z.string().nullish(),
   // Óticas extras (JSON string de array [{modelo, qtd}])
   oticaExtra: z.string().nullish(),
+  // Preço de venda por tipo de driver (null = não informado)
+  precoVendaOnoff220: z.string().nullish(),
+  precoVendaOnoffBivolt: z.string().nullish(),
+  precoVendaDim110v: z.string().nullish(),
+  precoVendaDimDali: z.string().nullish(),
 }).superRefine((data, ctx) => {
   // Validar Ótica: obrigatório se não for NaoAplicavel
   if (!data.oticaNaoAplicavel && (!data.otica || data.otica.trim() === "")) {
@@ -125,6 +130,11 @@ const bulkProductSchema = z.object({
   driverDim110vExtra: z.string().optional(),
   driverDimDaliExtra: z.string().optional(),
   oticaExtra: z.string().optional(),
+  // Preço de venda por tipo de driver
+  precoVendaOnoff220: z.string().optional(),
+  precoVendaOnoffBivolt: z.string().optional(),
+  precoVendaDim110v: z.string().optional(),
+  precoVendaDimDali: z.string().optional(),
 });
 
 // ─── Router ───────────────────────────────────────────────────────────────────
@@ -205,6 +215,10 @@ export const appRouter = router({
           oticaExtra: input.oticaExtra || null,
           fotoUrl: input.fotoUrl || null,
           fotoKey: input.fotoKey || null,
+          precoVendaOnoff220: input.precoVendaOnoff220 || null,
+          precoVendaOnoffBivolt: input.precoVendaOnoffBivolt || null,
+          precoVendaDim110v: input.precoVendaDim110v || null,
+          precoVendaDimDali: input.precoVendaDimDali || null,
         };
         await createProduct(data);
         return { success: true };
@@ -270,6 +284,10 @@ export const appRouter = router({
         if (d.driverDim110vExtra !== undefined) update.driverDim110vExtra = d.driverDim110vExtra || null;
         if (d.driverDimDaliExtra !== undefined) update.driverDimDaliExtra = d.driverDimDaliExtra || null;
         if (d.oticaExtra !== undefined) update.oticaExtra = d.oticaExtra || null;
+        if (d.precoVendaOnoff220 !== undefined) update.precoVendaOnoff220 = d.precoVendaOnoff220 || null;
+        if (d.precoVendaOnoffBivolt !== undefined) update.precoVendaOnoffBivolt = d.precoVendaOnoffBivolt || null;
+        if (d.precoVendaDim110v !== undefined) update.precoVendaDim110v = d.precoVendaDim110v || null;
+        if (d.precoVendaDimDali !== undefined) update.precoVendaDimDali = d.precoVendaDimDali || null;
 
         await updateProduct(input.id, update as any);
         return { success: true };

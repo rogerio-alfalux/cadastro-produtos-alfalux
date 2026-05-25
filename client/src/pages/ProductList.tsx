@@ -627,20 +627,28 @@ function ProductDetail({ id }: { id: number }) {
           <div className="text-right">
             <span className="text-xs font-medium text-foreground">{product.driverOnoff220 || "—"}</span>
             {(product as any).custoDriverOnoff220 && (
-              <span className="block text-[10px] text-primary/80 mt-0.5">R$ {Number((product as any).custoDriverOnoff220).toFixed(2).replace(".", ",")}</span>
+              <span className="block text-[10px] text-primary/80 mt-0.5">Custo: R$ {Number((product as any).custoDriverOnoff220).toFixed(2).replace(".", ",")}</span>
+            )}
+            {(product as any).precoVendaOnoff220 && (
+              <span className="block text-[10px] text-emerald-400 font-semibold mt-0.5">Venda: R$ {Number((product as any).precoVendaOnoff220).toFixed(2).replace(".", ",")}{product.categoria?.toUpperCase() === "PERFIS" ? "/m" : "/pc"}</span>
             )}
           </div>
         </div>
         {/* ON/OFF BIVOLT */}
+        {!product.driverOnoffBivoltNaoAplicavel && (
         <div className="flex items-start justify-between py-1.5 border-b border-border/30 last:border-0">
           <span className="text-xs text-muted-foreground uppercase tracking-wide">ON/OFF BIVOLT</span>
           <div className="text-right">
             <span className="text-xs font-medium text-foreground">{product.driverOnoffBivolt || "—"}</span>
             {(product as any).custoDriverOnoffBivolt && (
-              <span className="block text-[10px] text-primary/80 mt-0.5">R$ {Number((product as any).custoDriverOnoffBivolt).toFixed(2).replace(".", ",")}</span>
+              <span className="block text-[10px] text-primary/80 mt-0.5">Custo: R$ {Number((product as any).custoDriverOnoffBivolt).toFixed(2).replace(".", ",")}</span>
+            )}
+            {(product as any).precoVendaOnoffBivolt && (
+              <span className="block text-[10px] text-emerald-400 font-semibold mt-0.5">Venda: R$ {Number((product as any).precoVendaOnoffBivolt).toFixed(2).replace(".", ",")}{product.categoria?.toUpperCase() === "PERFIS" ? "/m" : "/pc"}</span>
             )}
           </div>
         </div>
+        )}
         {/* DIM 1-10V */}
         {!product.driverDim110vNaoAplicavel && product.driverDim110v && (
           <div className="flex items-start justify-between py-1.5 border-b border-border/30 last:border-0">
@@ -648,7 +656,10 @@ function ProductDetail({ id }: { id: number }) {
             <div className="text-right">
               <span className="text-xs font-medium text-foreground">{product.driverDim110v}</span>
               {(product as any).custoDriverDim110v && (
-                <span className="block text-[10px] text-primary/80 mt-0.5">R$ {Number((product as any).custoDriverDim110v).toFixed(2).replace(".", ",")}</span>
+                <span className="block text-[10px] text-primary/80 mt-0.5">Custo: R$ {Number((product as any).custoDriverDim110v).toFixed(2).replace(".", ",")}</span>
+              )}
+              {(product as any).precoVendaDim110v && (
+                <span className="block text-[10px] text-emerald-400 font-semibold mt-0.5">Venda: R$ {Number((product as any).precoVendaDim110v).toFixed(2).replace(".", ",")}{product.categoria?.toUpperCase() === "PERFIS" ? "/m" : "/pc"}</span>
               )}
             </div>
           </div>
@@ -660,7 +671,10 @@ function ProductDetail({ id }: { id: number }) {
             <div className="text-right">
               <span className="text-xs font-medium text-foreground">{product.driverDimDali}</span>
               {(product as any).custoDriverDimDali && (
-                <span className="block text-[10px] text-primary/80 mt-0.5">R$ {Number((product as any).custoDriverDimDali).toFixed(2).replace(".", ",")}</span>
+                <span className="block text-[10px] text-primary/80 mt-0.5">Custo: R$ {Number((product as any).custoDriverDimDali).toFixed(2).replace(".", ",")}</span>
+              )}
+              {(product as any).precoVendaDimDali && (
+                <span className="block text-[10px] text-emerald-400 font-semibold mt-0.5">Venda: R$ {Number((product as any).precoVendaDimDali).toFixed(2).replace(".", ",")}{product.categoria?.toUpperCase() === "PERFIS" ? "/m" : "/pc"}</span>
               )}
             </div>
           </div>

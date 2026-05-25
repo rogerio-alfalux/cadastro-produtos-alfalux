@@ -373,6 +373,10 @@ interface FormData {
   fotoUrl: string;
   fotoKey: string;
   custoLuminaria: string;
+  precoVendaOnoff220: string;
+  precoVendaOnoffBivolt: string;
+  precoVendaDim110v: string;
+  precoVendaDimDali: string;
 }
 
 const defaultForm: FormData = {
@@ -411,6 +415,10 @@ const defaultForm: FormData = {
   fotoUrl: "",
   fotoKey: "",
   custoLuminaria: "",
+  precoVendaOnoff220: "",
+  precoVendaOnoffBivolt: "",
+  precoVendaDim110v: "",
+  precoVendaDimDali: "",
 };
 
 // Required fields (driverOnoffBivolt is conditional — required only if not NaoAplicavel)
@@ -508,6 +516,10 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         fotoUrl: existingProduct.fotoUrl || "",
         fotoKey: existingProduct.fotoKey || "",
         custoLuminaria: existingProduct.custoLuminaria ? String(existingProduct.custoLuminaria) : "",
+        precoVendaOnoff220: p.precoVendaOnoff220 ? String(p.precoVendaOnoff220) : "",
+        precoVendaOnoffBivolt: p.precoVendaOnoffBivolt ? String(p.precoVendaOnoffBivolt) : "",
+        precoVendaDim110v: p.precoVendaDim110v ? String(p.precoVendaDim110v) : "",
+        precoVendaDimDali: p.precoVendaDimDali ? String(p.precoVendaDimDali) : "",
       };
 
       // Carregar drivers extras do banco
@@ -671,6 +683,10 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       custoDriverDimDali: form.custoDriverDimDali || undefined,
       fotoUrl: form.fotoUrl || undefined,
       fotoKey: form.fotoKey || undefined,
+      precoVendaOnoff220: form.precoVendaOnoff220 || undefined,
+      precoVendaOnoffBivolt: form.precoVendaOnoffBivolt || undefined,
+      precoVendaDim110v: form.precoVendaDim110v || undefined,
+      precoVendaDimDali: form.precoVendaDimDali || undefined,
       // Drivers ON/OFF
       driverOnoffBivolt: form.driverOnoffBivoltNaoAplicavel ? "NÃO APLICÁVEL" : (form.driverOnoffBivolt || undefined),
       // Drivers DIM: só envia se o usuário explicitamente marcou NÃO APLICÁVEL ou preencheu o campo.
@@ -1343,7 +1359,117 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
           </div>
         </section>
 
-        {/* ─── Validation Summary ───────────────────────────────────────── */}
+        {/* ─── Seção 7: Preço de Venda ────────────────────────────────── */}
+        <section className="alfalux-card p-6">
+          <div className="flex items-center gap-2 mb-5">
+            <Tag className="w-4 h-4 text-emerald-400" />
+            <h2 className="section-header mb-0">PREÇO DE VENDA</h2>
+            <span className="text-[10px] text-muted-foreground ml-auto">
+              OPCIONAL — {form.categoria?.toUpperCase() === "PERFIS" ? "R$/METRO LINEAR" : "R$/PEÇA"}
+            </span>
+          </div>
+
+          <p className="text-xs text-muted-foreground mb-4">
+            Informe o preço de venda para cada tipo de driver disponível neste produto.
+            {form.categoria?.toUpperCase() === "PERFIS" && (
+              <span className="ml-1 text-emerald-400 font-medium">Perfis: preço por metro linear.</span>
+            )}
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* ON/OFF 220V — sempre presente, sem flag NaoAplicavel */}
+            <FieldWrapper label="ON/OFF 220Vac (R$)" touched={touched} errors={errors}>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
+                <Input
+                  className="input-dark pl-9"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={form.precoVendaOnoff220}
+                  onChange={(e) => setField("precoVendaOnoff220", e.target.value)}
+                  placeholder="0,00"
+                />
+              </div>
+            </FieldWrapper>
+
+            {/* ON/OFF BIVOLT */}
+            {!form.driverOnoffBivoltNaoAplicavel && (
+              <FieldWrapper label="ON/OFF BIVOLT (R$)" touched={touched} errors={errors}>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
+                  <Input
+                    className="input-dark pl-9"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.precoVendaOnoffBivolt}
+                    onChange={(e) => setField("precoVendaOnoffBivolt", e.target.value)}
+                    placeholder="0,00"
+                  />
+                </div>
+              </FieldWrapper>
+            )}
+
+            {/* DIM 1-10V */}
+            {!form.driverDim110vNaoAplicavel && (
+              <FieldWrapper label="DIM 1-10V (R$)" touched={touched} errors={errors}>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
+                  <Input
+                    className="input-dark pl-9"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.precoVendaDim110v}
+                    onChange={(e) => setField("precoVendaDim110v", e.target.value)}
+                    placeholder="0,00"
+                  />
+                </div>
+              </FieldWrapper>
+            )}
+
+            {/* DIM DALI */}
+            {!form.driverDimDaliNaoAplicavel && (
+              <FieldWrapper label="DIM DALI (R$)" touched={touched} errors={errors}>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
+                  <Input
+                    className="input-dark pl-9"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.precoVendaDimDali}
+                    onChange={(e) => setField("precoVendaDimDali", e.target.value)}
+                    placeholder="0,00"
+                  />
+                </div>
+              </FieldWrapper>
+            )}
+
+            {/* Fallback: todos os drivers são NÃO APLICÁVEL */}
+            {form.driverOnoffBivoltNaoAplicavel && form.driverDim110vNaoAplicavel && form.driverDimDaliNaoAplicavel && (
+              <div className="col-span-2">
+                <FieldWrapper label="ON/OFF 220Vac (R$)" touched={touched} errors={errors}>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
+                    <Input
+                      className="input-dark pl-9"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={form.precoVendaOnoff220}
+                      onChange={(e) => setField("precoVendaOnoff220", e.target.value)}
+                      placeholder="0,00"
+                    />
+                  </div>
+                </FieldWrapper>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* ─── Validação Summary ───────────────────────────────────────── */}
         {Object.entries(errors).some(([, msg]) => !!msg) && (
           <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 animate-fade-in">
             <div className="flex items-center gap-2 mb-2">
