@@ -875,14 +875,14 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                   <Input
                     className="input-dark text-sm text-center px-2 w-16"
                     type="number"
-                    min="1"
+                    min="0.01"
                     max="999"
-                    step="0.1"
+                    step="0.01"
                     value={form.qtdModuloLed ?? 1}
                     onChange={(e) => {
                       const raw = e.target.value.replace(',', '.');
                       const parsed = parseFloat(raw);
-                      setField("qtdModuloLed", isNaN(parsed) ? 1 : Math.max(0.1, Math.round(parsed * 100) / 100));
+                      setField("qtdModuloLed", isNaN(parsed) ? 1 : Math.max(0.01, Math.round(parsed * 1000) / 1000));
                     }}
                     onKeyDown={(e) => {
                       // Permitir vírgula como separador decimal

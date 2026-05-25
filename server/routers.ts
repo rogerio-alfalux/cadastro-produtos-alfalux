@@ -26,7 +26,7 @@ const productSchema = z.object({
   sku: z.string().min(1, "SKU é obrigatório"),
   produto: z.string().min(1, "PRODUTO é obrigatório"),
   moduloLed: z.string().min(1, "MÓDULO LED é obrigatório"),
-  qtdModuloLed: z.number().min(0.1).default(1),
+  qtdModuloLed: z.number().min(0.01).default(1),
   // Ótica: obrigatório a menos que NaoAplicavel=true
   otica: z.string().optional().default(""),
   qtdOtica: z.number().int().min(1).default(1),
@@ -96,7 +96,7 @@ const bulkProductSchema = z.object({
   sku: z.string().default(""),
   produto: z.string().default(""),
   moduloLed: z.string().default(""),
-  qtdModuloLed: z.number().min(0.1).default(1),
+  qtdModuloLed: z.number().min(0.01).default(1),
   otica: z.string().default(""),
   qtdOtica: z.number().int().min(1).default(1),
   oticaNaoAplicavel: z.boolean().default(false),
