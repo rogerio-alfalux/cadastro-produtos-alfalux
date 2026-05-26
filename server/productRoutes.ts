@@ -623,6 +623,30 @@ router.get("/all", async (_req, res) => {
       result.ledModuleQtd = p.moduloLed ? qtdLed : null;
       result.holderQtd = p.holderNaoAplicavel ? null : qtdHolder;
 
+      // Campos de preço por metro linear para categoria PERFIS
+      // Retorna null quando o controle não está disponível para o produto
+      const isPerfil = cat === "PERFIS";
+      result.precoOnOff220 = isPerfil
+        ? (isValidDriver(p.driverOnoff220) && (p as any).precoVendaOnoff220 != null
+            ? Number((p as any).precoVendaOnoff220)
+            : null)
+        : null;
+      result.precoOnOffBivolt = isPerfil
+        ? (!p.driverOnoffBivoltNaoAplicavel && isValidDriver(p.driverOnoffBivolt) && (p as any).precoVendaOnoffBivolt != null
+            ? Number((p as any).precoVendaOnoffBivolt)
+            : null)
+        : null;
+      result.precoDim110v = isPerfil
+        ? (!p.driverDim110vNaoAplicavel && isValidDriver(p.driverDim110v) && (p as any).precoVendaDim110v != null
+            ? Number((p as any).precoVendaDim110v)
+            : null)
+        : null;
+      result.precoDimDali = isPerfil
+        ? (!p.driverDimDaliNaoAplicavel && isValidDriver(p.driverDimDali) && (p as any).precoVendaDimDali != null
+            ? Number((p as any).precoVendaDimDali)
+            : null)
+        : null;
+
       // Quantidades numéricas de drivers
       result.driverQtd220 = isValidDriver(p.driverOnoff220)
         ? (p.qtdDriverOnoff220 != null ? Number(p.qtdDriverOnoff220) : 1)
