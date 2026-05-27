@@ -79,6 +79,7 @@ const productSchema = z.object({
   precoVendaDim110vD1D2:     z.string().nullish(),
   precoVendaDimDaliD1:       z.string().nullish(),
   precoVendaDimDaliD1D2:     z.string().nullish(),
+  configuracaoPlanos:         z.enum(["D1", "D2", "D1+D2"]).nullish(),
 }).superRefine((data, ctx) => {
   // Validar Ótica: obrigatório se não for NaoAplicavel
   if (!data.oticaNaoAplicavel && (!data.otica || data.otica.trim() === "")) {
@@ -153,6 +154,7 @@ const bulkProductSchema = z.object({
   precoVendaDim110vD1D2:     z.string().optional(),
   precoVendaDimDaliD1:       z.string().optional(),
   precoVendaDimDaliD1D2:     z.string().optional(),
+  configuracaoPlanos:         z.enum(["D1", "D2", "D1+D2"]).optional(),
 });
 
 // ─── Router ───────────────────────────────────────────────────────────────────
@@ -245,6 +247,7 @@ export const appRouter = router({
           precoVendaDim110vD1D2:     input.precoVendaDim110vD1D2     || null,
           precoVendaDimDaliD1:       input.precoVendaDimDaliD1       || null,
           precoVendaDimDaliD1D2:     input.precoVendaDimDaliD1D2     || null,
+          configuracaoPlanos:         input.configuracaoPlanos          ?? null,
         };
         await createProduct(data);
         return { success: true };
@@ -322,6 +325,7 @@ export const appRouter = router({
         if (d.precoVendaDim110vD1D2 !== undefined)     update.precoVendaDim110vD1D2     = d.precoVendaDim110vD1D2     || null;
         if (d.precoVendaDimDaliD1 !== undefined)       update.precoVendaDimDaliD1       = d.precoVendaDimDaliD1       || null;
         if (d.precoVendaDimDaliD1D2 !== undefined)     update.precoVendaDimDaliD1D2     = d.precoVendaDimDaliD1D2     || null;
+        if (d.configuracaoPlanos !== undefined)          update.configuracaoPlanos        = d.configuracaoPlanos         ?? null;
 
         await updateProduct(input.id, update as any);
         return { success: true };

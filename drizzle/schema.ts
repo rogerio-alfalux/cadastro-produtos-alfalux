@@ -105,6 +105,10 @@ export const products = mysqlTable("products", {
   precoVendaDimDaliD1:       decimal("precoVendaDimDaliD1",       { precision: 10, scale: 2 }),
   precoVendaDimDaliD1D2:     decimal("precoVendaDimDaliD1D2",     { precision: 10, scale: 2 }),
 
+  // Configuração de planos de iluminação (exclusivo para PERFIS)
+  // D1 = iluminação para baixo, D2 = iluminação para cima, D1+D2 = dois planos
+  configuracaoPlanos: mysqlEnum("configuracaoPlanos", ["D1", "D2", "D1+D2"]),
+
   // Metadados
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

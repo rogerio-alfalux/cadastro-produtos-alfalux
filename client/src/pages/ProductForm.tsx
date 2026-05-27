@@ -377,6 +377,8 @@ interface FormData {
   precoVendaOnoffBivolt: string;
   precoVendaDim110v: string;
   precoVendaDimDali: string;
+  // Configuração de planos (exclusivo para PERFIS)
+  configuracaoPlanos: "D1" | "D2" | "D1+D2" | "";
   // Preço D1/D1+D2 (perfis com dois planos)
   precoVendaOnoff220D1: string;
   precoVendaOnoff220D1D2: string;
@@ -428,6 +430,7 @@ const defaultForm: FormData = {
   precoVendaOnoffBivolt: "",
   precoVendaDim110v: "",
   precoVendaDimDali: "",
+  configuracaoPlanos: "",
   precoVendaOnoff220D1: "",
   precoVendaOnoff220D1D2: "",
   precoVendaOnoffBivoltD1: "",
@@ -537,6 +540,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         precoVendaOnoffBivolt: p.precoVendaOnoffBivolt ? String(p.precoVendaOnoffBivolt) : "",
         precoVendaDim110v: p.precoVendaDim110v ? String(p.precoVendaDim110v) : "",
         precoVendaDimDali: p.precoVendaDimDali ? String(p.precoVendaDimDali) : "",
+        configuracaoPlanos: (p as any).configuracaoPlanos || "",
         precoVendaOnoff220D1: (p as any).precoVendaOnoff220D1 ? String((p as any).precoVendaOnoff220D1) : "",
         precoVendaOnoff220D1D2: (p as any).precoVendaOnoff220D1D2 ? String((p as any).precoVendaOnoff220D1D2) : "",
         precoVendaOnoffBivoltD1: (p as any).precoVendaOnoffBivoltD1 ? String((p as any).precoVendaOnoffBivoltD1) : "",
@@ -712,6 +716,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       precoVendaOnoffBivolt: form.precoVendaOnoffBivolt || undefined,
       precoVendaDim110v: form.precoVendaDim110v || undefined,
       precoVendaDimDali: form.precoVendaDimDali || undefined,
+      configuracaoPlanos: (form.configuracaoPlanos as "D1" | "D2" | "D1+D2" | undefined) || undefined,
       precoVendaOnoff220D1:      form.precoVendaOnoff220D1      || undefined,
       precoVendaOnoff220D1D2:    form.precoVendaOnoff220D1D2    || undefined,
       precoVendaOnoffBivoltD1:   form.precoVendaOnoffBivoltD1   || undefined,
@@ -1408,6 +1413,43 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
               <span className="ml-1 text-emerald-400 font-medium">Perfis: preço por metro linear.</span>
             )}
           </p>
+
+          {/* Configuração de planos — apenas para PERFIS */}
+          {form.categoria?.toUpperCase() === "PERFIS" && (
+            <div className="mb-5 p-4 rounded-lg bg-amber-500/10 border border-amber-500/30">
+              <label className="block text-xs font-semibold text-amber-400 uppercase tracking-wide mb-2">
+                Configuração de Planos de Iluminação
+              </label>
+              <p className="text-xs text-muted-foreground mb-3">
+                Define como o perfil distribui a iluminação. Usado para selecionar o preço correto automaticamente.
+              </p>
+              <div className="flex gap-2 flex-wrap">
+                {(["D1", "D2", "D1+D2"] as const).map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setField("configuracaoPlanos", form.configuracaoPlanos === opt ? "" : opt)}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-all ${
+                      form.configuracaoPlanos === opt
+                        ? "bg-amber-500 border-amber-500 text-black"
+                        : "bg-transparent border-border text-muted-foreground hover:border-amber-400 hover:text-amber-400"
+                    }`}
+                  >
+                    {opt === "D1" ? "D1 — Iluminação para baixo" :
+                     opt === "D2" ? "D2 — Iluminação para cima" :
+                     "D1+D2 — Dois planos (cima e baixo)"}
+                  </button>
+                ))}
+              </div>
+              {form.configuracaoPlanos && (
+                <p className="text-xs text-amber-400/80 mt-2">
+                  {form.configuracaoPlanos === "D1+D2"
+                    ? "Os campos de preço D1+D2 abaixo serão usados pelo configurador."
+                    : "Os campos de preço padrão abaixo serão usados pelo configurador."}
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* ON/OFF 220V — sempre presente, sem flag NaoAplicavel */}
