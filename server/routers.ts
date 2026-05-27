@@ -70,6 +70,15 @@ const productSchema = z.object({
   precoVendaOnoffBivolt: z.string().nullish(),
   precoVendaDim110v: z.string().nullish(),
   precoVendaDimDali: z.string().nullish(),
+  // Preço de venda D1/D1+D2 (perfis com dois planos de iluminação)
+  precoVendaOnoff220D1:      z.string().nullish(),
+  precoVendaOnoff220D1D2:    z.string().nullish(),
+  precoVendaOnoffBivoltD1:   z.string().nullish(),
+  precoVendaOnoffBivoltD1D2: z.string().nullish(),
+  precoVendaDim110vD1:       z.string().nullish(),
+  precoVendaDim110vD1D2:     z.string().nullish(),
+  precoVendaDimDaliD1:       z.string().nullish(),
+  precoVendaDimDaliD1D2:     z.string().nullish(),
 }).superRefine((data, ctx) => {
   // Validar Ótica: obrigatório se não for NaoAplicavel
   if (!data.oticaNaoAplicavel && (!data.otica || data.otica.trim() === "")) {
@@ -135,6 +144,15 @@ const bulkProductSchema = z.object({
   precoVendaOnoffBivolt: z.string().optional(),
   precoVendaDim110v: z.string().optional(),
   precoVendaDimDali: z.string().optional(),
+  // Preço de venda D1/D1+D2
+  precoVendaOnoff220D1:      z.string().optional(),
+  precoVendaOnoff220D1D2:    z.string().optional(),
+  precoVendaOnoffBivoltD1:   z.string().optional(),
+  precoVendaOnoffBivoltD1D2: z.string().optional(),
+  precoVendaDim110vD1:       z.string().optional(),
+  precoVendaDim110vD1D2:     z.string().optional(),
+  precoVendaDimDaliD1:       z.string().optional(),
+  precoVendaDimDaliD1D2:     z.string().optional(),
 });
 
 // ─── Router ───────────────────────────────────────────────────────────────────
@@ -219,6 +237,14 @@ export const appRouter = router({
           precoVendaOnoffBivolt: input.precoVendaOnoffBivolt || null,
           precoVendaDim110v: input.precoVendaDim110v || null,
           precoVendaDimDali: input.precoVendaDimDali || null,
+          precoVendaOnoff220D1:      input.precoVendaOnoff220D1      || null,
+          precoVendaOnoff220D1D2:    input.precoVendaOnoff220D1D2    || null,
+          precoVendaOnoffBivoltD1:   input.precoVendaOnoffBivoltD1   || null,
+          precoVendaOnoffBivoltD1D2: input.precoVendaOnoffBivoltD1D2 || null,
+          precoVendaDim110vD1:       input.precoVendaDim110vD1       || null,
+          precoVendaDim110vD1D2:     input.precoVendaDim110vD1D2     || null,
+          precoVendaDimDaliD1:       input.precoVendaDimDaliD1       || null,
+          precoVendaDimDaliD1D2:     input.precoVendaDimDaliD1D2     || null,
         };
         await createProduct(data);
         return { success: true };
@@ -288,6 +314,14 @@ export const appRouter = router({
         if (d.precoVendaOnoffBivolt !== undefined) update.precoVendaOnoffBivolt = d.precoVendaOnoffBivolt || null;
         if (d.precoVendaDim110v !== undefined) update.precoVendaDim110v = d.precoVendaDim110v || null;
         if (d.precoVendaDimDali !== undefined) update.precoVendaDimDali = d.precoVendaDimDali || null;
+        if (d.precoVendaOnoff220D1 !== undefined)      update.precoVendaOnoff220D1      = d.precoVendaOnoff220D1      || null;
+        if (d.precoVendaOnoff220D1D2 !== undefined)    update.precoVendaOnoff220D1D2    = d.precoVendaOnoff220D1D2    || null;
+        if (d.precoVendaOnoffBivoltD1 !== undefined)   update.precoVendaOnoffBivoltD1   = d.precoVendaOnoffBivoltD1   || null;
+        if (d.precoVendaOnoffBivoltD1D2 !== undefined) update.precoVendaOnoffBivoltD1D2 = d.precoVendaOnoffBivoltD1D2 || null;
+        if (d.precoVendaDim110vD1 !== undefined)       update.precoVendaDim110vD1       = d.precoVendaDim110vD1       || null;
+        if (d.precoVendaDim110vD1D2 !== undefined)     update.precoVendaDim110vD1D2     = d.precoVendaDim110vD1D2     || null;
+        if (d.precoVendaDimDaliD1 !== undefined)       update.precoVendaDimDaliD1       = d.precoVendaDimDaliD1       || null;
+        if (d.precoVendaDimDaliD1D2 !== undefined)     update.precoVendaDimDaliD1D2     = d.precoVendaDimDaliD1D2     || null;
 
         await updateProduct(input.id, update as any);
         return { success: true };

@@ -647,6 +647,17 @@ router.get("/all", async (_req, res) => {
             : null)
         : null;
 
+      // Preços D1/D1+D2 — exclusivo para PERFIS com dois planos de iluminação
+      const toNum = (v: any) => (v != null ? Number(v) : null);
+      result.precoOnOff220D1      = isPerfil ? toNum((p as any).precoVendaOnoff220D1)      : null;
+      result.precoOnOff220D1D2    = isPerfil ? toNum((p as any).precoVendaOnoff220D1D2)    : null;
+      result.precoOnOffBivoltD1   = isPerfil ? toNum((p as any).precoVendaOnoffBivoltD1)   : null;
+      result.precoOnOffBivoltD1D2 = isPerfil ? toNum((p as any).precoVendaOnoffBivoltD1D2) : null;
+      result.precoDim110vD1       = isPerfil ? toNum((p as any).precoVendaDim110vD1)       : null;
+      result.precoDim110vD1D2     = isPerfil ? toNum((p as any).precoVendaDim110vD1D2)     : null;
+      result.precoDimDaliD1       = isPerfil ? toNum((p as any).precoVendaDimDaliD1)       : null;
+      result.precoDimDaliD1D2     = isPerfil ? toNum((p as any).precoVendaDimDaliD1D2)     : null;
+
       // Quantidades numéricas de drivers
       result.driverQtd220 = isValidDriver(p.driverOnoff220)
         ? (p.qtdDriverOnoff220 != null ? Number(p.qtdDriverOnoff220) : 1)

@@ -94,6 +94,17 @@ export const products = mysqlTable("products", {
   precoVendaDim110v: decimal("precoVendaDim110v", { precision: 10, scale: 2 }),
   precoVendaDimDali: decimal("precoVendaDimDali", { precision: 10, scale: 2 }),
 
+  // Preço de venda por tipo de driver — configuração D1 (simples) e D1+D2 (duplo)
+  // Exclusivo para categoria PERFIS com dois planos de iluminação
+  precoVendaOnoff220D1:      decimal("precoVendaOnoff220D1",      { precision: 10, scale: 2 }),
+  precoVendaOnoff220D1D2:    decimal("precoVendaOnoff220D1D2",    { precision: 10, scale: 2 }),
+  precoVendaOnoffBivoltD1:   decimal("precoVendaOnoffBivoltD1",   { precision: 10, scale: 2 }),
+  precoVendaOnoffBivoltD1D2: decimal("precoVendaOnoffBivoltD1D2", { precision: 10, scale: 2 }),
+  precoVendaDim110vD1:       decimal("precoVendaDim110vD1",       { precision: 10, scale: 2 }),
+  precoVendaDim110vD1D2:     decimal("precoVendaDim110vD1D2",     { precision: 10, scale: 2 }),
+  precoVendaDimDaliD1:       decimal("precoVendaDimDaliD1",       { precision: 10, scale: 2 }),
+  precoVendaDimDaliD1D2:     decimal("precoVendaDimDaliD1D2",     { precision: 10, scale: 2 }),
+
   // Metadados
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
