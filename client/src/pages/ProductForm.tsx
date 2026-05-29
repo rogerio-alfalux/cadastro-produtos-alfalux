@@ -444,7 +444,7 @@ const defaultForm: FormData = {
 // Required fields (driverOnoffBivolt is conditional — required only if not NaoAplicavel)
 const REQUIRED_FIELDS: (keyof FormData)[] = [
   "instalacao", "familia", "sku", "produto", "moduloLed",
-  "otica", "holder", "dissipador", "driverOnoff220", "driverOnoffBivolt",
+  "otica", "holder", "dissipador",
 ];
 
 const FIELD_LABELS: Record<string, string> = {
@@ -456,8 +456,6 @@ const FIELD_LABELS: Record<string, string> = {
   otica: "ÓTICA MÓDULO LED",
   holder: "HOLDER",
   dissipador: "DISSIPADOR",
-  driverOnoff220: "ON/OFF DRIVER 220Vac",
-  driverOnoffBivolt: "ON/OFF DRIVER BIVOLT",
 };
 
 interface ProductFormProps {
@@ -476,6 +474,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
   const [produtoOriginalNome, setProdutoOriginalNome] = useState<string | null>(null);
   const [driversExtra, setDriversExtra] = useState<DriversExtraState>(defaultDriversExtra);
   const [oticasExtra, setOticasExtra] = useState<OticaExtra[]>([]);
+  const [showSemDriverDialog, setShowSemDriverDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   // Keep a ref that always points to the latest form state so validate()
   // never reads a stale closure value
@@ -689,7 +688,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
     }
   };
 
-  const handleSubmit = () => {
+  const doSubmit = () => {
     // Sync ref before validating to ensure we read the absolute latest state
     formRef.current = form;
     if (!validate()) {
@@ -765,6 +764,21 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
     }
   };
 
+  // handleSubmit: verifica se há algum driver preenchido; se não, exibe aviso antes de salvar
+  const handleSubmit = () => {
+    const f = formRef.current;
+    const temAlgumDriver =
+      (f.driverOnoff220 && f.driverOnoff220.trim()) ||
+      (f.driverOnoffBivolt && f.driverOnoffBivolt.trim() && !f.driverOnoffBivoltNaoAplicavel) ||
+      (f.driverDim110v && f.driverDim110v.trim() && !f.driverDim110vNaoAplicavel) ||
+      (f.driverDimDali && f.driverDimDali.trim() && !f.driverDimDaliNaoAplicavel);
+    if (!temAlgumDriver) {
+      setShowSemDriverDialog(true);
+      return;
+    }
+    doSubmit();
+  };
+
   const isLoading = createMutation.isPending || updateMutation.isPending;
   // formValid: campos obrigatórios preenchidos E nenhum erro real (com mensagem) no estado
   const formValid = isFormValid() && !Object.values(errors).some((msg) => !!msg);
@@ -777,6 +791,41 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
 
   return (
     <div className="max-w-5xl mx-auto animate-fade-in">
+      {/* Diálogo de aviso: produto sem driver */}
+      {showSemDriverDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-card border border-border rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                <svg className="w-5 h-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground text-base">Produto sem driver</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Nenhum driver foi cadastrado para este produto. Produtos sem driver não poderão ser configurados pelo sistema.<br /><br />
+                  Deseja salvar mesmo assim?
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowSemDriverDialog(false)}
+                className="px-4 py-2 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => { setShowSemDriverDialog(false); doSubmit(); }}
+                className="px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-black text-sm font-semibold transition-colors"
+              >
+                Salvar sem driver
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Page Header */}
       <div className="flex items-center gap-4 mb-6">
         <button

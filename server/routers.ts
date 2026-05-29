@@ -39,7 +39,7 @@ const productSchema = z.object({
   dissipador: z.string().optional().default(""),
   qtdDissipador: z.number().int().min(1).default(1),
   dissipadorNaoAplicavel: z.boolean().default(false),
-  driverOnoff220: z.string().min(1, "ON/OFF DRIVER 220Vac é obrigatório"),
+  driverOnoff220: z.string().optional().default(""),
   qtdDriverOnoff220: z.number().int().min(1).default(1),
   driverOnoffBivolt: z.string().optional().default(""),
   qtdDriverOnoffBivolt: z.number().int().min(1).default(1),
