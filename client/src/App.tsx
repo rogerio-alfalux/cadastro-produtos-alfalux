@@ -9,6 +9,7 @@ import ProductList from "./pages/ProductList";
 import ProductForm from "./pages/ProductForm";
 import ComponentsPage from "./pages/Components";
 import BulkOpsPage from "./pages/BulkOps";
+import RevendaPage from "./pages/Revenda";
 
 function CadastrarPage() {
   return <ProductForm />;
@@ -22,6 +23,7 @@ function Router() {
         <Route path="/cadastrar" component={CadastrarPage} />
         <Route path="/componentes" component={ComponentsPage} />
         <Route path="/operacoes-em-massa" component={BulkOpsPage} />
+        <Route path="/revenda" component={RevendaPage} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

@@ -289,3 +289,12 @@
 - [ ] Botão de remover ótica extra (lixeira)
 - [ ] Migração de dados: separar valores compostos "LENTE X + NxLOUVER Y" em primária + extras
 - [ ] API continua retornando dados corretamente
+
+## Feature v30 — Categoria REVENDA
+- [x] Criar tabela `revenda_products` no banco (id, codigo, descricao, referencia, fornecedor, observacoes, fotoUrl, fotoKey, custo, precoVenda, createdAt, updatedAt)
+- [x] Criar router tRPC `revenda` com procedures: list, listFornecedores, create, update, delete
+- [x] Criar endpoint público GET /api/revenda/all para o Configurador
+- [x] Criar página /revenda com listagem, busca, filtro por fornecedor e CRUD completo
+- [x] Adicionar link REVENDA no menu de navegação
+- [x] Importar 201 itens da planilha ITENSDEREVENDA.xlsx para o banco
+- [x] Testes vitest para a tabela revenda_products (5 testes passando)

@@ -6,6 +6,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { componentsRouter } from "./routers/components";
 import { bulkOpsRouter } from "./routers/bulkOps";
+import { revendaRouter } from "./routers/revenda";
 import {
   bulkInsertProducts,
   countProducts,
@@ -163,6 +164,7 @@ export const appRouter = router({
   system: systemRouter,
   components: componentsRouter,
   bulkOps: bulkOpsRouter,
+  revenda: revendaRouter,
   auth: router({
     me: publicProcedure.query((opts) => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {

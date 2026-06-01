@@ -155,3 +155,30 @@ export const components = mysqlTable("components", {
 
 export type Component = typeof components.$inferSelect;
 export type InsertComponent = typeof components.$inferInsert;
+
+// Tabela de produtos de revenda (itens de terceiros revendidos pela Alfalux)
+export const revendaProducts = mysqlTable("revenda_products", {
+  id: int("id").autoincrement().primaryKey(),
+
+  // Identificação
+  codigo: varchar("codigo", { length: 50 }).notNull().unique(),
+  descricao: text("descricao").notNull(),
+  referencia: varchar("referencia", { length: 200 }),
+  fornecedor: varchar("fornecedor", { length: 200 }),
+  observacoes: text("observacoes"),
+
+  // Foto (a ser adicionada futuramente)
+  fotoUrl: text("fotoUrl"),
+  fotoKey: text("fotoKey"),
+
+  // Financeiro
+  custo: decimal("custo", { precision: 10, scale: 2 }),
+  precoVenda: decimal("precoVenda", { precision: 10, scale: 2 }),
+
+  // Metadados
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type RevendaProduct = typeof revendaProducts.$inferSelect;
+export type InsertRevendaProduct = typeof revendaProducts.$inferInsert;
