@@ -50,6 +50,23 @@ type RevendaItem = {
   updatedAt: Date;
 };
 
+const IPI  = 0.0975;
+const ST   = 0.1104;
+const MULT = 1.6;
+
+function calcularPrecoVenda(custo: string, fornecedor: string): string {
+  const n = parseFloat(custo);
+  if (isNaN(n) || n <= 0) return "";
+  const forn = fornecedor.toUpperCase();
+  let preco: number;
+  if (forn.includes("REVOLUZ")) {
+    preco = Math.round(n * (1 + IPI) * (1 + ST) * MULT * 100) / 100;
+  } else {
+    preco = Math.round(n * MULT * 100) / 100;
+  }
+  return preco.toFixed(2);
+}
+
 const emptyForm = {
   codigo: "",
   descricao: "",
@@ -417,13 +434,20 @@ export default function RevendaPage() {
                   step="0.01"
                   min="0"
                   value={form.custo}
-                  onChange={(e) => setForm({ ...form, custo: e.target.value })}
+                  onChange={(e) => {
+                    const custo = e.target.value;
+                    const preco = calcularPrecoVenda(custo, form.fornecedor);
+                    setForm({ ...form, custo, precoVenda: preco });
+                  }}
                   placeholder="0,00"
                   className="text-sm"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold tracking-wider">PREÇO VENDA (R$)</Label>
+                <Label className="text-xs font-semibold tracking-wider">
+                  PREÇO VENDA (R$)
+                  <span className="ml-1 text-[10px] text-muted-foreground font-normal">(calculado)</span>
+                </Label>
                 <Input
                   type="number"
                   step="0.01"

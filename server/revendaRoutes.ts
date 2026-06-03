@@ -5,6 +5,19 @@ import { asc } from "drizzle-orm";
 
 const router = express.Router();
 
+// ─── Constantes de cálculo de preço de venda ────────────────────────────────
+const IPI  = 0.0975;
+const ST   = 0.1104;
+const MULT = 1.6;
+
+function calcularPrecoVenda(custo: number, fornecedor: string | null): number {
+  const forn = (fornecedor ?? "").toUpperCase();
+  if (forn.includes("REVOLUZ")) {
+    return Math.round(custo * (1 + IPI) * (1 + ST) * MULT * 100) / 100;
+  }
+  return Math.round(custo * MULT * 100) / 100;
+}
+
 // ─── Endpoint público para o Configurador ───────────────────────────────────
 // GET /api/revenda/all  (sem autenticação — consumido pelo Configurador)
 router.get("/all", async (_req, res) => {
@@ -23,17 +36,24 @@ router.get("/all", async (_req, res) => {
       .from(revendaProducts)
       .orderBy(asc(revendaProducts.fornecedor), asc(revendaProducts.codigo));
 
-    const formatted = items.map((p) => ({
-      id: p.id,
-      codigo: p.codigo,
-      descricao: p.descricao,
-      referencia: p.referencia ?? null,
-      fornecedor: p.fornecedor ?? null,
-      observacoes: p.observacoes ?? null,
-      fotoUrl: p.fotoUrl ?? null,
-      custo: p.custo != null ? Number(p.custo) : null,
-      precoVenda: p.precoVenda != null ? Number(p.precoVenda) : null,
-    }));
+    const formatted = items.map((p) => {
+      // Preço de venda: usa o valor já armazenado (calculado na importação)
+      // Se não houver precoVenda salvo mas houver custo, recalcula na hora
+      let precoVenda: number | null = null;
+      if (p.precoVenda != null) {
+        precoVenda = Number(p.precoVenda);
+      } else if (p.custo != null) {
+        precoVenda = calcularPrecoVenda(Number(p.custo), p.fornecedor);
+      }
+
+      return {
+        codigo:     p.codigo,
+        descricao:  p.descricao,
+        referencia: p.referencia ?? null,
+        fornecedor: p.fornecedor ?? null,
+        precoVenda,
+      };
+    });
 
     return res.json({
       count: formatted.length,

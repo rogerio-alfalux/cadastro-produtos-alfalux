@@ -298,3 +298,11 @@
 - [x] Adicionar link REVENDA no menu de navegação
 - [x] Importar 201 itens da planilha ITENSDEREVENDA.xlsx para o banco
 - [x] Testes vitest para a tabela revenda_products (5 testes passando)
+
+## Feature v31 — Preços de Revenda
+- [x] Importar custos da planilha ITENSDEREVENDA-PREÇO(02.06.2026).xlsx para o campo `custo`
+- [x] Calcular preço de venda com fórmulas: REVOLUZ = custo × (1+IPI) × (1+ST) × 1,6; demais = base × 1,6
+- [x] Base de cálculo = "VALOR FINAL S/FRETE" se preenchido, senão "VALOR"
+- [x] 79 itens com custo e preço de venda calculado; 122 sem preço na planilha (precoVenda=null)
+- [x] Endpoint /api/revenda/all retorna apenas precoVenda calculado (sem custo interno)
+- [x] Formulário de revenda calcula preço de venda automaticamente ao digitar custo
