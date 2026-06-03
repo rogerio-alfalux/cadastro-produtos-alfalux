@@ -245,6 +245,7 @@ export default function RevendaPage() {
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-border/50 bg-muted/30">
+                <th className="text-left px-3 py-3 font-semibold text-muted-foreground tracking-wider w-12">FOTO</th>
                 <th className="text-left px-4 py-3 font-semibold text-muted-foreground tracking-wider">CÓDIGO</th>
                 <th className="text-left px-4 py-3 font-semibold text-muted-foreground tracking-wider">DESCRIÇÃO</th>
                 <th className="text-left px-4 py-3 font-semibold text-muted-foreground tracking-wider hidden md:table-cell">REFERÊNCIA</th>
@@ -260,7 +261,7 @@ export default function RevendaPage() {
               {isLoading ? (
                 Array.from({ length: 8 }).map((_, i) => (
                   <tr key={i} className="border-b border-border/30">
-                    {[...Array(isAdmin ? 7 : 6)].map((_, j) => (
+                    {[...Array(isAdmin ? 8 : 7)].map((_, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-3 bg-muted/40 rounded animate-pulse" />
                       </td>
@@ -269,7 +270,7 @@ export default function RevendaPage() {
                 ))
               ) : items.length === 0 ? (
                 <tr>
-                  <td colSpan={isAdmin ? 7 : 6} className="px-4 py-12 text-center text-muted-foreground">
+                  <td colSpan={isAdmin ? 8 : 7} className="px-4 py-12 text-center text-muted-foreground">
                     <Package className="w-8 h-8 mx-auto mb-2 opacity-30" />
                     <p>Nenhum item encontrado</p>
                   </td>
@@ -280,6 +281,21 @@ export default function RevendaPage() {
                     key={item.id}
                     className="border-b border-border/30 hover:bg-muted/20 transition-colors"
                   >
+                    <td className="px-3 py-2">
+                      {item.fotoUrl ? (
+                        <img
+                          src={item.fotoUrl}
+                          alt={item.codigo}
+                          className="w-10 h-10 object-contain rounded border border-border/40 bg-white cursor-pointer hover:scale-150 transition-transform duration-200"
+                          onClick={() => window.open(item.fotoUrl!, '_blank')}
+                          title="Clique para ampliar"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded border border-border/30 bg-muted/20 flex items-center justify-center">
+                          <Package className="w-4 h-4 text-muted-foreground/30" />
+                        </div>
+                      )}
+                    </td>
                     <td className="px-4 py-3 font-mono text-primary font-medium">{item.codigo}</td>
                     <td className="px-4 py-3 text-foreground max-w-xs">
                       <div className="truncate" title={item.descricao}>{item.descricao}</div>

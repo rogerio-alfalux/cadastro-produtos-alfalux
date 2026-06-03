@@ -306,3 +306,10 @@
 - [x] 79 itens com custo e preço de venda calculado; 122 sem preço na planilha (precoVenda=null)
 - [x] Endpoint /api/revenda/all retorna apenas precoVenda calculado (sem custo interno)
 - [x] Formulário de revenda calcula preço de venda automaticamente ao digitar custo
+
+## Feature v32 — Upgrade Revenda: Novos Preços + Imagens
+- [x] Atualizar preços com planilha ITENSDEREVENDA-PREÇO(03.06.2026).xlsx (104 itens com preço)
+- [x] Inserir 15 novos produtos da nova planilha (total: 216 produtos)
+- [x] Upload de 54 imagens JPG para o storage webdev
+- [x] Associar fotoUrl a cada produto no banco
+- [x] Exibir thumbnail na tabela de revenda (clique para ampliar)
