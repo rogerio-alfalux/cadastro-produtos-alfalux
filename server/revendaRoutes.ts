@@ -52,6 +52,7 @@ router.get("/all", async (_req, res) => {
         referencia: p.referencia ?? null,
         fornecedor: p.fornecedor ?? null,
         precoVenda,
+        fotoUrl:    p.fotoUrl ?? null,
       };
     });
 
