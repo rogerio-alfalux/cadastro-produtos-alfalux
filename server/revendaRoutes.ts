@@ -2,6 +2,7 @@ import express from "express";
 import { getDb } from "./db";
 import { revendaProducts } from "../drizzle/schema";
 import { asc } from "drizzle-orm";
+import { storageGetSignedUrl } from "./storage";
 
 const router = express.Router();
 
@@ -16,6 +17,12 @@ function calcularPrecoVenda(custo: number, fornecedor: string | null): number {
     return Math.round(custo * (1 + IPI) * (1 + ST) * MULT * 100) / 100;
   }
   return Math.round(custo * MULT * 100) / 100;
+}
+
+// Extrai a chave do storage a partir de um fotoUrl (/manus-storage/<key>)
+function extractStorageKey(fotoUrl: string): string | null {
+  const match = fotoUrl.match(/^\/manus-storage\/(.+)$/);
+  return match ? match[1] : null;
 }
 
 // ─── Endpoint público para o Configurador ───────────────────────────────────
@@ -36,7 +43,8 @@ router.get("/all", async (_req, res) => {
       .from(revendaProducts)
       .orderBy(asc(revendaProducts.fornecedor), asc(revendaProducts.codigo));
 
-    const formatted = items.map((p) => {
+    // Gerar URLs assinadas para todas as imagens em paralelo
+    const formattedPromises = items.map(async (p) => {
       // Preço de venda: usa o valor já armazenado (calculado na importação)
       // Se não houver precoVenda salvo mas houver custo, recalcula na hora
       let precoVenda: number | null = null;
@@ -46,15 +54,33 @@ router.get("/all", async (_req, res) => {
         precoVenda = calcularPrecoVenda(Number(p.custo), p.fornecedor);
       }
 
+      // Gerar URL assinada S3 pública para a imagem (funciona em qualquer origem)
+      let fotoUrl: string | null = null;
+      if (p.fotoUrl) {
+        const key = extractStorageKey(p.fotoUrl);
+        if (key) {
+          try {
+            fotoUrl = await storageGetSignedUrl(key);
+          } catch {
+            // fallback: retorna o caminho relativo se a assinatura falhar
+            fotoUrl = p.fotoUrl;
+          }
+        } else {
+          fotoUrl = p.fotoUrl;
+        }
+      }
+
       return {
         codigo:     p.codigo,
         descricao:  p.descricao,
         referencia: p.referencia ?? null,
         fornecedor: p.fornecedor ?? null,
         precoVenda,
-        fotoUrl:    p.fotoUrl ?? null,
+        fotoUrl,
       };
     });
+
+    const formatted = await Promise.all(formattedPromises);
 
     return res.json({
       count: formatted.length,
@@ -68,4 +94,3 @@ router.get("/all", async (_req, res) => {
 });
 
 export default router;
-// fotoUrl fix: re-upload sem espaços Thu Jun  4 21:54:45 UTC 2026
