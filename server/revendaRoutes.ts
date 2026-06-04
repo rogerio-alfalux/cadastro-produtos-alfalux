@@ -68,3 +68,4 @@ router.get("/all", async (_req, res) => {
 });
 
 export default router;
+// fotoUrl fix: re-upload sem espaços Thu Jun  4 21:54:45 UTC 2026
