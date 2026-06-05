@@ -319,3 +319,28 @@
 - [x] Adicionar endpoint REST /api/revenda/upload-foto (upload via multipart → storage S3)
 - [x] Adicionar endpoint REST DELETE /api/revenda/:id/foto (remove fotoUrl do banco)
 - [x] Atualizar UI da página Revenda.tsx com área de upload drag-and-drop e botão de remover foto
+
+## Feature v34 — Categoria Acessórios
+
+- [ ] Criar tabela `accessories` no schema Drizzle com campos: id, codigo, sku, produto, familia, dimensao, fotoUrl, fotoKey, custo, precoVenda, createdAt, updatedAt
+- [ ] Executar migration SQL no banco
+- [ ] Criar router tRPC com procedures: list, create, update, delete
+- [ ] Criar endpoint público GET /api/acessorios/all com CORS aberto
+- [ ] Criar endpoint POST /api/acessorios/upload-foto para upload de imagem
+- [ ] Criar endpoint DELETE /api/acessorios/:id/foto para remover foto
+- [ ] Criar página Acessorios.tsx com listagem, busca, filtro por família e CRUD completo
+- [ ] Adicionar rota /acessorios no App.tsx
+- [ ] Adicionar item ACESSÓRIOS no menu de navegação
+- [ ] Escrever testes unitários para o router de acessórios
+
+## Feature v35 — Categoria Acessórios
+
+- [x] Tabela `accessories` criada no banco (codigo, sku, produto, familia, dimensao, fotoUrl, fotoKey, custo, precoVenda)
+- [x] Router tRPC `accessories` com list, listFamilias, getById, create, update, delete
+- [x] Endpoint público GET /api/acessorios/all (CORS aberto, URLs S3 assinadas)
+- [x] Endpoint POST /api/acessorios/upload-foto (upload de imagem para S3)
+- [x] Endpoint DELETE /api/acessorios/:id/foto (remover foto)
+- [x] Página Accessories.tsx com tabela, filtro por família, busca e CRUD completo
+- [x] Item ACESSÓRIOS adicionado na navegação (AlfaluxLayout)
+- [x] Rota /acessorios registrada no App.tsx
+- [x] Testes unitários (3 testes passando — total 48 testes)

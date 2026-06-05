@@ -10,6 +10,7 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import productRoutes from "../productRoutes";
 import revendaRoutes from "../revendaRoutes";
+import accessoriesRoutes from "../accessoriesRoutes";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -40,6 +41,7 @@ async function startServer() {
   registerOAuthRoutes(app);
   app.use("/api/products", productRoutes);
   app.use("/api/revenda", revendaRoutes);
+  app.use("/api/acessorios", accessoriesRoutes);
   // tRPC API
   app.use(
     "/api/trpc",

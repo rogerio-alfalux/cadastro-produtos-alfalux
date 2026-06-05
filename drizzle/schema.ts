@@ -182,3 +182,25 @@ export const revendaProducts = mysqlTable("revenda_products", {
 
 export type RevendaProduct = typeof revendaProducts.$inferSelect;
 export type InsertRevendaProduct = typeof revendaProducts.$inferInsert;
+
+// Tabela de acessórios (peças e acessórios fabricados ou revendidos pela Alfalux)
+export const accessories = mysqlTable("accessories", {
+  id: int("id").autoincrement().primaryKey(),
+  // Identificação
+  codigo: varchar("codigo", { length: 50 }),
+  sku: varchar("sku", { length: 100 }),
+  produto: text("produto"),
+  familia: varchar("familia", { length: 200 }),
+  dimensao: varchar("dimensao", { length: 200 }),
+  // Foto
+  fotoUrl: text("fotoUrl"),
+  fotoKey: text("fotoKey"),
+  // Financeiro
+  custo: decimal("custo", { precision: 10, scale: 2 }),
+  precoVenda: decimal("precoVenda", { precision: 10, scale: 2 }),
+  // Metadados
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type Accessory = typeof accessories.$inferSelect;
+export type InsertAccessory = typeof accessories.$inferInsert;

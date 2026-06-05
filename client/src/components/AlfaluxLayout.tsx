@@ -12,6 +12,7 @@ import {
   Cpu,
   Layers,
   ShoppingCart,
+  Wrench,
 } from "lucide-react";
 
 interface NavItem {
@@ -24,6 +25,7 @@ const navItems: NavItem[] = [
   { label: "PRODUTOS", href: "/", icon: Database },
   { label: "CADASTRAR", href: "/cadastrar", icon: PlusCircle },
   { label: "REVENDA", href: "/revenda", icon: ShoppingCart },
+  { label: "ACESSÓRIOS", href: "/acessorios", icon: Wrench },
   { label: "COMPONENTES", href: "/componentes", icon: Cpu },
   { label: "EM MASSA", href: "/operacoes-em-massa", icon: Layers },
 ];
@@ -129,7 +131,7 @@ export default function AlfaluxLayout({ children }: AlfaluxLayoutProps) {
             <span>ALFALUX</span>
             <ChevronRight className="w-3 h-3" />
             <span className="text-foreground font-medium">
-              {location === "/" ? "PRODUTOS" : location === "/cadastrar" ? "CADASTRAR PRODUTO" : location.startsWith("/revenda") ? "REVENDA" : location.startsWith("/componentes") ? "COMPONENTES" : location.startsWith("/operacoes-em-massa") ? "OPERAÇÕES EM MASSA" : "EDITAR PRODUTO"}
+              {location === "/" ? "PRODUTOS" : location === "/cadastrar" ? "CADASTRAR PRODUTO" : location.startsWith("/revenda") ? "REVENDA" : location.startsWith("/acessorios") ? "ACESSÓRIOS" : location.startsWith("/componentes") ? "COMPONENTES" : location.startsWith("/operacoes-em-massa") ? "OPERAÇÕES EM MASSA" : "EDITAR PRODUTO"}
             </span>
           </div>
         </div>

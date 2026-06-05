@@ -99,6 +99,13 @@
       "when": 1780333514705,
       "tag": "0013_striped_warpath",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "5",
+      "when": 1780683772679,
+      "tag": "0014_heavy_living_lightning",
+      "breakpoints": true
     }
   ]
 }
