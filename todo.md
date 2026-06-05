@@ -313,3 +313,9 @@
 - [x] Upload de 54 imagens JPG para o storage webdev
 - [x] Associar fotoUrl a cada produto no banco
 - [x] Exibir thumbnail na tabela de revenda (clique para ampliar)
+
+## Feature v33 — Gerenciamento de foto nos produtos de revenda
+
+- [x] Adicionar endpoint REST /api/revenda/upload-foto (upload via multipart → storage S3)
+- [x] Adicionar endpoint REST DELETE /api/revenda/:id/foto (remove fotoUrl do banco)
+- [x] Atualizar UI da página Revenda.tsx com área de upload drag-and-drop e botão de remover foto

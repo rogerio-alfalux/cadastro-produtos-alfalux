@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,9 @@ import {
   Package,
   ChevronLeft,
   ChevronRight,
+  Upload,
+  X,
+  ImageIcon,
 } from "lucide-react";
 
 const PAGE_SIZE = 50;
@@ -75,6 +78,8 @@ const emptyForm = {
   observacoes: "",
   custo: "",
   precoVenda: "",
+  fotoUrl: "",
+  fotoKey: "",
 };
 
 export default function RevendaPage() {
@@ -89,6 +94,11 @@ export default function RevendaPage() {
   const [editItem, setEditItem] = useState<RevendaItem | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [deleteConfirm, setDeleteConfirm] = useState<RevendaItem | null>(null);
+
+  // Photo state
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const utils = trpc.useUtils();
 
@@ -141,10 +151,49 @@ export default function RevendaPage() {
     onError: (err) => toast.error(err.message),
   });
 
+  // Photo upload handler
+  async function handlePhotoUpload(file: File) {
+    if (!file) return;
+    const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!allowed.includes(file.type)) {
+      toast.error("Apenas arquivos JPEG, JPG, PNG e WEBP são aceitos");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Arquivo muito grande. Máximo: 10MB");
+      return;
+    }
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/revenda/upload-foto", { method: "POST", body: fd });
+      const data = await res.json();
+      if (data.url) {
+        setForm((prev) => ({ ...prev, fotoUrl: data.url, fotoKey: data.key }));
+        setPhotoPreview(data.url);
+        toast.success("Foto enviada com sucesso!");
+      } else {
+        toast.error(data.error || "Erro ao enviar foto");
+      }
+    } catch {
+      toast.error("Erro ao enviar foto");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function removePhoto() {
+    setPhotoPreview(null);
+    setForm((prev) => ({ ...prev, fotoUrl: "", fotoKey: "" }));
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
   // Handlers
   function openCreate() {
     setEditItem(null);
     setForm(emptyForm);
+    setPhotoPreview(null);
     setDialogOpen(true);
   }
 
@@ -158,7 +207,10 @@ export default function RevendaPage() {
       observacoes: item.observacoes ?? "",
       custo: item.custo ?? "",
       precoVenda: item.precoVenda ?? "",
+      fotoUrl: item.fotoUrl ?? "",
+      fotoKey: item.fotoKey ?? "",
     });
+    setPhotoPreview(item.fotoUrl ?? null);
     setDialogOpen(true);
   }
 
@@ -171,6 +223,8 @@ export default function RevendaPage() {
       observacoes: form.observacoes || null,
       custo: form.custo || null,
       precoVenda: form.precoVenda || null,
+      fotoUrl: form.fotoUrl || null,
+      fotoKey: form.fotoKey || null,
     };
     if (editItem) {
       updateMutation.mutate({ id: editItem.id, ...payload });
@@ -287,7 +341,7 @@ export default function RevendaPage() {
                           src={item.fotoUrl}
                           alt={item.codigo}
                           className="w-10 h-10 object-contain rounded border border-border/40 bg-white cursor-pointer hover:scale-150 transition-transform duration-200"
-                          onClick={() => window.open(item.fotoUrl!, '_blank')}
+                          onClick={() => window.open(item.fotoUrl!, "_blank")}
                           title="Clique para ampliar"
                         />
                       ) : (
@@ -387,7 +441,7 @@ export default function RevendaPage() {
 
       {/* ─── Dialog Criar/Editar ─────────────────────────────────────────────── */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-sm font-bold tracking-wider">
               {editItem ? "EDITAR ITEM DE REVENDA" : "NOVO ITEM DE REVENDA"}
@@ -486,6 +540,80 @@ export default function RevendaPage() {
                 rows={3}
               />
             </div>
+
+            {/* ─── Foto ─────────────────────────────────────────────────────── */}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold tracking-wider flex items-center gap-1.5">
+                <ImageIcon className="w-3.5 h-3.5" />
+                FOTO DO PRODUTO
+                <span className="text-[10px] text-muted-foreground font-normal ml-1">OPCIONAL — JPEG, JPG, PNG</span>
+              </Label>
+
+              <div className="flex items-start gap-4">
+                {/* Preview */}
+                <div
+                  className={`w-24 h-24 rounded-lg border-2 border-dashed flex items-center justify-center overflow-hidden flex-shrink-0 transition-colors ${
+                    photoPreview
+                      ? "border-primary/40"
+                      : "border-border hover:border-primary/40 cursor-pointer"
+                  }`}
+                  onClick={() => !photoPreview && fileInputRef.current?.click()}
+                >
+                  {photoPreview ? (
+                    <img
+                      src={photoPreview}
+                      alt="Preview"
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center gap-1 text-muted-foreground">
+                      <ImageIcon className="w-6 h-6 opacity-40" />
+                      <span className="text-[9px] tracking-wider">SEM FOTO</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Upload area */}
+                <div className="flex-1">
+                  <div
+                    className="border-2 border-dashed border-border rounded-lg p-4 text-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-all"
+                    onClick={() => fileInputRef.current?.click()}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const file = e.dataTransfer.files[0];
+                      if (file) handlePhotoUpload(file);
+                    }}
+                  >
+                    <Upload className="w-5 h-5 text-muted-foreground mx-auto mb-1.5" />
+                    <p className="text-xs text-muted-foreground">
+                      {uploading ? "Enviando..." : "Arraste ou clique para selecionar"}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground/60 mt-0.5">JPEG, JPG, PNG — máx. 10MB</p>
+                  </div>
+                  {photoPreview && (
+                    <button
+                      type="button"
+                      onClick={removePhoto}
+                      className="mt-1.5 text-xs text-destructive hover:text-destructive/80 flex items-center gap-1 transition-colors"
+                    >
+                      <X className="w-3 h-3" /> Remover foto
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handlePhotoUpload(file);
+                }}
+              />
+            </div>
           </div>
 
           <DialogFooter>
@@ -495,7 +623,7 @@ export default function RevendaPage() {
             <Button
               size="sm"
               onClick={handleSubmit}
-              disabled={isSaving || !form.codigo.trim() || !form.descricao.trim()}
+              disabled={isSaving || !form.codigo.trim() || !form.descricao.trim() || uploading}
             >
               {isSaving ? "SALVANDO..." : editItem ? "SALVAR ALTERAÇÕES" : "CRIAR ITEM"}
             </Button>
