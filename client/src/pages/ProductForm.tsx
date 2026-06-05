@@ -443,7 +443,7 @@ const defaultForm: FormData = {
 
 // Required fields (driverOnoffBivolt is conditional — required only if not NaoAplicavel)
 const REQUIRED_FIELDS: (keyof FormData)[] = [
-  "instalacao", "familia", "sku", "produto", "moduloLed",
+  "instalacao", "familia", "produto",
   "otica", "holder", "dissipador",
 ];
 
