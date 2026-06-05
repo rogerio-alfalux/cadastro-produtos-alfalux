@@ -676,9 +676,10 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       const res = await fetch("/api/products/upload-image", { method: "POST", body: fd });
       const data = await res.json();
       if (data.url) {
-        setField("fotoUrl", data.url);
-        setField("fotoKey", data.key);
+        setForm((prev) => ({ ...prev, fotoUrl: data.url, fotoKey: data.key }));
         setPhotoPreview(data.url);
+        // Limpa todos os errors residuais — isFormValid() já recalcula o estado atual
+        setErrors({});
         toast.success("Foto enviada com sucesso!");
       }
     } catch {
