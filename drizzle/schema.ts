@@ -198,6 +198,7 @@ export const accessories = mysqlTable("accessories", {
   // Financeiro
   custo: decimal("custo", { precision: 10, scale: 2 }),
   precoVenda: decimal("precoVenda", { precision: 10, scale: 2 }),
+  observacoes: text("observacoes"),
   // Metadados
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

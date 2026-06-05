@@ -16,6 +16,7 @@ const accessorySchema = z.object({
   fotoKey: z.string().nullish(),
   custo: z.string().nullish(),
   precoVenda: z.string().nullish(),
+  observacoes: z.string().nullish(),
 });
 
 // ─── Router ───────────────────────────────────────────────────────────────────
@@ -116,6 +117,7 @@ export const accessoriesRouter = router({
         fotoKey: input.fotoKey || null,
         custo: input.custo || null,
         precoVenda: input.precoVenda || null,
+        observacoes: input.observacoes || null,
       });
       return { id: (result as any).insertId };
     }),
@@ -139,6 +141,7 @@ export const accessoriesRouter = router({
           fotoKey: data.fotoKey || null,
           custo: data.custo || null,
           precoVenda: data.precoVenda || null,
+          observacoes: data.observacoes || null,
         })
         .where(eq(accessories.id, id));
       return { success: true };

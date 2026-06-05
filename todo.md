@@ -344,3 +344,13 @@
 - [x] Item ACESSÓRIOS adicionado na navegação (AlfaluxLayout)
 - [x] Rota /acessorios registrada no App.tsx
 - [x] Testes unitários (3 testes passando — total 48 testes)
+
+## Feature v36 — Campo Observações em Acessórios
+
+- [x] Coluna `observacoes` adicionada à tabela `accessories` via ALTER TABLE
+- [x] Campo `observacoes` adicionado ao schema Drizzle (drizzle/schema.ts)
+- [x] Campo `observacoes` adicionado ao schema Zod do router (server/routers/accessories.ts)
+- [x] Campo `observacoes` incluído nas operações create e update do router
+- [x] Campo `observacoes` adicionado ao tipo AccessoryItem, emptyForm, openEdit e handleSubmit (Accessories.tsx)
+- [x] Textarea de observações adicionada ao formulário de criação/edição de acessórios
+- [x] 48 testes passando

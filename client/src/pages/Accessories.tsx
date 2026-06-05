@@ -48,6 +48,7 @@ type AccessoryItem = {
   fotoKey: string | null;
   custo: string | null;
   precoVenda: string | null;
+  observacoes: string | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -60,6 +61,7 @@ const emptyForm = {
   dimensao: "",
   custo: "",
   precoVenda: "",
+  observacoes: "",
   fotoUrl: "",
   fotoKey: "",
 };
@@ -188,6 +190,7 @@ export default function AccessoriesPage() {
       dimensao: item.dimensao ?? "",
       custo: item.custo ?? "",
       precoVenda: item.precoVenda ?? "",
+      observacoes: item.observacoes ?? "",
       fotoUrl: item.fotoUrl ?? "",
       fotoKey: item.fotoKey ?? "",
     });
@@ -204,6 +207,7 @@ export default function AccessoriesPage() {
       dimensao: form.dimensao || undefined,
       custo: form.custo || null,
       precoVenda: form.precoVenda || null,
+      observacoes: form.observacoes || null,
       fotoUrl: form.fotoUrl || null,
       fotoKey: form.fotoKey || null,
     };
@@ -512,6 +516,18 @@ export default function AccessoriesPage() {
                   className="text-sm"
                 />
               </div>
+            </div>
+
+            {/* ─── Observações ───────────────────────────────────────────── */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold tracking-wider">OBSERVAÇÕES</Label>
+              <textarea
+                value={form.observacoes}
+                onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
+                placeholder="Observações adicionais..."
+                rows={2}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
+              />
             </div>
 
             {/* ─── Foto ─────────────────────────────────────────────────────── */}
