@@ -354,3 +354,11 @@
 - [x] Campo `observacoes` adicionado ao tipo AccessoryItem, emptyForm, openEdit e handleSubmit (Accessories.tsx)
 - [x] Textarea de observações adicionada ao formulário de criação/edição de acessórios
 - [x] 48 testes passando
+
+## Feature v37 — Duplicar Acessório
+
+- [x] Botão "Duplicar" (ícone de copiar) em cada linha da tabela de acessórios
+- [x] Ao clicar em Duplicar, abre o formulário pré-preenchido com todos os dados do item original
+- [x] Campo Código limpo ao duplicar (forçar novo código único)
+- [x] Banner de aviso no topo do formulário indicando "DUPLICANDO A PARTIR DE: [NOME DO PRODUTO]"
+- [x] Ao salvar, cria um novo registro (não edita o original)

@@ -25,6 +25,7 @@ import {
   Plus,
   Pencil,
   Trash2,
+  Copy,
   Wrench,
   Layers,
   Package,
@@ -76,6 +77,7 @@ export default function AccessoriesPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<AccessoryItem | null>(null);
+  const [duplicateSource, setDuplicateSource] = useState<AccessoryItem | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [deleteConfirm, setDeleteConfirm] = useState<AccessoryItem | null>(null);
 
@@ -110,6 +112,7 @@ export default function AccessoriesPage() {
       toast.success("Acessório criado com sucesso!");
       utils.accessories.list.invalidate();
       utils.accessories.listFamilias.invalidate();
+      setDuplicateSource(null);
       setDialogOpen(false);
     },
     onError: (err) => toast.error(err.message),
@@ -175,13 +178,34 @@ export default function AccessoriesPage() {
 
   function openCreate() {
     setEditItem(null);
+    setDuplicateSource(null);
     setForm(emptyForm);
     setPhotoPreview(null);
     setDialogOpen(true);
   }
 
+  function openDuplicate(item: AccessoryItem) {
+    setEditItem(null);
+    setDuplicateSource(item);
+    setForm({
+      codigo: "", // limpo para forçar novo código
+      sku: item.sku ?? "",
+      produto: item.produto ?? "",
+      familia: item.familia ?? "",
+      dimensao: item.dimensao ?? "",
+      custo: item.custo ?? "",
+      precoVenda: item.precoVenda ?? "",
+      observacoes: item.observacoes ?? "",
+      fotoUrl: item.fotoUrl ?? "",
+      fotoKey: item.fotoKey ?? "",
+    });
+    setPhotoPreview(item.fotoUrl ?? null);
+    setDialogOpen(true);
+  }
+
   function openEdit(item: AccessoryItem) {
     setEditItem(item);
+    setDuplicateSource(null);
     setForm({
       codigo: item.codigo ?? "",
       sku: item.sku ?? "",
@@ -367,7 +391,17 @@ export default function AccessoriesPage() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            className="h-7 w-7 p-0 text-muted-foreground hover:text-primary"
+                            title="Duplicar acessório"
+                            onClick={() => openDuplicate(item)}
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             className="h-7 w-7 p-0"
+                            title="Editar acessório"
                             onClick={() => openEdit(item)}
                           >
                             <Pencil className="w-3.5 h-3.5" />
@@ -376,6 +410,7 @@ export default function AccessoriesPage() {
                             variant="ghost"
                             size="sm"
                             className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                            title="Excluir acessório"
                             onClick={() => setDeleteConfirm(item)}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -428,9 +463,19 @@ export default function AccessoriesPage() {
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-sm font-bold tracking-wider">
-              {editItem ? "EDITAR ACESSÓRIO" : "NOVO ACESSÓRIO"}
+              {editItem ? "EDITAR ACESSÓRIO" : duplicateSource ? "DUPLICAR ACESSÓRIO" : "NOVO ACESSÓRIO"}
             </DialogTitle>
           </DialogHeader>
+
+          {duplicateSource && (
+            <div className="flex items-center gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">
+              <Copy className="w-3.5 h-3.5 flex-shrink-0" />
+              <span>
+                <span className="font-semibold">DUPLICANDO A PARTIR DE:</span>{" "}
+                {duplicateSource.produto || duplicateSource.codigo || "item sem nome"}
+              </span>
+            </div>
+          )}
 
           <div className="grid gap-4 py-2">
             <div className="grid grid-cols-2 gap-3">
