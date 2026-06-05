@@ -24,9 +24,9 @@ const productSchema = z.object({
   categoria: z.string().optional(),
   instalacao: z.string().min(1, "INSTALAÇÃO é obrigatório"),
   familia: z.string().min(1, "FAMÍLIA é obrigatório"),
-  sku: z.string().min(1, "SKU é obrigatório"),
+  sku: z.string().optional().default(""),
   produto: z.string().min(1, "PRODUTO é obrigatório"),
-  moduloLed: z.string().min(1, "MÓDULO LED é obrigatório"),
+  moduloLed: z.string().optional().default(""),
   qtdModuloLed: z.number().min(0.01).default(1),
   // Ótica: obrigatório a menos que NaoAplicavel=true
   otica: z.string().optional().default(""),
