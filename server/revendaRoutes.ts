@@ -99,7 +99,7 @@ router.get("/all", async (_req, res) => {
     const items = await db
       .select()
       .from(revendaProducts)
-      .orderBy(asc(revendaProducts.fornecedor), asc(revendaProducts.codigo));
+      .orderBy(asc(revendaProducts.codigo));
 
     // Gerar URLs assinadas para todas as imagens em paralelo
     const formattedPromises = items.map(async (p) => {
