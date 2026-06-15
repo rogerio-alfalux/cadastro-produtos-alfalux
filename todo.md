@@ -362,3 +362,4 @@
 - [x] Campo Código limpo ao duplicar (forçar novo código único)
 - [x] Banner de aviso no topo do formulário indicando "DUPLICANDO A PARTIR DE: [NOME DO PRODUTO]"
 - [x] Ao salvar, cria um novo registro (não edita o original)
+- [x] Liberar a Geysa para inserir e editar produtos, componentes, drivers, fontes, revenda e acessórios sem bloqueios indevidos de login ou perfil.

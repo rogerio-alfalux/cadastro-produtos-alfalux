@@ -165,6 +165,7 @@ export const revendaProducts = mysqlTable("revenda_products", {
   descricao: text("descricao").notNull(),
   referencia: varchar("referencia", { length: 200 }),
   fornecedor: varchar("fornecedor", { length: 200 }),
+  familia: varchar("familia", { length: 200 }),
   observacoes: text("observacoes"),
 
   // Foto (a ser adicionada futuramente)

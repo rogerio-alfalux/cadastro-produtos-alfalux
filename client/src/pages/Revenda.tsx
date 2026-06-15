@@ -84,7 +84,7 @@ const emptyForm = {
 
 export default function RevendaPage() {
   const { user } = useAuth();
-  const isAdmin = user?.role === "admin";
+  const isLoggedIn = !!user;
 
   const [search, setSearch] = useState("");
   const [fornecedorFilter, setFornecedorFilter] = useState<string>("__all__");
@@ -255,7 +255,7 @@ export default function RevendaPage() {
             {total} {total === 1 ? "item" : "itens"} cadastrados
           </p>
         </div>
-        {isAdmin && (
+        {isLoggedIn && (
           <Button size="sm" onClick={openCreate} className="gap-2">
             <Plus className="w-4 h-4" />
             NOVO ITEM
@@ -306,7 +306,7 @@ export default function RevendaPage() {
                 <th className="text-left px-4 py-3 font-semibold text-muted-foreground tracking-wider hidden sm:table-cell">FORNECEDOR</th>
                 <th className="text-left px-4 py-3 font-semibold text-muted-foreground tracking-wider hidden lg:table-cell">CUSTO</th>
                 <th className="text-left px-4 py-3 font-semibold text-muted-foreground tracking-wider hidden lg:table-cell">PREÇO VENDA</th>
-                {isAdmin && (
+                {isLoggedIn && (
                   <th className="text-right px-4 py-3 font-semibold text-muted-foreground tracking-wider">AÇÕES</th>
                 )}
               </tr>
@@ -315,7 +315,7 @@ export default function RevendaPage() {
               {isLoading ? (
                 Array.from({ length: 8 }).map((_, i) => (
                   <tr key={i} className="border-b border-border/30">
-                    {[...Array(isAdmin ? 8 : 7)].map((_, j) => (
+                    {[...Array(isLoggedIn ? 8 : 7)].map((_, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-3 bg-muted/40 rounded animate-pulse" />
                       </td>
@@ -324,7 +324,7 @@ export default function RevendaPage() {
                 ))
               ) : items.length === 0 ? (
                 <tr>
-                  <td colSpan={isAdmin ? 8 : 7} className="px-4 py-12 text-center text-muted-foreground">
+                  <td colSpan={isLoggedIn ? 8 : 7} className="px-4 py-12 text-center text-muted-foreground">
                     <Package className="w-8 h-8 mx-auto mb-2 opacity-30" />
                     <p>Nenhum item encontrado</p>
                   </td>
@@ -377,7 +377,7 @@ export default function RevendaPage() {
                     <td className="px-4 py-3 font-medium hidden lg:table-cell">
                       {formatCurrency(item.precoVenda)}
                     </td>
-                    {isAdmin && (
+                    {isLoggedIn && (
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <Button

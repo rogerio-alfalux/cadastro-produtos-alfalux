@@ -1,0 +1,1 @@
+ALTER TABLE `revenda_products` ADD `familia` varchar(200);
