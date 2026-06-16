@@ -486,7 +486,7 @@ export default function ProductList() {
 
       {/* ─── Duplicate Modal ──────────────────────────────────────────── */}
       <Dialog open={!!duplicarId} onOpenChange={(o) => !o && setDuplicarId(null)}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-background border-border">
+        <DialogContent className="max-w-6xl max-h-[92vh] overflow-y-auto bg-background border-border">
           <DialogHeader>
             <DialogTitle className="text-cyan-400 tracking-wider flex items-center gap-2">
               <Copy className="w-4 h-4" />
@@ -504,7 +504,7 @@ export default function ProductList() {
 
       {/* ─── Edit Modal ───────────────────────────────────────────────── */}
       <Dialog open={!!editId} onOpenChange={(o) => !o && setEditId(null)}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-background border-border">
+        <DialogContent className="max-w-6xl max-h-[92vh] overflow-y-auto bg-background border-border">
           <DialogHeader>
             <DialogTitle className="text-foreground tracking-wider">EDITAR PRODUTO</DialogTitle>
           </DialogHeader>

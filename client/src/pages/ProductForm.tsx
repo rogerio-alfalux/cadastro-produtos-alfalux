@@ -791,7 +791,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="max-w-5xl mx-auto animate-fade-in">
+    <div className="max-w-6xl mx-auto animate-fade-in">
       {/* Diálogo de aviso: produto sem driver */}
       {showSemDriverDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -869,7 +869,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
             <h2 className="section-header mb-0">IDENTIFICAÇÃO DO PRODUTO</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {/* Categoria */}
             <FieldWrapper field="categoria" label="CATEGORIA" touched={touched} errors={errors}>
               <Select key={form.categoria || "_empty"} value={form.categoria} onValueChange={(v) => setField("categoria", v)}>
@@ -1501,7 +1501,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* ON/OFF 220V — sempre presente, sem flag NaoAplicavel */}
             <FieldWrapper label="ON/OFF 220Vac (R$)" touched={touched} errors={errors}>
               <div className="relative">
