@@ -383,3 +383,9 @@
 - [x] Lookup por modelo (uppercase) → codigo cadastrado na tabela components
 - [x] Fallback: se o driver não estiver na tabela, usa regex extractEqCode para extrair o código do nome
 - [x] Sem quebra de compatibilidade: campo `code` no objeto driver continua sendo retornado normalmente
+
+## Feature v32 — Drivers e fontes como acessórios na API
+- [x] Endpoint /api/acessorios/all agora inclui todos os drivers e fontes da tabela `components` (tipos DRIVER_*) como itens adicionais
+- [x] Cada driver é mapeado com: id prefixado "driver-{id}", source="driver", codigo=EQ, sku=EQ, produto=modelo, familia=tipo legível, custo, observacoes
+- [x] Acessórios da tabela accessories recebem source="accessories" para distinção no Configurador
+- [x] Sem quebra de compatibilidade: campos existentes mantidos, apenas adicionados source, custo e observacoes

@@ -1,8 +1,8 @@
 import express from "express";
 import multer from "multer";
 import { getDb } from "./db";
-import { accessories } from "../drizzle/schema";
-import { asc, eq } from "drizzle-orm";
+import { accessories, components as componentsTable } from "../drizzle/schema";
+import { asc, eq, inArray } from "drizzle-orm";
 import { storagePut, storageGetSignedUrl } from "./storage";
 
 const router = express.Router();
@@ -88,7 +88,32 @@ router.get("/all", async (_req, res) => {
       .from(accessories)
       .orderBy(asc(accessories.familia), asc(accessories.codigo));
 
-    // Gerar URLs assinadas para todas as imagens em paralelo
+    // Buscar drivers e fontes da tabela components para incluir como acessórios
+    const DRIVER_TIPOS = [
+      "DRIVER_ONOFF_220",
+      "DRIVER_ONOFF_BIVOLT",
+      "DRIVER_DIM_110V",
+      "DRIVER_DIM_DALI",
+      "DRIVER_DIM_TRIAC_110V",
+      "DRIVER_DIM_TRIAC_220V",
+    ] as const;
+    const drivers = await db
+      .select()
+      .from(componentsTable)
+      .where(inArray(componentsTable.tipo, DRIVER_TIPOS as any))
+      .orderBy(asc(componentsTable.tipo), asc(componentsTable.modelo));
+
+    // Mapear tipo do componente para família legível
+    const tipoToFamilia: Record<string, string> = {
+      DRIVER_ONOFF_220:      "Driver ON/OFF 220V",
+      DRIVER_ONOFF_BIVOLT:   "Driver ON/OFF Bivolt",
+      DRIVER_DIM_110V:       "Driver DIM 1-10V",
+      DRIVER_DIM_DALI:       "Driver DIM DALI",
+      DRIVER_DIM_TRIAC_110V: "Driver DIM TRIAC 110V",
+      DRIVER_DIM_TRIAC_220V: "Driver DIM TRIAC 220V",
+    };
+
+    // Gerar URLs assinadas para acessórios com foto em paralelo
     const formattedPromises = items.map(async (a) => {
       let fotoUrl: string | null = null;
       if (a.fotoUrl) {
@@ -106,17 +131,37 @@ router.get("/all", async (_req, res) => {
 
       return {
         id:         a.id,
+        source:     "accessories" as const,
         codigo:     a.codigo ?? null,
         sku:        a.sku ?? null,
         produto:    a.produto ?? null,
         familia:    a.familia ?? null,
         dimensao:   a.dimensao ?? null,
         precoVenda: a.precoVenda != null ? Number(a.precoVenda) : null,
+        custo:      a.custo != null ? Number(a.custo) : null,
+        observacoes: a.observacoes ?? null,
         fotoUrl,
       };
     });
 
-    const formatted = await Promise.all(formattedPromises);
+    const formattedAccessories = await Promise.all(formattedPromises);
+
+    // Mapear drivers como acessórios (sem foto por enquanto)
+    const formattedDrivers = drivers.map((d) => ({
+      id:         `driver-${d.id}`,
+      source:     "driver" as const,
+      codigo:     d.codigo ?? null,
+      sku:        d.codigo ?? null,   // usa o código EQ como SKU
+      produto:    d.modelo,
+      familia:    tipoToFamilia[d.tipo] ?? d.tipo,
+      dimensao:   null,
+      precoVenda: null,
+      custo:      d.custo != null ? Number(d.custo) : null,
+      observacoes: d.observacao ?? null,
+      fotoUrl:    null,
+    }));
+
+    const formatted = [...formattedAccessories, ...formattedDrivers];
 
     return res.json({
       count: formatted.length,
