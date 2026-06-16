@@ -28,7 +28,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, RefreshCw, Search, ChevronDown, ChevronUp, Package, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Trash2, RefreshCw, Search, ChevronDown, ChevronUp, Package, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, CheckSquare2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
 type ComponentType =
@@ -441,6 +442,40 @@ export default function Components() {
   // ─── Delete dialog ────────────────────────────────────────────────────────
   const [deleteTarget, setDeleteTarget] = useState<ComponentRow | null>(null);
 
+  // ─── Bulk delete (exclusão em massa) ─────────────────────────────────────
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [deleteManyConfirm1, setDeleteManyConfirm1] = useState(false);
+  const [deleteManyConfirm2, setDeleteManyConfirm2] = useState(false);
+  const deleteManyMut = trpc.components.deleteMany.useMutation({
+    onSuccess: (data) => {
+      utils.components.list.invalidate();
+      toast.success(`${data.deleted} componente(s) excluído(s) com sucesso!`);
+      setSelectedIds(new Set());
+      setDeleteManyConfirm1(false);
+      setDeleteManyConfirm2(false);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectGroup = (items: ComponentRow[]) => {
+    const allSelected = items.every((c) => selectedIds.has(c.id));
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allSelected) {
+        items.forEach((c) => next.delete(c.id));
+      } else {
+        items.forEach((c) => next.add(c.id));
+      }
+      return next;
+    });
+  };
+
   // ─── Bulk replace dialog ──────────────────────────────────────────────────
   const [showBulk, setShowBulk] = useState(false);
 
@@ -559,25 +594,44 @@ export default function Components() {
                 {expandedGroups.has(tipo) && (
                   <div className="divide-y divide-border/50">
                     {/* Column header */}
-                    <div className="grid grid-cols-12 gap-3 px-5 py-2 bg-muted/20 text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
+                    <div className="grid grid-cols-[repeat(13,minmax(0,1fr))] gap-3 px-5 py-2 bg-muted/20 text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
+                      <div className="col-span-1 flex items-center">
+                        <Checkbox
+                          checked={items.every((c) => selectedIds.has(c.id))}
+                          onCheckedChange={() => toggleSelectGroup(items)}
+                          aria-label="Selecionar todos do grupo"
+                          className="w-3.5 h-3.5"
+                        />
+                      </div>
                       <div className="col-span-5">Modelo</div>
                       <div className="col-span-2">Código</div>
-                      <div className="col-span-3">Observação</div>
+                      <div className="col-span-2">Observação</div>
                       <div className="col-span-1 text-right">Custo</div>
-                      <div className="col-span-1" />
+                      <div className="col-span-2" />
                     </div>
                     {items.map((c) => (
                       <div
                         key={c.id}
-                        className="grid grid-cols-12 gap-3 px-5 py-3 items-center hover:bg-muted/10 transition-colors"
+                        className={cn(
+                          "grid grid-cols-[repeat(13,minmax(0,1fr))] gap-3 px-5 py-3 items-center hover:bg-muted/10 transition-colors",
+                          selectedIds.has(c.id) && "bg-destructive/5"
+                        )}
                       >
+                        <div className="col-span-1 flex items-center">
+                          <Checkbox
+                            checked={selectedIds.has(c.id)}
+                            onCheckedChange={() => toggleSelect(c.id)}
+                            aria-label={`Selecionar ${c.modelo}`}
+                            className="w-3.5 h-3.5"
+                          />
+                        </div>
                         <div className="col-span-5 font-medium text-sm text-foreground truncate">{c.modelo}</div>
                         <div className="col-span-2 text-xs text-muted-foreground font-mono truncate">{c.codigo ?? "—"}</div>
-                        <div className="col-span-3 text-xs text-muted-foreground truncate">{c.observacao ?? "—"}</div>
+                        <div className="col-span-2 text-xs text-muted-foreground truncate">{c.observacao ?? "—"}</div>
                         <div className="col-span-1 text-xs text-emerald-400 text-right">
                           {c.custo ? `R$ ${Number(c.custo).toFixed(2)}` : "—"}
                         </div>
-                        <div className="col-span-1 flex justify-end gap-1">
+                        <div className="col-span-2 flex justify-end gap-1">
                           <button
                             onClick={() => setProductsTarget(c)}
                             className="p-1.5 rounded text-muted-foreground hover:text-blue-400 hover:bg-blue-400/10 transition-colors"
@@ -609,6 +663,80 @@ export default function Components() {
           </div>
         )}
       </div>
+      {/* ─── Barra flutuante de exclusão em massa ─────────────────────────────── */}
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-2xl border border-destructive/40 bg-card shadow-2xl px-5 py-3 animate-in slide-in-from-bottom-4 duration-200">
+          <CheckSquare2 className="w-4 h-4 text-destructive" />
+          <span className="text-sm font-medium text-foreground">
+            <strong className="text-destructive">{selectedIds.size}</strong> componente(s) selecionado(s)
+          </span>
+          <div className="w-px h-5 bg-border mx-1" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSelectedIds(new Set())}
+            className="h-7 text-xs"
+          >
+            Limpar seleção
+          </Button>
+          <Button
+            size="sm"
+            className="h-7 text-xs bg-destructive hover:bg-destructive/90 gap-1.5"
+            onClick={() => setDeleteManyConfirm1(true)}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Excluir selecionados
+          </Button>
+        </div>
+      )}
+
+      {/* ─── Confirmação dupla de exclusão em massa ────────────────────────────── */}
+      {/* Primeiro confirm */}
+      <AlertDialog open={deleteManyConfirm1} onOpenChange={(o) => { if (!o) setDeleteManyConfirm1(false); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir {selectedIds.size} componente(s)?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você está prestes a excluir <strong>{selectedIds.size} componente(s)</strong> da lista.
+              Os produtos que já utilizam esses componentes não serão afetados, mas esta ação
+              <strong className="text-destructive"> não pode ser desfeita</strong>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteManyConfirm1(false)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90"
+              onClick={() => { setDeleteManyConfirm1(false); setDeleteManyConfirm2(true); }}
+            >
+              Continuar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {/* Segundo confirm (confirmação final) */}
+      <AlertDialog open={deleteManyConfirm2} onOpenChange={(o) => { if (!o) setDeleteManyConfirm2(false); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive">Confirmação final</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação é <strong>irreversível</strong>. Confirme para excluir permanentemente{" "}
+              <strong>{selectedIds.size} componente(s)</strong> do sistema.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteManyConfirm2(false)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90"
+              disabled={deleteManyMut.isPending}
+              onClick={() => deleteManyMut.mutate({ ids: Array.from(selectedIds) })}
+            >
+              {deleteManyMut.isPending ? "Excluindo..." : `Excluir ${selectedIds.size} componente(s)`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+
 
 
       {/* ─── Ver Produtos Modal ─────────────────────────────────────────────────── */}

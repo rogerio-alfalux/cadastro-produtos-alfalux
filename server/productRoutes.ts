@@ -2,7 +2,9 @@ import express from "express";
 import multer from "multer";
 import * as XLSX from "xlsx";
 import { storagePut, storageGetSignedUrl } from "./storage";
-import { bulkInsertProducts, listProducts } from "./db";
+import { bulkInsertProducts, listProducts, getDb } from "./db";
+import { components as componentsTable } from "../drizzle/schema";
+import { inArray } from "drizzle-orm";
 
 const router = express.Router();
 
@@ -487,6 +489,33 @@ router.get("/all", async (_req, res) => {
 
     const { items } = await listProducts({ limit: 10000, offset: 0 });
 
+    // Buscar todos os drivers da tabela components para lookup do campo codigo (EQ)
+    // Cria um Map de modelo (uppercase) -> codigo para uso no makeDriver
+    const driverCodigoMap = new Map<string, string | null>();
+    try {
+      const db = await getDb();
+      if (db) {
+        const driverTipos = [
+          "DRIVER_ONOFF_220",
+          "DRIVER_ONOFF_BIVOLT",
+          "DRIVER_DIM_110V",
+          "DRIVER_DIM_DALI",
+          "DRIVER_DIM_TRIAC_110V",
+          "DRIVER_DIM_TRIAC_220V",
+        ] as const;
+        const allDrivers = await db
+          .select({ modelo: componentsTable.modelo, codigo: componentsTable.codigo })
+          .from(componentsTable)
+          .where(inArray(componentsTable.tipo, driverTipos as any));
+        for (const d of allDrivers) {
+          driverCodigoMap.set(d.modelo.trim().toUpperCase(), d.codigo ?? null);
+        }
+      }
+    } catch (err) {
+      console.warn("[products/all] Falha ao buscar códigos de drivers:", err);
+      // Não bloqueia o endpoint — makeDriver usará extractEqCode como fallback
+    }
+
     // Resolver URLs públicas do S3 para todos os produtos com foto em paralelo
     const extractKey = (url: string | null | undefined): string | null => {
       if (!url) return null;
@@ -580,7 +609,14 @@ router.get("/all", async (_req, res) => {
 
       const makeDriver = (model: string | null | undefined) => {
         if (!isValidDriver(model)) return null;
-        return { model: model!.trim(), code: extractEqCode(model) };
+        const trimmed = model!.trim();
+        // Primeiro tenta buscar o codigo cadastrado na tabela components
+        // Fallback: extrai EQ do nome do modelo via regex
+        const codigoCadastrado = driverCodigoMap.get(trimmed.toUpperCase());
+        const code = codigoCadastrado !== undefined
+          ? codigoCadastrado  // pode ser null se o driver não tem codigo cadastrado
+          : extractEqCode(model);  // fallback para regex
+        return { model: trimmed, code };
       };
 
       const cat = (p.categoria || "").toUpperCase();

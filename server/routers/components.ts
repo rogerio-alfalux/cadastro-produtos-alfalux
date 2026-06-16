@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { eq, like, and, asc, sql } from "drizzle-orm";
+import { eq, like, and, asc, sql, inArray } from "drizzle-orm";
 import { publicProcedure, router } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { getDb } from "../db";
@@ -166,6 +166,15 @@ export const componentsRouter = router({
       if (!db) throw new Error("Database unavailable");
       await db.delete(components).where(eq(components.id, input.id));
       return { success: true };
+    }),
+  // ─── Delete many components at once ──────────────────────────────────────
+  deleteMany: publicProcedure
+    .input(z.object({ ids: z.array(z.number()).min(1) }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database unavailable");
+      await db.delete(components).where(inArray(components.id, input.ids));
+      return { deleted: input.ids.length };
     }),
 
   // ─── Count products using a component value (for confirmation dialog) ────

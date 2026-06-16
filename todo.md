@@ -367,3 +367,19 @@
 - [x] Adicionar categorias de driver DIM TRIAC 110V e DIM TRIAC 220V ao enum de tipos de componentes.
 - [x] Criar importação em massa de componentes via Excel (upload, preview, confirmação, inserção).
 - [x] Criar família de produtos LED BAR 45 (DA, DB, DC) replicando estrutura da LED BAR U com novas fotos e SKUs corretos.
+- [ ] Exclusão em massa de componentes: checkboxes na listagem, botão "Excluir Selecionados" e confirmação dupla antes de deletar.
+- [ ] Expor campo codigo (EQ) dos componentes na API pública para o configurador.
+
+## Feature v30 — Exclusão em Massa de Componentes
+- [x] Checkboxes por linha na tabela de componentes (coluna extra à esquerda)
+- [x] Checkbox de seleção de grupo no cabeçalho de cada tipo (seleciona/deseleciona todos do grupo)
+- [x] Barra flutuante na parte inferior com contador de selecionados, botão "Limpar seleção" e botão "Excluir selecionados"
+- [x] Double-check: primeiro modal de confirmação com aviso de irreversibilidade
+- [x] Double-check: segundo modal de confirmação final antes de executar a exclusão
+- [x] Mutation `components.deleteMany` com invalidação de cache após exclusão
+
+## Feature v31 — Código EQ via lookup na tabela components
+- [x] Endpoint /api/products/all agora busca o campo `codigo` da tabela `components` para cada driver
+- [x] Lookup por modelo (uppercase) → codigo cadastrado na tabela components
+- [x] Fallback: se o driver não estiver na tabela, usa regex extractEqCode para extrair o código do nome
+- [x] Sem quebra de compatibilidade: campo `code` no objeto driver continua sendo retornado normalmente
