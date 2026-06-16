@@ -391,6 +391,14 @@ export default function Components() {
   const [editTarget, setEditTarget] = useState<ComponentRow | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
 
+  // Verificação de código duplicado em tempo real
+  const codigoParaVerificar = form.codigo.trim().length >= 2 ? form.codigo.trim().toUpperCase() : null;
+  const { data: codigoConflito } = trpc.components.checkCodigo.useQuery(
+    { codigo: codigoParaVerificar!, excludeId: editTarget?.id },
+    { enabled: !!codigoParaVerificar && showForm, staleTime: 1500 }
+  );
+  const codigoEmUso = !!codigoConflito?.exists;
+
   const openCreate = () => {
     setEditTarget(null);
     setForm(EMPTY_FORM);
@@ -409,9 +417,14 @@ export default function Components() {
     setShowForm(true);
   };
 
+
   const handleSave = () => {
     if (!form.tipo || !form.modelo.trim()) {
       toast.error("Tipo e Modelo são obrigatórios.");
+      return;
+    }
+    if (codigoEmUso) {
+      toast.error(`Código "${form.codigo.trim().toUpperCase()}" já está em uso pelo componente: ${codigoConflito?.modelo}`);
       return;
     }
     if (editTarget) {
@@ -685,7 +698,13 @@ export default function Components() {
                 value={form.codigo}
                 onChange={(e) => setForm((p) => ({ ...p, codigo: e.target.value.toUpperCase() }))}
                 placeholder="Ex: 929001905506"
+                className={codigoEmUso ? "border-destructive focus-visible:ring-destructive" : ""}
               />
+              {codigoEmUso && (
+                <p className="text-xs text-destructive mt-1">
+                  ⚠ Código já em uso por: <strong>{codigoConflito?.modelo}</strong>
+                </p>
+              )}
             </div>
 
             {/* Observação */}
@@ -717,7 +736,7 @@ export default function Components() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowForm(false)}>Cancelar</Button>
-            <Button onClick={handleSave} disabled={createMut.isPending || updateMut.isPending}>
+            <Button onClick={handleSave} disabled={createMut.isPending || updateMut.isPending || codigoEmUso}>
               {createMut.isPending || updateMut.isPending ? "Salvando..." : "Salvar"}
             </Button>
           </DialogFooter>

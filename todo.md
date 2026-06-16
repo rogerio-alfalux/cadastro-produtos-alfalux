@@ -363,3 +363,4 @@
 - [x] Banner de aviso no topo do formulário indicando "DUPLICANDO A PARTIR DE: [NOME DO PRODUTO]"
 - [x] Ao salvar, cria um novo registro (não edita o original)
 - [x] Liberar a Geysa para inserir e editar produtos, componentes, drivers, fontes, revenda e acessórios sem bloqueios indevidos de login ou perfil.
+- [x] Validar código duplicado em Componentes: bloquear salvamento e emitir aviso se o código já existir no banco (frontend + backend).

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { eq, like, and, asc, sql } from "drizzle-orm";
 import { publicProcedure, router } from "../_core/trpc";
+import { TRPCError } from "@trpc/server";
 import { getDb } from "../db";
 import { components, products } from "../../drizzle/schema";
 
@@ -63,10 +64,25 @@ export const componentsRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database unavailable");
+      // Bloquear código duplicado
+      if (input.codigo?.trim()) {
+        const codigoNorm = input.codigo.trim().toUpperCase();
+        const existing = await db
+          .select({ id: components.id, modelo: components.modelo })
+          .from(components)
+          .where(sql`UPPER(${components.codigo}) = ${codigoNorm}`)
+          .limit(1);
+        if (existing.length > 0) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: `Código "${codigoNorm}" já está em uso pelo componente: ${existing[0].modelo}`,
+          });
+        }
+      }
       const [result] = await db.insert(components).values({
         tipo: input.tipo,
         modelo: input.modelo.trim(),
-        codigo: input.codigo?.trim() || null,
+        codigo: input.codigo?.trim() ? input.codigo.trim().toUpperCase() : null,
         observacao: input.observacao?.trim() || null,
         custo: (input.custo && input.custo.trim() !== '') ? input.custo.trim().replace(',', '.') : null,
       });
@@ -88,13 +104,56 @@ export const componentsRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database unavailable");
       const { id, ...data } = input;
+      // Bloquear código duplicado (excluindo o próprio registro)
+      if (data.codigo?.trim()) {
+        const codigoNorm = data.codigo.trim().toUpperCase();
+        const existing = await db
+          .select({ id: components.id, modelo: components.modelo })
+          .from(components)
+          .where(sql`UPPER(${components.codigo}) = ${codigoNorm} AND ${components.id} != ${id}`)
+          .limit(1);
+        if (existing.length > 0) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: `Código "${codigoNorm}" já está em uso pelo componente: ${existing[0].modelo}`,
+          });
+        }
+      }
       await db.update(components).set({
         modelo: data.modelo?.trim(),
-        codigo: data.codigo?.trim() || null,
+        codigo: data.codigo?.trim() ? data.codigo.trim().toUpperCase() : null,
         observacao: data.observacao?.trim() || null,
         custo: (data.custo && data.custo.trim() !== '') ? data.custo.trim().replace(',', '.') : null,
       }).where(eq(components.id, id));
       return { success: true };
+    }),
+
+  // ─── Check if a code is already in use (real-time validation) ───────────
+  checkCodigo: publicProcedure
+    .input(
+      z.object({
+        codigo: z.string().min(1),
+        excludeId: z.number().optional(),
+      })
+    )
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { exists: false, modelo: null };
+      const codigoNorm = input.codigo.trim().toUpperCase();
+      const rows = input.excludeId
+        ? await db
+            .select({ id: components.id, modelo: components.modelo })
+            .from(components)
+            .where(sql`UPPER(${components.codigo}) = ${codigoNorm} AND ${components.id} != ${input.excludeId}`)
+            .limit(1)
+        : await db
+            .select({ id: components.id, modelo: components.modelo })
+            .from(components)
+            .where(sql`UPPER(${components.codigo}) = ${codigoNorm}`)
+            .limit(1);
+      return rows.length > 0
+        ? { exists: true, modelo: rows[0].modelo }
+        : { exists: false, modelo: null };
     }),
 
   // ─── Delete a component ──────────────────────────────────────────────────
