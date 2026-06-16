@@ -366,3 +366,4 @@
 - [x] Validar código duplicado em Componentes: bloquear salvamento e emitir aviso se o código já existir no banco (frontend + backend).
 - [x] Adicionar categorias de driver DIM TRIAC 110V e DIM TRIAC 220V ao enum de tipos de componentes.
 - [x] Criar importação em massa de componentes via Excel (upload, preview, confirmação, inserção).
+- [x] Criar família de produtos LED BAR 45 (DA, DB, DC) replicando estrutura da LED BAR U com novas fotos e SKUs corretos.
