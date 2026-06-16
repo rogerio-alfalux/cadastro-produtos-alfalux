@@ -1024,7 +1024,7 @@ export default function ComponentsShowcase() {
                     <DialogTrigger asChild>
                       <Button variant="outline">Open Dialog</Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="sm:max-w-lg">
                       <DialogHeader>
                         <DialogTitle>Test Input</DialogTitle>
                         <DialogDescription>
