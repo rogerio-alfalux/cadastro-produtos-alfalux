@@ -11,6 +11,7 @@ import { serveStatic, setupVite } from "./vite";
 import productRoutes from "../productRoutes";
 import revendaRoutes from "../revendaRoutes";
 import accessoriesRoutes from "../accessoriesRoutes";
+import componentsRoutes from "../componentsRoutes";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -42,6 +43,7 @@ async function startServer() {
   app.use("/api/products", productRoutes);
   app.use("/api/revenda", revendaRoutes);
   app.use("/api/acessorios", accessoriesRoutes);
+  app.use("/api/components", componentsRoutes);
   // tRPC API
   app.use(
     "/api/trpc",

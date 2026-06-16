@@ -287,7 +287,7 @@ export const bulkOpsRouter = router({
   // ─── Preview: substituição de componente em massa ─────────────────────────
   previewReplaceComponent: publicProcedure
     .input(z.object({
-      tipo: z.enum(["MODULO_LED", "OTICA", "HOLDER", "DISSIPADOR", "DRIVER_ONOFF_220", "DRIVER_ONOFF_BIVOLT", "DRIVER_DIM_110V", "DRIVER_DIM_DALI"] as const),
+      tipo: z.enum(["MODULO_LED", "OTICA", "HOLDER", "DISSIPADOR", "DRIVER_ONOFF_220", "DRIVER_ONOFF_BIVOLT", "DRIVER_DIM_110V", "DRIVER_DIM_DALI", "DRIVER_DIM_TRIAC_110V", "DRIVER_DIM_TRIAC_220V"] as const),
       componenteAtual: z.string().min(1),
       familia: z.string().optional(),
     }))
@@ -303,6 +303,8 @@ export const bulkOpsRouter = router({
         DRIVER_ONOFF_BIVOLT: "driverOnoffBivolt",
         DRIVER_DIM_110V: "driverDim110v",
         DRIVER_DIM_DALI: "driverDimDali",
+        DRIVER_DIM_TRIAC_110V: "driverDimTriac110v",
+        DRIVER_DIM_TRIAC_220V: "driverDimTriac220v",
       };
       const col = COL_MAP[input.tipo];
       const familiaClause = input.familia?.trim() ? ` AND familia = '${input.familia.replace(/'/g, "''")}'` : "";
@@ -319,7 +321,7 @@ export const bulkOpsRouter = router({
   // ─── Apply: substituir componente em massa ────────────────────────────────
   applyReplaceComponent: publicProcedure
     .input(z.object({
-      tipo: z.enum(["MODULO_LED", "OTICA", "HOLDER", "DISSIPADOR", "DRIVER_ONOFF_220", "DRIVER_ONOFF_BIVOLT", "DRIVER_DIM_110V", "DRIVER_DIM_DALI"] as const),
+      tipo: z.enum(["MODULO_LED", "OTICA", "HOLDER", "DISSIPADOR", "DRIVER_ONOFF_220", "DRIVER_ONOFF_BIVOLT", "DRIVER_DIM_110V", "DRIVER_DIM_DALI", "DRIVER_DIM_TRIAC_110V", "DRIVER_DIM_TRIAC_220V"] as const),
       componenteAtual: z.string().min(1),
       novoComponente: z.string().min(1),
       familia: z.string().optional(),
@@ -336,6 +338,8 @@ export const bulkOpsRouter = router({
         DRIVER_ONOFF_BIVOLT: "driverOnoffBivolt",
         DRIVER_DIM_110V: "driverDim110v",
         DRIVER_DIM_DALI: "driverDimDali",
+        DRIVER_DIM_TRIAC_110V: "driverDimTriac110v",
+        DRIVER_DIM_TRIAC_220V: "driverDimTriac220v",
       };
       const col = COL_MAP[input.tipo];
       const familiaClause = input.familia?.trim() ? ` AND familia = '${input.familia.replace(/'/g, "''")}'` : "";

@@ -364,3 +364,5 @@
 - [x] Ao salvar, cria um novo registro (não edita o original)
 - [x] Liberar a Geysa para inserir e editar produtos, componentes, drivers, fontes, revenda e acessórios sem bloqueios indevidos de login ou perfil.
 - [x] Validar código duplicado em Componentes: bloquear salvamento e emitir aviso se o código já existir no banco (frontend + backend).
+- [x] Adicionar categorias de driver DIM TRIAC 110V e DIM TRIAC 220V ao enum de tipos de componentes.
+- [x] Criar importação em massa de componentes via Excel (upload, preview, confirmação, inserção).

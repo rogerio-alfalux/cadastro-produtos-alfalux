@@ -28,7 +28,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, RefreshCw, Search, ChevronDown, ChevronUp, Package } from "lucide-react";
+import { Plus, Pencil, Trash2, RefreshCw, Search, ChevronDown, ChevronUp, Package, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type ComponentType =
@@ -36,6 +36,8 @@ type ComponentType =
   | "DRIVER_ONOFF_BIVOLT"
   | "DRIVER_DIM_110V"
   | "DRIVER_DIM_DALI"
+  | "DRIVER_DIM_TRIAC_110V"
+  | "DRIVER_DIM_TRIAC_220V"
   | "OTICA"
   | "HOLDER"
   | "DISSIPADOR"
@@ -46,6 +48,8 @@ const COMPONENT_TYPES: { value: ComponentType; label: string }[] = [
   { value: "DRIVER_ONOFF_BIVOLT", label: "Driver ON/OFF Bivolt" },
   { value: "DRIVER_DIM_110V", label: "Driver Dim 1-10V" },
   { value: "DRIVER_DIM_DALI", label: "Driver Dim DALI" },
+  { value: "DRIVER_DIM_TRIAC_110V", label: "Driver Dim Triac 110V" },
+  { value: "DRIVER_DIM_TRIAC_220V", label: "Driver Dim Triac 220V" },
   { value: "OTICA", label: "Ótica" },
   { value: "HOLDER", label: "Holder" },
   { value: "DISSIPADOR", label: "Dissipador" },
@@ -440,6 +444,9 @@ export default function Components() {
   // ─── Bulk replace dialog ──────────────────────────────────────────────────
   const [showBulk, setShowBulk] = useState(false);
 
+  // ─── Import Excel dialog ─────────────────────────────────────────────────
+  const [showImport, setShowImport] = useState(false);
+
   // ─── "Ver produtos" modal ──────────────────────────────────────────────────
   const [productsTarget, setProductsTarget] = useState<ComponentRow | null>(null);
   const { data: productsUsing = [], isFetching: loadingProducts } = trpc.components.getProductsUsing.useQuery(
@@ -479,10 +486,14 @@ export default function Components() {
               Gerencie drivers, óticas, holders, dissipadores e módulos LED
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button variant="outline" onClick={() => setShowBulk(true)} className="gap-2">
               <RefreshCw className="w-4 h-4" />
               Alteração em Massa
+            </Button>
+            <Button variant="outline" onClick={() => setShowImport(true)} className="gap-2">
+              <Upload className="w-4 h-4" />
+              Importar Excel
             </Button>
             <Button onClick={openCreate} className="gap-2">
               <Plus className="w-4 h-4" />
@@ -771,6 +782,232 @@ export default function Components() {
         families={families}
         onSuccess={() => utils.components.list.invalidate()}
       />
+
+      {/* ─── Import Excel Modal ──────────────────────────────────────────────── */}
+      <ImportExcelModal
+        open={showImport}
+        onClose={() => setShowImport(false)}
+        onSuccess={() => utils.components.list.invalidate()}
+      />
     </>
+  );
+}
+
+// ─── Import Excel Modal ───────────────────────────────────────────────────────
+function ImportExcelModal({
+  open,
+  onClose,
+  onSuccess,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [file, setFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [result, setResult] = useState<{
+    inserted: number;
+    skipped: number;
+    total: number;
+    errors: string[];
+  } | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleClose = () => {
+    setFile(null);
+    setResult(null);
+    setIsDragging(false);
+    onClose();
+  };
+
+  const handleFileChange = (f: File | null) => {
+    if (!f) return;
+    setFile(f);
+    setResult(null);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const f = e.dataTransfer.files[0];
+    if (f) handleFileChange(f);
+  };
+
+  const handleImport = async () => {
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/components/import-excel", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error ?? "Erro ao importar");
+        return;
+      }
+      setResult(data);
+      if (data.inserted > 0) {
+        toast.success(`${data.inserted} componente(s) importado(s) com sucesso!`);
+        onSuccess();
+      } else {
+        toast.warning("Nenhum componente novo foi inserido.");
+      }
+    } catch (err) {
+      toast.error("Erro de rede ao importar: " + String(err));
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDownloadTemplate = () => {
+    window.open("/api/components/template", "_blank");
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FileSpreadsheet className="w-5 h-5 text-emerald-400" />
+            Importar Componentes em Massa
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          {/* Template download */}
+          <div className="rounded-lg border border-border bg-muted/20 px-4 py-3 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-foreground">Planilha Modelo</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Baixe o modelo com as colunas corretas e tipos válidos
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={handleDownloadTemplate} className="gap-2 shrink-0">
+              <Download className="w-4 h-4" />
+              Baixar Modelo
+            </Button>
+          </div>
+
+          {/* Drop zone */}
+          {!result && (
+            <div
+              className={cn(
+                "relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors",
+                isDragging
+                  ? "border-primary bg-primary/10"
+                  : file
+                  ? "border-emerald-500/60 bg-emerald-500/5"
+                  : "border-border hover:border-primary/50 hover:bg-muted/20"
+              )}
+              onClick={() => inputRef.current?.click()}
+              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={handleDrop}
+            >
+              <input
+                ref={inputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                className="hidden"
+                onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
+              />
+              {file ? (
+                <div className="flex flex-col items-center gap-2">
+                  <FileSpreadsheet className="w-10 h-10 text-emerald-400" />
+                  <p className="text-sm font-medium text-foreground">{file.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {(file.size / 1024).toFixed(1)} KB — clique para trocar
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2">
+                  <Upload className="w-10 h-10 text-muted-foreground" />
+                  <p className="text-sm font-medium text-foreground">Arraste o arquivo aqui</p>
+                  <p className="text-xs text-muted-foreground">ou clique para selecionar (.xlsx)</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Result */}
+          {result && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-lg border border-border bg-card p-3 text-center">
+                  <p className="text-2xl font-bold text-foreground">{result.total}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Total lidos</p>
+                </div>
+                <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-center">
+                  <p className="text-2xl font-bold text-emerald-400">{result.inserted}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Inseridos</p>
+                </div>
+                <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-center">
+                  <p className="text-2xl font-bold text-amber-400">{result.skipped}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Ignorados</p>
+                </div>
+              </div>
+
+              {result.inserted > 0 && (
+                <div className="flex items-center gap-2 text-sm text-emerald-400">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <span>{result.inserted} componente(s) adicionado(s) com sucesso!</span>
+                </div>
+              )}
+
+              {result.errors.length > 0 && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2 text-sm text-amber-400">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    <span>{result.errors.length} aviso(s):</span>
+                  </div>
+                  <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 max-h-32 overflow-y-auto p-3 space-y-1">
+                    {result.errors.map((e, i) => (
+                      <p key={i} className="text-xs text-amber-300/80">{e}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => { setFile(null); setResult(null); }}
+                className="gap-2"
+              >
+                <Upload className="w-4 h-4" />
+                Importar outro arquivo
+              </Button>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={handleClose}>Fechar</Button>
+          {!result && (
+            <Button
+              onClick={handleImport}
+              disabled={!file || isUploading}
+              className="gap-2"
+            >
+              {isUploading ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  Importando...
+                </>
+              ) : (
+                <>
+                  <Upload className="w-4 h-4" />
+                  Importar
+                </>
+              )}
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

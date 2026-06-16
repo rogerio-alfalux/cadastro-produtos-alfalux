@@ -130,6 +130,8 @@ export const components = mysqlTable("components", {
     "DRIVER_ONOFF_BIVOLT",
     "DRIVER_DIM_110V",
     "DRIVER_DIM_DALI",
+    "DRIVER_DIM_TRIAC_110V",
+    "DRIVER_DIM_TRIAC_220V",
     "OTICA",
     "HOLDER",
     "DISSIPADOR",

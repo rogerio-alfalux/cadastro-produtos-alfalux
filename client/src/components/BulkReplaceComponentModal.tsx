@@ -39,6 +39,8 @@ const COMPONENT_TYPES = [
   { value: "DRIVER_ONOFF_BIVOLT", label: "Driver ON/OFF Bivolt" },
   { value: "DRIVER_DIM_110V", label: "Driver DIM 1-10V" },
   { value: "DRIVER_DIM_DALI", label: "Driver DIM DALI" },
+  { value: "DRIVER_DIM_TRIAC_110V", label: "Driver DIM Triac 110V" },
+  { value: "DRIVER_DIM_TRIAC_220V", label: "Driver DIM Triac 220V" },
 ] as const;
 
 type ComponentType = typeof COMPONENT_TYPES[number]["value"];
