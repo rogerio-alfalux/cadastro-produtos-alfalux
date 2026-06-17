@@ -83,11 +83,13 @@ interface DriverRowProps {
   setTouched: React.Dispatch<React.SetStateAction<Partial<Record<keyof FormData, boolean>>>>;
 }
 
-const driverTypeMap: Record<string, "DRIVER_ONOFF_220" | "DRIVER_ONOFF_BIVOLT" | "DRIVER_DIM_110V" | "DRIVER_DIM_DALI"> = {
+const driverTypeMap: Record<string, "DRIVER_ONOFF_220" | "DRIVER_ONOFF_BIVOLT" | "DRIVER_DIM_110V" | "DRIVER_DIM_DALI" | "DRIVER_DIM_TRIAC_110V" | "DRIVER_DIM_TRIAC_220V"> = {
   driverOnoff220: "DRIVER_ONOFF_220",
   driverOnoffBivolt: "DRIVER_ONOFF_BIVOLT",
   driverDim110v: "DRIVER_DIM_110V",
   driverDimDali: "DRIVER_DIM_DALI",
+  driverDimTriac110v: "DRIVER_DIM_TRIAC_110V",
+  driverDimTriac220v: "DRIVER_DIM_TRIAC_220V",
 };
 
 const DriverRow = ({
@@ -211,7 +213,7 @@ const DriverRow = ({
 // ─── DriverExtraRow component ───────────────────────────────────────────────────
 
 interface DriverExtraRowProps {
-  tipo: "DRIVER_ONOFF_220" | "DRIVER_ONOFF_BIVOLT" | "DRIVER_DIM_110V" | "DRIVER_DIM_DALI";
+  tipo: "DRIVER_ONOFF_220" | "DRIVER_ONOFF_BIVOLT" | "DRIVER_DIM_110V" | "DRIVER_DIM_DALI" | "DRIVER_DIM_TRIAC_110V" | "DRIVER_DIM_TRIAC_220V";
   item: { modelo: string; qtd: number; custo: string };
   onChange: (updated: { modelo: string; qtd: number; custo: string }) => void;
   onRemove: () => void;
@@ -271,6 +273,8 @@ type DriversExtraState = {
   onoffBivolt: DriverExtra[];
   dim110v: DriverExtra[];
   dimDali: DriverExtra[];
+  dimTriac110v: DriverExtra[];
+  dimTriac220v: DriverExtra[];
 };
 
 const emptyDriverExtra = (): DriverExtra => ({ modelo: "", qtd: 1, custo: "" });
@@ -280,6 +284,8 @@ const defaultDriversExtra: DriversExtraState = {
   onoffBivolt: [],
   dim110v: [],
   dimDali: [],
+  dimTriac110v: [],
+  dimTriac220v: [],
 };
 
 // ─── Otica extra types ───────────────────────────────────────────────────────
@@ -369,6 +375,14 @@ interface FormData {
   qtdDriverDimDali: number;
   driverDimDaliNaoAplicavel: boolean;
   custoDriverDimDali: string;
+  driverDimTriac110v: string;
+  qtdDriverDimTriac110v: number;
+  driverDimTriac110vNaoAplicavel: boolean;
+  custoDriverDimTriac110v: string;
+  driverDimTriac220v: string;
+  qtdDriverDimTriac220v: number;
+  driverDimTriac220vNaoAplicavel: boolean;
+  custoDriverDimTriac220v: string;
   temperaturasCor: string[];
   fotoUrl: string;
   fotoKey: string;
@@ -422,6 +436,14 @@ const defaultForm: FormData = {
   qtdDriverDimDali: 1,
   driverDimDaliNaoAplicavel: false,
   custoDriverDimDali: "",
+  driverDimTriac110v: "",
+  qtdDriverDimTriac110v: 1,
+  driverDimTriac110vNaoAplicavel: false,
+  custoDriverDimTriac110v: "",
+  driverDimTriac220v: "",
+  qtdDriverDimTriac220v: 1,
+  driverDimTriac220vNaoAplicavel: false,
+  custoDriverDimTriac220v: "",
   temperaturasCor: ["2700", "3000", "4000", "5000"],
   fotoUrl: "",
   fotoKey: "",
@@ -531,6 +553,14 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         qtdDriverDimDali: (p.qtdDriverDimDali != null ? Number(p.qtdDriverDimDali) : 1),
         driverDimDaliNaoAplicavel: existingProduct.driverDimDaliNaoAplicavel || false,
         custoDriverDimDali: p.custoDriverDimDali ? String(p.custoDriverDimDali) : "",
+        driverDimTriac110v: (p as any).driverDimTriac110vNaoAplicavel ? "" : ((p as any).driverDimTriac110v || ""),
+        qtdDriverDimTriac110v: ((p as any).qtdDriverDimTriac110v != null ? Number((p as any).qtdDriverDimTriac110v) : 1),
+        driverDimTriac110vNaoAplicavel: (p as any).driverDimTriac110vNaoAplicavel || false,
+        custoDriverDimTriac110v: (p as any).custoDriverDimTriac110v ? String((p as any).custoDriverDimTriac110v) : "",
+        driverDimTriac220v: (p as any).driverDimTriac220vNaoAplicavel ? "" : ((p as any).driverDimTriac220v || ""),
+        qtdDriverDimTriac220v: ((p as any).qtdDriverDimTriac220v != null ? Number((p as any).qtdDriverDimTriac220v) : 1),
+        driverDimTriac220vNaoAplicavel: (p as any).driverDimTriac220vNaoAplicavel || false,
+        custoDriverDimTriac220v: (p as any).custoDriverDimTriac220v ? String((p as any).custoDriverDimTriac220v) : "",
         temperaturasCor: temps,
         fotoUrl: existingProduct.fotoUrl || "",
         fotoKey: existingProduct.fotoKey || "",
@@ -560,6 +590,8 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         onoffBivolt: parseExtra((p as any).driverOnoffBivoltExtra),
         dim110v: parseExtra((p as any).driverDim110vExtra),
         dimDali: parseExtra((p as any).driverDimDaliExtra),
+        dimTriac110v: parseExtra((p as any).driverDimTriac110vExtra),
+        dimTriac220v: parseExtra((p as any).driverDimTriac220vExtra),
       });
       // Carregar óticas extras do banco
       const parseOticaExtra = (raw: string | null | undefined): OticaExtra[] => {
@@ -735,6 +767,14 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       driverDimDali: form.driverDimDaliNaoAplicavel
         ? "NÃO APLICÁVEL"
         : (form.driverDimDali || undefined),
+      driverDimTriac110v: form.driverDimTriac110vNaoAplicavel
+        ? "NÃO APLICÁVEL"
+        : (form.driverDimTriac110v || undefined),
+      driverDimTriac220v: form.driverDimTriac220vNaoAplicavel
+        ? "NÃO APLICÁVEL"
+        : (form.driverDimTriac220v || undefined),
+      custoDriverDimTriac110v: form.custoDriverDimTriac110v || undefined,
+      custoDriverDimTriac220v: form.custoDriverDimTriac220v || undefined,
     };
     // Se os campos DIM estão vazios E não marcados como NÃO APLICÁVEL,
     // remove os campos NaoAplicavel do payload para não sobrescrever o banco com false
@@ -746,6 +786,14 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       delete payload.driverDimDaliNaoAplicavel;
       delete payload.driverDimDali;
     }
+    if (!form.driverDimTriac110vNaoAplicavel && !form.driverDimTriac110v) {
+      delete payload.driverDimTriac110vNaoAplicavel;
+      delete payload.driverDimTriac110v;
+    }
+    if (!form.driverDimTriac220vNaoAplicavel && !form.driverDimTriac220v) {
+      delete payload.driverDimTriac220vNaoAplicavel;
+      delete payload.driverDimTriac220v;
+    }
 
     // Serializar drivers extras como JSON
     const serializeExtra = (arr: DriverExtra[]) =>
@@ -754,6 +802,8 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
     payload.driverOnoffBivoltExtra = serializeExtra(driversExtra.onoffBivolt);
     payload.driverDim110vExtra = serializeExtra(driversExtra.dim110v);
     payload.driverDimDaliExtra = serializeExtra(driversExtra.dimDali);
+    payload.driverDimTriac110vExtra = serializeExtra(driversExtra.dimTriac110v);
+    payload.driverDimTriac220vExtra = serializeExtra(driversExtra.dimTriac220v);
     // Serializar óticas extras como JSON
     const validOticasExtra = oticasExtra.filter((o) => o.modelo.trim());
     payload.oticaExtra = validOticasExtra.length > 0 ? JSON.stringify(validOticasExtra) : undefined;
@@ -1305,6 +1355,56 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                     />
                   ))}
                   <button type="button" onClick={() => setDriversExtra((prev) => ({ ...prev, dimDali: [...prev.dimDali, emptyDriverExtra()] }))}
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors mt-1">
+                    <PlusCircle className="w-3.5 h-3.5" /> Adicionar driver
+                  </button>
+                </div>
+
+                {/* DIM TRIAC 110V */}
+                <div className="space-y-2">
+                  <DriverRow
+                    driverField="driverDimTriac110v"
+                    custoField="custoDriverDimTriac110v"
+                    qtdField="qtdDriverDimTriac110v"
+                    naoAplicavelField="driverDimTriac110vNaoAplicavel"
+                    label="DIM TRIAC 110V"
+                    optional
+                    placeholder="Driver DIM TRIAC 110V"
+                    form={form} touched={touched} errors={errors}
+                    setField={setField} setForm={setForm} setErrors={setErrors} setTouched={setTouched}
+                  />
+                  {driversExtra.dimTriac110v.map((de, idx) => (
+                    <DriverExtraRow key={idx} tipo="DRIVER_DIM_TRIAC_110V" item={de}
+                      onChange={(updated) => setDriversExtra((prev) => ({ ...prev, dimTriac110v: prev.dimTriac110v.map((x, i) => i === idx ? updated : x) }))}
+                      onRemove={() => setDriversExtra((prev) => ({ ...prev, dimTriac110v: prev.dimTriac110v.filter((_, i) => i !== idx) }))}
+                    />
+                  ))}
+                  <button type="button" onClick={() => setDriversExtra((prev) => ({ ...prev, dimTriac110v: [...prev.dimTriac110v, emptyDriverExtra()] }))}
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors mt-1">
+                    <PlusCircle className="w-3.5 h-3.5" /> Adicionar driver
+                  </button>
+                </div>
+
+                {/* DIM TRIAC 220V */}
+                <div className="space-y-2">
+                  <DriverRow
+                    driverField="driverDimTriac220v"
+                    custoField="custoDriverDimTriac220v"
+                    qtdField="qtdDriverDimTriac220v"
+                    naoAplicavelField="driverDimTriac220vNaoAplicavel"
+                    label="DIM TRIAC 220V"
+                    optional
+                    placeholder="Driver DIM TRIAC 220V"
+                    form={form} touched={touched} errors={errors}
+                    setField={setField} setForm={setForm} setErrors={setErrors} setTouched={setTouched}
+                  />
+                  {driversExtra.dimTriac220v.map((de, idx) => (
+                    <DriverExtraRow key={idx} tipo="DRIVER_DIM_TRIAC_220V" item={de}
+                      onChange={(updated) => setDriversExtra((prev) => ({ ...prev, dimTriac220v: prev.dimTriac220v.map((x, i) => i === idx ? updated : x) }))}
+                      onRemove={() => setDriversExtra((prev) => ({ ...prev, dimTriac220v: prev.dimTriac220v.filter((_, i) => i !== idx) }))}
+                    />
+                  ))}
+                  <button type="button" onClick={() => setDriversExtra((prev) => ({ ...prev, dimTriac220v: [...prev.dimTriac220v, emptyDriverExtra()] }))}
                     className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors mt-1">
                     <PlusCircle className="w-3.5 h-3.5" /> Adicionar driver
                   </button>

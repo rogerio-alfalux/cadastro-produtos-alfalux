@@ -404,3 +404,17 @@
 - [x] Endpoints de upload/remoção de foto no componentsRoutes.ts
 - [x] UI de foto no Components.tsx (botão câmera/imagem por linha, modal com preview, upload, remoção)
 - [x] Transmitir fotoUrl assinada dos drivers na API /api/acessorios/all
+
+## Feature v34 — Drivers DIM TRIAC 110V e 220V nos produtos
+- [ ] Schema: adicionar driverDimTriac110v, custoDimTriac110v, driverDimTriac220v, custoDimTriac220v na tabela products
+- [ ] Backend: atualizar Zod schema, db helpers, routers tRPC
+- [ ] API /api/products/all: incluir campos DIM TRIAC 110V e 220V
+- [ ] Frontend ProductForm: adicionar campos DIM TRIAC 110V e 220V na seção Drivers
+- [ ] Frontend ProductList/modal de visualização: exibir DIM TRIAC 110V e 220V
+
+## Feature v34 — Drivers DIM TRIAC 110V e 220V nos produtos [x]
+- [x] Schema: colunas driverDimTriac110v, driverDimTriac220v, custoDriverDimTriac110v, custoDriverDimTriac220v, qtd e NaoAplicavel
+- [x] Migração SQL aplicada
+- [x] Backend: Zod schemas (create + update), routers.ts, productRoutes.ts (/api/products/all)
+- [x] Frontend: FormData, defaultForm, carregamento existingProduct, payload doSubmit, JSX DriverRow + DriverExtraRow
+- [x] Todos os 75 testes passando

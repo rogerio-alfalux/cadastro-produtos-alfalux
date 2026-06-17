@@ -52,6 +52,12 @@ const productSchema = z.object({
   driverDimDali: z.string().nullish(),
   qtdDriverDimDali: z.number().int().min(1).default(1),
   driverDimDaliNaoAplicavel: z.boolean().default(false),
+  driverDimTriac110v: z.string().nullish(),
+  qtdDriverDimTriac110v: z.number().int().min(1).default(1),
+  driverDimTriac110vNaoAplicavel: z.boolean().default(false),
+  driverDimTriac220v: z.string().nullish(),
+  qtdDriverDimTriac220v: z.number().int().min(1).default(1),
+  driverDimTriac220vNaoAplicavel: z.boolean().default(false),
   temperaturasCor: z.string().default('["2700","3000","4000","5000"]'),
   fotoUrl: z.string().nullish(),
   fotoKey: z.string().nullish(),
@@ -60,11 +66,15 @@ const productSchema = z.object({
   custoDriverOnoffBivolt: z.string().nullish(),
   custoDriverDim110v: z.string().nullish(),
   custoDriverDimDali: z.string().nullish(),
+  custoDriverDimTriac110v: z.string().nullish(),
+  custoDriverDimTriac220v: z.string().nullish(),
   // Drivers extras (JSON string de array [{modelo, qtd, custo}])
   driverOnoff220Extra: z.string().nullish(),
   driverOnoffBivoltExtra: z.string().nullish(),
   driverDim110vExtra: z.string().nullish(),
   driverDimDaliExtra: z.string().nullish(),
+  driverDimTriac110vExtra: z.string().nullish(),
+  driverDimTriac220vExtra: z.string().nullish(),
   // Óticas extras (JSON string de array [{modelo, qtd}])
   oticaExtra: z.string().nullish(),
   // Preço de venda por tipo de driver (null = não informado)
@@ -129,6 +139,12 @@ const bulkProductSchema = z.object({
   driverDimDali: z.string().optional(),
   qtdDriverDimDali: z.number().int().min(1).default(1),
   driverDimDaliNaoAplicavel: z.boolean().default(false),
+  driverDimTriac110v: z.string().optional(),
+  qtdDriverDimTriac110v: z.number().int().min(1).default(1),
+  driverDimTriac110vNaoAplicavel: z.boolean().default(false),
+  driverDimTriac220v: z.string().optional(),
+  qtdDriverDimTriac220v: z.number().int().min(1).default(1),
+  driverDimTriac220vNaoAplicavel: z.boolean().default(false),
   temperaturasCor: z.string().default('["2700","3000","4000","5000"]'),
   fotoUrl: z.string().optional(),
   fotoKey: z.string().optional(),
@@ -137,10 +153,14 @@ const bulkProductSchema = z.object({
   custoDriverOnoffBivolt: z.string().optional(),
   custoDriverDim110v: z.string().optional(),
   custoDriverDimDali: z.string().optional(),
+  custoDriverDimTriac110v: z.string().optional(),
+  custoDriverDimTriac220v: z.string().optional(),
   driverOnoff220Extra: z.string().optional(),
   driverOnoffBivoltExtra: z.string().optional(),
   driverDim110vExtra: z.string().optional(),
   driverDimDaliExtra: z.string().optional(),
+  driverDimTriac110vExtra: z.string().optional(),
+  driverDimTriac220vExtra: z.string().optional(),
   oticaExtra: z.string().optional(),
   // Preço de venda por tipo de driver
   precoVendaOnoff220: z.string().optional(),
@@ -226,16 +246,26 @@ export const appRouter = router({
           driverDimDali: input.driverDimDali?.toUpperCase() || null,
           driverDimDaliNaoAplicavel: !input.driverDimDali || input.driverDimDaliNaoAplicavel === true,
           qtdDriverDimDali: input.qtdDriverDimDali ?? 1,
+          driverDimTriac110v: input.driverDimTriac110v?.toUpperCase() || null,
+          driverDimTriac110vNaoAplicavel: !input.driverDimTriac110v || input.driverDimTriac110vNaoAplicavel === true,
+          qtdDriverDimTriac110v: input.qtdDriverDimTriac110v ?? 1,
+          driverDimTriac220v: input.driverDimTriac220v?.toUpperCase() || null,
+          driverDimTriac220vNaoAplicavel: !input.driverDimTriac220v || input.driverDimTriac220vNaoAplicavel === true,
+          qtdDriverDimTriac220v: input.qtdDriverDimTriac220v ?? 1,
           temperaturasCor: input.temperaturasCor || '["2700","3000","4000","5000"]',
           custoLuminaria: input.custoLuminaria || null,
           custoDriverOnoff220: input.custoDriverOnoff220 || null,
           custoDriverOnoffBivolt: input.custoDriverOnoffBivolt || null,
           custoDriverDim110v: input.custoDriverDim110v || null,
           custoDriverDimDali: input.custoDriverDimDali || null,
+          custoDriverDimTriac110v: input.custoDriverDimTriac110v || null,
+          custoDriverDimTriac220v: input.custoDriverDimTriac220v || null,
           driverOnoff220Extra: input.driverOnoff220Extra || null,
           driverOnoffBivoltExtra: input.driverOnoffBivoltExtra || null,
           driverDim110vExtra: input.driverDim110vExtra || null,
           driverDimDaliExtra: input.driverDimDaliExtra || null,
+          driverDimTriac110vExtra: input.driverDimTriac110vExtra || null,
+          driverDimTriac220vExtra: input.driverDimTriac220vExtra || null,
           oticaExtra: input.oticaExtra || null,
           fotoUrl: input.fotoUrl || null,
           fotoKey: input.fotoKey || null,
@@ -304,6 +334,22 @@ export const appRouter = router({
           update.driverDimDaliNaoAplicavel = d.driverDimDaliNaoAplicavel;
         }
         if (d.qtdDriverDimDali !== undefined) update.qtdDriverDimDali = d.qtdDriverDimDali;
+        // DIM TRIAC 110V
+        if (d.driverDimTriac110v !== undefined) {
+          update.driverDimTriac110v = d.driverDimTriac110v?.toUpperCase() || null;
+          update.driverDimTriac110vNaoAplicavel = !d.driverDimTriac110v || d.driverDimTriac110vNaoAplicavel === true;
+        } else if (d.driverDimTriac110vNaoAplicavel !== undefined) {
+          update.driverDimTriac110vNaoAplicavel = d.driverDimTriac110vNaoAplicavel;
+        }
+        if (d.qtdDriverDimTriac110v !== undefined) update.qtdDriverDimTriac110v = d.qtdDriverDimTriac110v;
+        // DIM TRIAC 220V
+        if (d.driverDimTriac220v !== undefined) {
+          update.driverDimTriac220v = d.driverDimTriac220v?.toUpperCase() || null;
+          update.driverDimTriac220vNaoAplicavel = !d.driverDimTriac220v || d.driverDimTriac220vNaoAplicavel === true;
+        } else if (d.driverDimTriac220vNaoAplicavel !== undefined) {
+          update.driverDimTriac220vNaoAplicavel = d.driverDimTriac220vNaoAplicavel;
+        }
+        if (d.qtdDriverDimTriac220v !== undefined) update.qtdDriverDimTriac220v = d.qtdDriverDimTriac220v;
         if (d.temperaturasCor !== undefined) update.temperaturasCor = d.temperaturasCor;
         if (d.fotoUrl !== undefined) update.fotoUrl = d.fotoUrl || null;
         if (d.fotoKey !== undefined) update.fotoKey = d.fotoKey || null;
@@ -312,10 +358,14 @@ export const appRouter = router({
         if (d.custoDriverOnoffBivolt !== undefined) update.custoDriverOnoffBivolt = d.custoDriverOnoffBivolt || null;
         if (d.custoDriverDim110v !== undefined) update.custoDriverDim110v = d.custoDriverDim110v || null;
         if (d.custoDriverDimDali !== undefined) update.custoDriverDimDali = d.custoDriverDimDali || null;
+        if (d.custoDriverDimTriac110v !== undefined) update.custoDriverDimTriac110v = d.custoDriverDimTriac110v || null;
+        if (d.custoDriverDimTriac220v !== undefined) update.custoDriverDimTriac220v = d.custoDriverDimTriac220v || null;
         if (d.driverOnoff220Extra !== undefined) update.driverOnoff220Extra = d.driverOnoff220Extra || null;
         if (d.driverOnoffBivoltExtra !== undefined) update.driverOnoffBivoltExtra = d.driverOnoffBivoltExtra || null;
         if (d.driverDim110vExtra !== undefined) update.driverDim110vExtra = d.driverDim110vExtra || null;
         if (d.driverDimDaliExtra !== undefined) update.driverDimDaliExtra = d.driverDimDaliExtra || null;
+        if (d.driverDimTriac110vExtra !== undefined) update.driverDimTriac110vExtra = d.driverDimTriac110vExtra || null;
+        if (d.driverDimTriac220vExtra !== undefined) update.driverDimTriac220vExtra = d.driverDimTriac220vExtra || null;
         if (d.oticaExtra !== undefined) update.oticaExtra = d.oticaExtra || null;
         if (d.precoVendaOnoff220 !== undefined) update.precoVendaOnoff220 = d.precoVendaOnoff220 || null;
         if (d.precoVendaOnoffBivolt !== undefined) update.precoVendaOnoffBivolt = d.precoVendaOnoffBivolt || null;

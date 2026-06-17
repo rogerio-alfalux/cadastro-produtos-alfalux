@@ -60,13 +60,20 @@ export const products = mysqlTable("products", {
   driverDim110vNaoAplicavel: boolean("driverDim110vNaoAplicavel").default(false).notNull(),
   driverDimDali: text("driverDimDali"),
   qtdDriverDimDali: int("qtdDriverDimDali").default(1).notNull(),
-  driverDimDaliNaoAplicavel: boolean("driverDimDaliNaoAplicavel").default(false).notNull(),
-
+    driverDimDaliNaoAplicavel: boolean("driverDimDaliNaoAplicavel").default(false).notNull(),
+  driverDimTriac110v: text("driverDimTriac110v"),
+  qtdDriverDimTriac110v: int("qtdDriverDimTriac110v").default(1).notNull(),
+  driverDimTriac110vNaoAplicavel: boolean("driverDimTriac110vNaoAplicavel").default(false).notNull(),
+  driverDimTriac220v: text("driverDimTriac220v"),
+  qtdDriverDimTriac220v: int("qtdDriverDimTriac220v").default(1).notNull(),
+  driverDimTriac220vNaoAplicavel: boolean("driverDimTriac220vNaoAplicavel").default(false).notNull(),
   // Drivers extras (JSON array: [{modelo, qtd, custo}])
   driverOnoff220Extra: text("driverOnoff220Extra"),
   driverOnoffBivoltExtra: text("driverOnoffBivoltExtra"),
   driverDim110vExtra: text("driverDim110vExtra"),
   driverDimDaliExtra: text("driverDimDaliExtra"),
+  driverDimTriac110vExtra: text("driverDimTriac110vExtra"),
+  driverDimTriac220vExtra: text("driverDimTriac220vExtra"),
 
   // Óticas extras (JSON array: [{modelo, qtd}])
   oticaExtra: text("oticaExtra"),
@@ -86,6 +93,8 @@ export const products = mysqlTable("products", {
   custoDriverOnoffBivolt: decimal("custoDriverOnoffBivolt", { precision: 10, scale: 2 }),
   custoDriverDim110v: decimal("custoDriverDim110v", { precision: 10, scale: 2 }),
   custoDriverDimDali: decimal("custoDriverDimDali", { precision: 10, scale: 2 }),
+  custoDriverDimTriac110v: decimal("custoDriverDimTriac110v", { precision: 10, scale: 2 }),
+  custoDriverDimTriac220v: decimal("custoDriverDimTriac220v", { precision: 10, scale: 2 }),
 
   // Preço de venda por tipo de driver
   // Categoria "PERFIS": preço por metro linear; demais categorias: preço por peça

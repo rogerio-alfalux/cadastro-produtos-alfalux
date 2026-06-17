@@ -644,11 +644,19 @@ router.get("/all", async (_req, res) => {
         driverDimDali: (p.driverDimDaliNaoAplicavel || !isValidDriver(p.driverDimDali))
           ? null
           : makeDriver(p.driverDimDali),
+        driverDimTriac110v: ((p as any).driverDimTriac110vNaoAplicavel || !isValidDriver((p as any).driverDimTriac110v))
+          ? null
+          : makeDriver((p as any).driverDimTriac110v),
+        driverDimTriac220v: ((p as any).driverDimTriac220vNaoAplicavel || !isValidDriver((p as any).driverDimTriac220v))
+          ? null
+          : makeDriver((p as any).driverDimTriac220v),
         custoLuminaria: p.custoLuminaria ? Number(p.custoLuminaria) : null,
         custoDriver220: (p as any).custoDriverOnoff220 ? Number((p as any).custoDriverOnoff220) : null,
         custoDriverBivolt: (p as any).custoDriverOnoffBivolt ? Number((p as any).custoDriverOnoffBivolt) : null,
         custoDriverDim110v: (p as any).custoDriverDim110v ? Number((p as any).custoDriverDim110v) : null,
         custoDriverDimDali: (p as any).custoDriverDimDali ? Number((p as any).custoDriverDimDali) : null,
+        custoDriverDimTriac110v: (p as any).custoDriverDimTriac110v ? Number((p as any).custoDriverDimTriac110v) : null,
+        custoDriverDimTriac220v: (p as any).custoDriverDimTriac220v ? Number((p as any).custoDriverDimTriac220v) : null,
       };
 
       // oticaPrimaria e oticaSecundaria: sempre retornados (não apenas DOWNLIGHTS/SPOTS)
@@ -720,6 +728,12 @@ router.get("/all", async (_req, res) => {
         : null;
       result.driverQtdDimDali = (!p.driverDimDaliNaoAplicavel && isValidDriver(p.driverDimDali))
         ? (p.qtdDriverDimDali != null ? Number(p.qtdDriverDimDali) : 1)
+        : null;
+      result.driverQtdDimTriac110v = (!(p as any).driverDimTriac110vNaoAplicavel && isValidDriver((p as any).driverDimTriac110v))
+        ? ((p as any).qtdDriverDimTriac110v != null ? Number((p as any).qtdDriverDimTriac110v) : 1)
+        : null;
+      result.driverQtdDimTriac220v = (!(p as any).driverDimTriac220vNaoAplicavel && isValidDriver((p as any).driverDimTriac220v))
+        ? ((p as any).qtdDriverDimTriac220v != null ? Number((p as any).qtdDriverDimTriac220v) : 1)
         : null;
 
       return result;
