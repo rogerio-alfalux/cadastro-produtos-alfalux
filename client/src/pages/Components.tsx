@@ -74,6 +74,8 @@ interface FormState {
   codigo: string;
   observacao: string;
   custo: string;
+  fotoUrl: string;
+  fotoKey: string;
 }
 
 const EMPTY_FORM: FormState = {
@@ -82,6 +84,8 @@ const EMPTY_FORM: FormState = {
   codigo: "",
   observacao: "",
   custo: "",
+  fotoUrl: "",
+  fotoKey: "",
 };
 
 // ─── Autocomplete for Modelo field ───────────────────────────────────────────
@@ -420,6 +424,8 @@ export default function Components() {
       codigo: c.codigo ?? "",
       observacao: c.observacao ?? "",
       custo: c.custo ?? "",
+      fotoUrl: c.fotoUrl ?? "",
+      fotoKey: c.fotoKey ?? "",
     });
     setShowForm(true);
   };
@@ -435,9 +441,9 @@ export default function Components() {
       return;
     }
     if (editTarget) {
-      updateMut.mutate({ id: editTarget.id, modelo: form.modelo, codigo: form.codigo, observacao: form.observacao, custo: form.custo });
+      updateMut.mutate({ id: editTarget.id, modelo: form.modelo, codigo: form.codigo, observacao: form.observacao, custo: form.custo, fotoUrl: form.fotoUrl || undefined, fotoKey: form.fotoKey || undefined });
     } else {
-      createMut.mutate({ tipo: form.tipo as ComponentType, modelo: form.modelo, codigo: form.codigo, observacao: form.observacao, custo: form.custo });
+      createMut.mutate({ tipo: form.tipo as ComponentType, modelo: form.modelo, codigo: form.codigo, observacao: form.observacao, custo: form.custo, fotoUrl: form.fotoUrl || undefined, fotoKey: form.fotoKey || undefined });
     }
   };
 
@@ -488,6 +494,36 @@ export default function Components() {
   const [fotoTarget, setFotoTarget] = useState<ComponentRow | null>(null);
   const [fotoUploading, setFotoUploading] = useState(false);
   const fotoInputRef = useRef<HTMLInputElement>(null);
+  // ─── Foto no formulário de criação/edição ────────────────────────────────
+  const [formFotoUploading, setFormFotoUploading] = useState(false);
+  const formFotoInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFormFotoUpload = async (file: File) => {
+    setFormFotoUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const uploadRes = await fetch("/api/components/upload-foto", { method: "POST", body: formData });
+      const uploadData = await uploadRes.json();
+      if (!uploadRes.ok) { toast.error(uploadData.error ?? "Erro ao fazer upload"); return; }
+      setForm((p) => ({ ...p, fotoUrl: uploadData.url, fotoKey: uploadData.key }));
+      toast.success("Foto carregada!");
+    } catch (err) {
+      toast.error("Erro de rede: " + String(err));
+    } finally {
+      setFormFotoUploading(false);
+    }
+  };
+
+  const handleFormFotoRemove = async () => {
+    // Se estiver editando um componente existente, remove do servidor também
+    if (editTarget && form.fotoKey) {
+      try {
+        await fetch(`/api/components/${editTarget.id}/foto`, { method: "DELETE" });
+      } catch (_) { /* ignore */ }
+    }
+    setForm((p) => ({ ...p, fotoUrl: "", fotoKey: "" }));
+  };
 
   const handleFotoUpload = async (file: File) => {
     if (!fotoTarget) return;
@@ -679,19 +715,28 @@ export default function Components() {
                         <div className="col-span-1 text-xs text-emerald-400 text-right">
                           {c.custo ? `R$ ${Number(c.custo).toFixed(2)}` : "—"}
                         </div>
-                        <div className="col-span-2 flex justify-end gap-1">
-                          <button
-                            onClick={() => setFotoTarget(c)}
-                            className={cn(
-                              "p-1.5 rounded transition-colors",
-                              c.fotoUrl
-                                ? "text-violet-400 hover:text-violet-300 hover:bg-violet-400/10"
-                                : "text-muted-foreground hover:text-violet-400 hover:bg-violet-400/10"
-                            )}
-                            title={c.fotoUrl ? "Ver/alterar foto" : "Adicionar foto"}
-                          >
-                            {c.fotoUrl ? <ImageIcon className="w-3.5 h-3.5" /> : <Camera className="w-3.5 h-3.5" />}
-                          </button>
+                        <div className="col-span-2 flex justify-end gap-1 items-center">
+                          {c.fotoUrl ? (
+                            <button
+                              onClick={() => setFotoTarget(c)}
+                              className="rounded overflow-hidden border border-violet-500/40 hover:border-violet-400 transition-colors flex-shrink-0"
+                              title="Ver/alterar foto"
+                            >
+                              <img
+                                src={c.fotoUrl}
+                                alt={c.modelo}
+                                className="w-7 h-7 object-cover"
+                              />
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => setFotoTarget(c)}
+                              className="p-1.5 rounded transition-colors text-muted-foreground hover:text-violet-400 hover:bg-violet-400/10"
+                              title="Adicionar foto"
+                            >
+                              <Camera className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                           <button
                             onClick={() => setProductsTarget(c)}
                             className="p-1.5 rounded text-muted-foreground hover:text-blue-400 hover:bg-blue-400/10 transition-colors"
@@ -1019,6 +1064,71 @@ export default function Components() {
                   placeholder="0,00"
                 />
               </div>
+            </div>
+
+            {/* Foto */}
+            <div className="space-y-1.5">
+              <Label>Foto <span className="text-muted-foreground text-xs">(opcional)</span></Label>
+              {form.fotoUrl ? (
+                <div className="flex items-start gap-3">
+                  <img
+                    src={form.fotoUrl}
+                    alt="Foto do componente"
+                    className="w-24 h-24 object-contain rounded-lg border border-border bg-muted/30"
+                  />
+                  <div className="flex flex-col gap-2 mt-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={() => formFotoInputRef.current?.click()}
+                      disabled={formFotoUploading}
+                    >
+                      <Camera className="w-3.5 h-3.5" />
+                      Trocar foto
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 text-destructive hover:text-destructive"
+                      onClick={handleFormFotoRemove}
+                      disabled={formFotoUploading}
+                    >
+                      <XIcon className="w-3.5 h-3.5" />
+                      Remover
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => formFotoInputRef.current?.click()}
+                  disabled={formFotoUploading}
+                  className="w-full flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border hover:border-violet-500/50 bg-muted/20 hover:bg-violet-500/5 transition-colors py-6 cursor-pointer disabled:opacity-50"
+                >
+                  {formFotoUploading ? (
+                    <span className="text-sm text-muted-foreground">Enviando...</span>
+                  ) : (
+                    <>
+                      <Camera className="w-6 h-6 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Clique para adicionar foto</span>
+                    </>
+                  )}
+                </button>
+              )}
+              <input
+                ref={formFotoInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleFormFotoUpload(file);
+                  e.target.value = "";
+                }}
+              />
             </div>
           </div>
           <DialogFooter>

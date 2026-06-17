@@ -61,6 +61,8 @@ export const componentsRouter = router({
         codigo: z.string().optional(),
         observacao: z.string().optional(),
         custo: z.string().optional(),
+        fotoUrl: z.string().optional(),
+        fotoKey: z.string().optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -87,6 +89,8 @@ export const componentsRouter = router({
         codigo: input.codigo?.trim() ? input.codigo.trim().toUpperCase() : null,
         observacao: input.observacao?.trim() || null,
         custo: (input.custo && input.custo.trim() !== '') ? input.custo.trim().replace(',', '.') : null,
+        fotoUrl: input.fotoUrl || null,
+        fotoKey: input.fotoKey || null,
       });
       return { id: (result as any).insertId };
     }),
@@ -100,6 +104,8 @@ export const componentsRouter = router({
         codigo: z.string().optional(),
         observacao: z.string().optional(),
         custo: z.string().optional(),
+        fotoUrl: z.string().optional(),
+        fotoKey: z.string().optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -126,6 +132,8 @@ export const componentsRouter = router({
         codigo: data.codigo?.trim() ? data.codigo.trim().toUpperCase() : null,
         observacao: data.observacao?.trim() || null,
         custo: (data.custo && data.custo.trim() !== '') ? data.custo.trim().replace(',', '.') : null,
+        ...(data.fotoUrl !== undefined ? { fotoUrl: data.fotoUrl || null } : {}),
+        ...(data.fotoKey !== undefined ? { fotoKey: data.fotoKey || null } : {}),
       }).where(eq(components.id, id));
       return { success: true };
     }),
