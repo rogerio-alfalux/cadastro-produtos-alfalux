@@ -4,6 +4,7 @@ import * as XLSX from "xlsx";
 import { getDb } from "./db";
 import { components } from "../drizzle/schema";
 import { eq, and, ne } from "drizzle-orm";
+import { storagePut } from "./storage";
 
 const router = express.Router();
 
@@ -35,6 +36,62 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 // ─── Multer para Excel ────────────────────────────────────────────────────────
+const uploadImage = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (allowed.includes(file.mimetype)) cb(null, true);
+    else cb(new Error("Apenas JPEG, PNG e WEBP s\u00e3o aceitos"));
+  },
+});
+
+// POST /api/components/upload-foto
+router.post("/upload-foto", uploadImage.single("file"), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: "Nenhum arquivo enviado" });
+    const ext = req.file.originalname.split(".").pop()?.toLowerCase() || "jpg";
+    const key = `components/photos/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { url } = await storagePut(key, req.file.buffer, req.file.mimetype);
+    return res.json({ url, key });
+  } catch (err) {
+    console.error("[components/upload-foto]", err);
+    return res.status(500).json({ error: "Erro ao fazer upload da imagem" });
+  }
+});
+
+// PUT /api/components/:id/foto
+router.put("/:id/foto", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: "ID inv\u00e1lido" });
+    const { url, key } = req.body as { url?: string; key?: string };
+    if (!url || !key) return res.status(400).json({ error: "url e key s\u00e3o obrigat\u00f3rios" });
+    const db = await getDb();
+    if (!db) return res.status(503).json({ error: "Banco de dados indispon\u00edvel" });
+    await db.update(components).set({ fotoUrl: url, fotoKey: key }).where(eq(components.id, id));
+    return res.json({ success: true });
+  } catch (err) {
+    console.error("[components/put-foto]", err);
+    return res.status(500).json({ error: "Erro ao salvar foto" });
+  }
+});
+
+// DELETE /api/components/:id/foto
+router.delete("/:id/foto", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: "ID inv\u00e1lido" });
+    const db = await getDb();
+    if (!db) return res.status(503).json({ error: "Banco de dados indispon\u00edvel" });
+    await db.update(components).set({ fotoUrl: null, fotoKey: null }).where(eq(components.id, id));
+    return res.json({ success: true });
+  } catch (err) {
+    console.error("[components/delete-foto]", err);
+    return res.status(500).json({ error: "Erro ao remover foto" });
+  }
+});
+
 const uploadExcel = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 20 * 1024 * 1024 }, // 20MB

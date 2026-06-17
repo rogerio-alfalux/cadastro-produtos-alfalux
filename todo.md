@@ -389,3 +389,18 @@
 - [x] Cada driver é mapeado com: id prefixado "driver-{id}", source="driver", codigo=EQ, sku=EQ, produto=modelo, familia=tipo legível, custo, observacoes
 - [x] Acessórios da tabela accessories recebem source="accessories" para distinção no Configurador
 - [x] Sem quebra de compatibilidade: campos existentes mantidos, apenas adicionados source, custo e observacoes
+
+## Feature v33 — Foto nos componentes
+- [ ] Migrar schema: adicionar colunas fotoUrl e fotoKey na tabela components
+- [ ] Endpoint POST /api/componentes/upload-foto para upload de imagem
+- [ ] Endpoint DELETE /api/componentes/:id/foto para remover foto
+- [ ] Procedure updateFoto no tRPC para salvar fotoUrl/fotoKey no banco
+- [ ] UI: botão de câmera/upload na linha do componente (modal ou inline)
+- [ ] UI: preview da foto com opção de remover
+- [ ] API /api/acessorios/all: incluir fotoUrl assinada dos drivers/fontes
+
+## Feature v33 — Foto nos componentes
+- [x] Migrar schema: adicionar fotoUrl e fotoKey na tabela components
+- [x] Endpoints de upload/remoção de foto no componentsRoutes.ts
+- [x] UI de foto no Components.tsx (botão câmera/imagem por linha, modal com preview, upload, remoção)
+- [x] Transmitir fotoUrl assinada dos drivers na API /api/acessorios/all

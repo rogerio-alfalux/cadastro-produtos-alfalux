@@ -147,14 +147,15 @@ export const components = mysqlTable("components", {
   // Observações opcionais
   observacao: text("observacao"),
 
-  // Custo unitário do componente
+    // Custo unitário do componente
   custo: decimal("custo", { precision: 10, scale: 2 }),
-
+  // Foto do componente (opcional)
+  fotoUrl: text("fotoUrl"),
+  fotoKey: text("fotoKey"),
   // Metadados
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
-
 export type Component = typeof components.$inferSelect;
 export type InsertComponent = typeof components.$inferInsert;
 

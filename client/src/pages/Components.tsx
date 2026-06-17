@@ -28,7 +28,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, RefreshCw, Search, ChevronDown, ChevronUp, Package, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, CheckSquare2 } from "lucide-react";
+import { Plus, Pencil, Trash2, RefreshCw, Search, ChevronDown, ChevronUp, Package, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, CheckSquare2, Camera, X as XIcon, ImageIcon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
@@ -64,6 +64,8 @@ interface ComponentRow {
   codigo: string | null;
   observacao: string | null;
   custo: string | null;
+  fotoUrl: string | null;
+  fotoKey: string | null;
 }
 
 interface FormState {
@@ -482,6 +484,52 @@ export default function Components() {
   // ─── Import Excel dialog ─────────────────────────────────────────────────
   const [showImport, setShowImport] = useState(false);
 
+  // ─── Foto modal ─────────────────────────────────────────────────────────────
+  const [fotoTarget, setFotoTarget] = useState<ComponentRow | null>(null);
+  const [fotoUploading, setFotoUploading] = useState(false);
+  const fotoInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFotoUpload = async (file: File) => {
+    if (!fotoTarget) return;
+    setFotoUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const uploadRes = await fetch("/api/components/upload-foto", { method: "POST", body: formData });
+      const uploadData = await uploadRes.json();
+      if (!uploadRes.ok) { toast.error(uploadData.error ?? "Erro ao fazer upload"); return; }
+      const saveRes = await fetch(`/api/components/${fotoTarget.id}/foto`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: uploadData.url, key: uploadData.key }),
+      });
+      if (!saveRes.ok) { toast.error("Erro ao salvar referência da foto"); return; }
+      toast.success("Foto salva com sucesso!");
+      utils.components.list.invalidate();
+      setFotoTarget((prev) => prev ? { ...prev, fotoUrl: uploadData.url, fotoKey: uploadData.key } : null);
+    } catch (err) {
+      toast.error("Erro de rede: " + String(err));
+    } finally {
+      setFotoUploading(false);
+    }
+  };
+
+  const handleFotoRemove = async () => {
+    if (!fotoTarget) return;
+    setFotoUploading(true);
+    try {
+      const res = await fetch(`/api/components/${fotoTarget.id}/foto`, { method: "DELETE" });
+      if (!res.ok) { toast.error("Erro ao remover foto"); return; }
+      toast.success("Foto removida!");
+      utils.components.list.invalidate();
+      setFotoTarget((prev) => prev ? { ...prev, fotoUrl: null, fotoKey: null } : null);
+    } catch (err) {
+      toast.error("Erro de rede: " + String(err));
+    } finally {
+      setFotoUploading(false);
+    }
+  };
+
   // ─── "Ver produtos" modal ──────────────────────────────────────────────────
   const [productsTarget, setProductsTarget] = useState<ComponentRow | null>(null);
   const { data: productsUsing = [], isFetching: loadingProducts } = trpc.components.getProductsUsing.useQuery(
@@ -633,6 +681,18 @@ export default function Components() {
                         </div>
                         <div className="col-span-2 flex justify-end gap-1">
                           <button
+                            onClick={() => setFotoTarget(c)}
+                            className={cn(
+                              "p-1.5 rounded transition-colors",
+                              c.fotoUrl
+                                ? "text-violet-400 hover:text-violet-300 hover:bg-violet-400/10"
+                                : "text-muted-foreground hover:text-violet-400 hover:bg-violet-400/10"
+                            )}
+                            title={c.fotoUrl ? "Ver/alterar foto" : "Adicionar foto"}
+                          >
+                            {c.fotoUrl ? <ImageIcon className="w-3.5 h-3.5" /> : <Camera className="w-3.5 h-3.5" />}
+                          </button>
+                          <button
                             onClick={() => setProductsTarget(c)}
                             className="p-1.5 rounded text-muted-foreground hover:text-blue-400 hover:bg-blue-400/10 transition-colors"
                             title="Ver produtos que usam este componente"
@@ -738,6 +798,94 @@ export default function Components() {
 
 
 
+
+      {/* ─── Foto Modal ─────────────────────────────────────────────────────────── */}
+      <Dialog open={!!fotoTarget} onOpenChange={(o) => { if (!o) setFotoTarget(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Camera className="w-5 h-5 text-violet-400" />
+              Foto do Componente
+            </DialogTitle>
+          </DialogHeader>
+          {fotoTarget && (
+            <div className="space-y-4 py-2">
+              <div className="rounded-lg bg-muted/30 border border-border px-4 py-3">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-0.5">{COMPONENT_TYPES.find((t) => t.value === fotoTarget.tipo)?.label ?? fotoTarget.tipo}</p>
+                <p className="text-sm font-medium text-foreground">{fotoTarget.modelo}</p>
+              </div>
+
+              {/* Preview ou placeholder */}
+              <div
+                className={cn(
+                  "relative rounded-xl border-2 border-dashed overflow-hidden flex items-center justify-center bg-muted/20 transition-colors h-52",
+                  fotoTarget.fotoUrl ? "border-violet-500/40" : "border-border hover:border-violet-500/40 cursor-pointer"
+                )}
+                onClick={() => !fotoTarget.fotoUrl && fotoInputRef.current?.click()}
+              >
+                {fotoTarget.fotoUrl ? (
+                  <img
+                    src={fotoTarget.fotoUrl}
+                    alt={fotoTarget.modelo}
+                    className="w-full h-full object-contain"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                    <Camera className="w-10 h-10" />
+                    <p className="text-sm">Clique para adicionar foto</p>
+                    <p className="text-xs">JPEG, PNG ou WEBP — máx. 10MB</p>
+                  </div>
+                )}
+                {fotoUploading && (
+                  <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
+                    <RefreshCw className="w-6 h-6 animate-spin text-violet-400" />
+                  </div>
+                )}
+              </div>
+
+              {/* Input oculto */}
+              <input
+                ref={fotoInputRef}
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleFotoUpload(f);
+                  e.target.value = "";
+                }}
+              />
+
+              {/* Ações */}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 gap-2"
+                  onClick={() => fotoInputRef.current?.click()}
+                  disabled={fotoUploading}
+                >
+                  <Upload className="w-4 h-4" />
+                  {fotoTarget.fotoUrl ? "Trocar foto" : "Enviar foto"}
+                </Button>
+                {fotoTarget.fotoUrl && (
+                  <Button
+                    variant="outline"
+                    className="gap-2 text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/10"
+                    onClick={handleFotoRemove}
+                    disabled={fotoUploading}
+                  >
+                    <XIcon className="w-4 h-4" />
+                    Remover
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setFotoTarget(null)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* ─── Ver Produtos Modal ─────────────────────────────────────────────────── */}
       <Dialog open={!!productsTarget} onOpenChange={(o) => !o && setProductsTarget(null)}>

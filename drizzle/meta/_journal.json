@@ -127,6 +127,13 @@
       "when": 1781619921403,
       "tag": "0017_brave_warbird",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "5",
+      "when": 1781699472556,
+      "tag": "0018_parched_flatman",
+      "breakpoints": true
     }
   ]
 }

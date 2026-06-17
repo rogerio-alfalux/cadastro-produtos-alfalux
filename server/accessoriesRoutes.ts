@@ -146,20 +146,32 @@ router.get("/all", async (_req, res) => {
 
     const formattedAccessories = await Promise.all(formattedPromises);
 
-    // Mapear drivers como acessórios (sem foto por enquanto)
-    const formattedDrivers = drivers.map((d) => ({
-      id:         `driver-${d.id}`,
-      source:     "driver" as const,
-      codigo:     d.codigo ?? null,
-      sku:        d.codigo ?? null,   // usa o código EQ como SKU
-      produto:    d.modelo,
-      familia:    tipoToFamilia[d.tipo] ?? d.tipo,
-      dimensao:   null,
-      precoVenda: null,
-      custo:      d.custo != null ? Number(d.custo) : null,
-      observacoes: d.observacao ?? null,
-      fotoUrl:    null,
-    }));
+    // Mapear drivers como acessórios (com foto assinada se disponível)
+    const formattedDriversPromises = drivers.map(async (d) => {
+      let driverFotoUrl: string | null = null;
+      if (d.fotoUrl) {
+        const key = extractStorageKey(d.fotoUrl);
+        if (key) {
+          try { driverFotoUrl = await storageGetSignedUrl(key); } catch { driverFotoUrl = d.fotoUrl; }
+        } else {
+          driverFotoUrl = d.fotoUrl;
+        }
+      }
+      return {
+        id:         `driver-${d.id}`,
+        source:     "driver" as const,
+        codigo:     d.codigo ?? null,
+        sku:        d.codigo ?? null,
+        produto:    d.modelo,
+        familia:    tipoToFamilia[d.tipo] ?? d.tipo,
+        dimensao:   null,
+        precoVenda: null,
+        custo:      d.custo != null ? Number(d.custo) : null,
+        observacoes: d.observacao ?? null,
+        fotoUrl:    driverFotoUrl,
+      };
+    });
+    const formattedDrivers = await Promise.all(formattedDriversPromises);
 
     const formatted = [...formattedAccessories, ...formattedDrivers];
 
