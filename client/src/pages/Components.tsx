@@ -678,8 +678,8 @@ export default function Components() {
                 {expandedGroups.has(tipo) && (
                   <div className="divide-y divide-border/50">
                     {/* Column header */}
-                    <div className="grid grid-cols-[repeat(17,minmax(0,1fr))] gap-3 px-5 py-2 bg-muted/20 text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
-                      <div className="col-span-1 flex items-center">
+                    <div className="grid gap-3 px-5 py-2 bg-muted/20 text-[10px] text-muted-foreground uppercase tracking-wider font-medium" style={{gridTemplateColumns:'28px 44px 1fr 90px 140px 70px 100px'}}>
+                      <div className="flex items-center">
                         <Checkbox
                           checked={items.every((c) => selectedIds.has(c.id))}
                           onCheckedChange={() => toggleSelectGroup(items)}
@@ -687,22 +687,23 @@ export default function Components() {
                           className="w-3.5 h-3.5"
                         />
                       </div>
-                      <div className="col-span-2">Foto</div>
-                      <div className="col-span-6">Modelo</div>
-                      <div className="col-span-2">Código</div>
-                      <div className="col-span-2">Observação</div>
-                      <div className="col-span-1 text-right">Custo</div>
-                      <div className="col-span-3" />
+                      <div></div>
+                      <div>Modelo</div>
+                      <div>Código</div>
+                      <div>Observação</div>
+                      <div className="text-right">Custo</div>
+                      <div />
                     </div>
                     {items.map((c) => (
                       <div
                         key={c.id}
                         className={cn(
-                          "grid grid-cols-[repeat(17,minmax(0,1fr))] gap-3 px-5 py-2 items-center hover:bg-muted/10 transition-colors",
+                          "grid gap-3 px-5 py-2 items-center hover:bg-muted/10 transition-colors",
+                          "[grid-template-columns:28px_44px_1fr_90px_140px_70px_100px]",
                           selectedIds.has(c.id) && "bg-destructive/5"
                         )}
                       >
-                        <div className="col-span-1 flex items-center">
+                        <div className="flex items-center">
                           <Checkbox
                             checked={selectedIds.has(c.id)}
                             onCheckedChange={() => toggleSelect(c.id)}
@@ -711,7 +712,7 @@ export default function Components() {
                           />
                         </div>
                         {/* Foto — lado esquerdo, como nos produtos */}
-                        <div className="col-span-2 flex items-center">
+                        <div className="flex items-center">
                           <button
                             onClick={() => setFotoTarget(c)}
                             className={cn(
@@ -733,13 +734,13 @@ export default function Components() {
                             )}
                           </button>
                         </div>
-                        <div className="col-span-6 font-medium text-sm text-foreground truncate">{c.modelo}</div>
-                        <div className="col-span-2 text-xs text-muted-foreground font-mono truncate">{c.codigo ?? "—"}</div>
-                        <div className="col-span-2 text-xs text-muted-foreground truncate">{c.observacao ?? "—"}</div>
-                        <div className="col-span-1 text-xs text-emerald-400 text-right">
+                        <div className="font-medium text-sm text-foreground truncate min-w-0">{c.modelo}</div>
+                        <div className="text-xs text-muted-foreground font-mono truncate">{c.codigo ?? "—"}</div>
+                        <div className="text-xs text-muted-foreground truncate">{c.observacao ?? "—"}</div>
+                        <div className="text-xs text-emerald-400 text-right">
                           {c.custo ? `R$ ${Number(c.custo).toFixed(2)}` : "—"}
                         </div>
-                        <div className="col-span-3 flex justify-end gap-1 items-center">
+                        <div className="flex justify-end gap-1 items-center">
                           <button
                             onClick={() => setProductsTarget(c)}
                             className="p-1.5 rounded text-muted-foreground hover:text-blue-400 hover:bg-blue-400/10 transition-colors"
