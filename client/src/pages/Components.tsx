@@ -678,7 +678,7 @@ export default function Components() {
                 {expandedGroups.has(tipo) && (
                   <div className="divide-y divide-border/50">
                     {/* Column header */}
-                    <div className="grid grid-cols-[repeat(13,minmax(0,1fr))] gap-3 px-5 py-2 bg-muted/20 text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
+                    <div className="grid grid-cols-[repeat(15,minmax(0,1fr))] gap-3 px-5 py-2 bg-muted/20 text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
                       <div className="col-span-1 flex items-center">
                         <Checkbox
                           checked={items.every((c) => selectedIds.has(c.id))}
@@ -687,17 +687,18 @@ export default function Components() {
                           className="w-3.5 h-3.5"
                         />
                       </div>
-                      <div className="col-span-5">Modelo</div>
+                      <div className="col-span-2">Foto</div>
+                      <div className="col-span-4">Modelo</div>
                       <div className="col-span-2">Código</div>
                       <div className="col-span-2">Observação</div>
                       <div className="col-span-1 text-right">Custo</div>
-                      <div className="col-span-2" />
+                      <div className="col-span-3" />
                     </div>
                     {items.map((c) => (
                       <div
                         key={c.id}
                         className={cn(
-                          "grid grid-cols-[repeat(13,minmax(0,1fr))] gap-3 px-5 py-3 items-center hover:bg-muted/10 transition-colors",
+                          "grid grid-cols-[repeat(15,minmax(0,1fr))] gap-3 px-5 py-2 items-center hover:bg-muted/10 transition-colors",
                           selectedIds.has(c.id) && "bg-destructive/5"
                         )}
                       >
@@ -709,34 +710,36 @@ export default function Components() {
                             className="w-3.5 h-3.5"
                           />
                         </div>
-                        <div className="col-span-5 font-medium text-sm text-foreground truncate">{c.modelo}</div>
+                        {/* Foto — lado esquerdo, como nos produtos */}
+                        <div className="col-span-2 flex items-center">
+                          <button
+                            onClick={() => setFotoTarget(c)}
+                            className={cn(
+                              "w-10 h-10 rounded-lg overflow-hidden border flex items-center justify-center flex-shrink-0 transition-colors",
+                              c.fotoUrl
+                                ? "border-violet-500/40 hover:border-violet-400 bg-muted/20"
+                                : "border-dashed border-border hover:border-violet-500/50 bg-muted/20 hover:bg-violet-500/5"
+                            )}
+                            title={c.fotoUrl ? "Ver/alterar foto" : "Adicionar foto"}
+                          >
+                            {c.fotoUrl ? (
+                              <img
+                                src={c.fotoUrl}
+                                alt={c.modelo}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <Camera className="w-4 h-4 text-muted-foreground/50" />
+                            )}
+                          </button>
+                        </div>
+                        <div className="col-span-4 font-medium text-sm text-foreground truncate">{c.modelo}</div>
                         <div className="col-span-2 text-xs text-muted-foreground font-mono truncate">{c.codigo ?? "—"}</div>
                         <div className="col-span-2 text-xs text-muted-foreground truncate">{c.observacao ?? "—"}</div>
                         <div className="col-span-1 text-xs text-emerald-400 text-right">
                           {c.custo ? `R$ ${Number(c.custo).toFixed(2)}` : "—"}
                         </div>
-                        <div className="col-span-2 flex justify-end gap-1 items-center">
-                          {c.fotoUrl ? (
-                            <button
-                              onClick={() => setFotoTarget(c)}
-                              className="rounded overflow-hidden border border-violet-500/40 hover:border-violet-400 transition-colors flex-shrink-0"
-                              title="Ver/alterar foto"
-                            >
-                              <img
-                                src={c.fotoUrl}
-                                alt={c.modelo}
-                                className="w-7 h-7 object-cover"
-                              />
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => setFotoTarget(c)}
-                              className="p-1.5 rounded transition-colors text-muted-foreground hover:text-violet-400 hover:bg-violet-400/10"
-                              title="Adicionar foto"
-                            >
-                              <Camera className="w-3.5 h-3.5" />
-                            </button>
-                          )}
+                        <div className="col-span-3 flex justify-end gap-1 items-center">
                           <button
                             onClick={() => setProductsTarget(c)}
                             className="p-1.5 rounded text-muted-foreground hover:text-blue-400 hover:bg-blue-400/10 transition-colors"
