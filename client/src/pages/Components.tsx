@@ -678,7 +678,7 @@ export default function Components() {
                 {expandedGroups.has(tipo) && (
                   <div className="divide-y divide-border/50">
                     {/* Column header */}
-                    <div className="grid grid-cols-[repeat(15,minmax(0,1fr))] gap-3 px-5 py-2 bg-muted/20 text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
+                    <div className="grid grid-cols-[repeat(17,minmax(0,1fr))] gap-3 px-5 py-2 bg-muted/20 text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
                       <div className="col-span-1 flex items-center">
                         <Checkbox
                           checked={items.every((c) => selectedIds.has(c.id))}
@@ -688,7 +688,7 @@ export default function Components() {
                         />
                       </div>
                       <div className="col-span-2">Foto</div>
-                      <div className="col-span-4">Modelo</div>
+                      <div className="col-span-6">Modelo</div>
                       <div className="col-span-2">Código</div>
                       <div className="col-span-2">Observação</div>
                       <div className="col-span-1 text-right">Custo</div>
@@ -698,7 +698,7 @@ export default function Components() {
                       <div
                         key={c.id}
                         className={cn(
-                          "grid grid-cols-[repeat(15,minmax(0,1fr))] gap-3 px-5 py-2 items-center hover:bg-muted/10 transition-colors",
+                          "grid grid-cols-[repeat(17,minmax(0,1fr))] gap-3 px-5 py-2 items-center hover:bg-muted/10 transition-colors",
                           selectedIds.has(c.id) && "bg-destructive/5"
                         )}
                       >
@@ -733,7 +733,7 @@ export default function Components() {
                             )}
                           </button>
                         </div>
-                        <div className="col-span-4 font-medium text-sm text-foreground truncate">{c.modelo}</div>
+                        <div className="col-span-6 font-medium text-sm text-foreground truncate">{c.modelo}</div>
                         <div className="col-span-2 text-xs text-muted-foreground font-mono truncate">{c.codigo ?? "—"}</div>
                         <div className="col-span-2 text-xs text-muted-foreground truncate">{c.observacao ?? "—"}</div>
                         <div className="col-span-1 text-xs text-emerald-400 text-right">
