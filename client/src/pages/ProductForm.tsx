@@ -360,6 +360,7 @@ interface FormData {
   dissipador: string;
   qtdDissipador: number;
   dissipadorNaoAplicavel: boolean;
+  semDriver: boolean;
   driverOnoff220: string;
   qtdDriverOnoff220: number;
   custoDriverOnoff220: string;
@@ -421,6 +422,7 @@ const defaultForm: FormData = {
   dissipador: "",
   qtdDissipador: 1,
   dissipadorNaoAplicavel: false,
+  semDriver: false,
   driverOnoff220: "",
   qtdDriverOnoff220: 1,
   custoDriverOnoff220: "",
@@ -538,6 +540,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         dissipador: (existingProduct.dissipadorNaoAplicavel || !existingProduct.dissipador) ? "" : existingProduct.dissipador,
         qtdDissipador: (p.qtdDissipador != null ? Number(p.qtdDissipador) : 1),
         dissipadorNaoAplicavel: existingProduct.dissipadorNaoAplicavel || !existingProduct.dissipador || false,
+        semDriver: (p as any).semDriver || false,
         driverOnoff220: existingProduct.driverOnoff220 || "",
         qtdDriverOnoff220: (p.qtdDriverOnoff220 != null ? Number(p.qtdDriverOnoff220) : 1),
         custoDriverOnoff220: p.custoDriverOnoff220 ? String(p.custoDriverOnoff220) : "",
@@ -645,8 +648,8 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       if (field === "otica" && f.oticaNaoAplicavel) continue;
       if (field === "holder" && f.holderNaoAplicavel) continue;
       if (field === "dissipador" && f.dissipadorNaoAplicavel) continue;
-      if (field === "driverOnoffBivolt" && f.driverOnoffBivoltNaoAplicavel) continue;
-
+            if (field === "driverOnoffBivolt" && f.driverOnoffBivoltNaoAplicavel) continue;
+      if ((field === "driverOnoff220" || field === "driverOnoffBivolt") && f.semDriver) continue;
       const value = f[field];
       if (!value || (typeof value === "string" && !value.trim())) {
         newErrors[field] = `${FIELD_LABELS[field]} é obrigatório`;
@@ -669,6 +672,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       if (field === "holder" && form.holderNaoAplicavel) continue;
       if (field === "dissipador" && form.dissipadorNaoAplicavel) continue;
       if (field === "driverOnoffBivolt" && form.driverOnoffBivoltNaoAplicavel) continue;
+      if ((field === "driverOnoff220" || field === "driverOnoffBivolt") && form.semDriver) continue;
       const value = form[field];
       if (!value || (typeof value === "string" && !value.trim())) return false;
     }
@@ -736,6 +740,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const payload: any = {
       ...form,
+      semDriver: form.semDriver,
       temperaturasCor: JSON.stringify(form.temperaturasCor),
       custoLuminaria: form.custoLuminaria || undefined,
       custoDriverOnoff220: form.custoDriverOnoff220 || undefined,
@@ -1240,11 +1245,24 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
             <Settings className="w-4 h-4 text-primary" />
             <h2 className="section-header mb-0">DRIVERS / CONTROLE</h2>
           </div>
-          <p className="text-xs text-muted-foreground mb-5">
+                    <p className="text-xs text-muted-foreground mb-4">
             Para cada driver, informe o modelo e o custo unitário em R$ (opcional)
           </p>
-
-          <div className="space-y-5">
+          {/* Checkbox SEM DRIVER */}
+          <div className="flex items-center gap-3 mb-5 p-3 rounded-lg border border-amber-500/30 bg-amber-500/5">
+            <input
+              type="checkbox"
+              id="semDriver"
+              checked={form.semDriver}
+              onChange={(e) => setField("semDriver", e.target.checked)}
+              className="w-4 h-4 accent-amber-500 cursor-pointer"
+            />
+            <label htmlFor="semDriver" className="text-sm font-medium cursor-pointer select-none">
+              Produto <span className="text-amber-400 font-semibold">SEM DRIVER</span>
+              <span className="text-xs text-muted-foreground ml-2">(módulo tensão de rede ou com lâmpada)</span>
+            </label>
+          </div>
+          <div className={cn("space-y-5", form.semDriver && "opacity-40 pointer-events-none select-none")}>
             {/* Cabeçalho das colunas */}
             <div className="flex gap-2 items-center">
               <div className="flex-1 text-[10px] text-muted-foreground/60 uppercase tracking-wider font-medium">

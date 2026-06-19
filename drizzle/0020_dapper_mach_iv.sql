@@ -1,0 +1,1 @@
+ALTER TABLE `products` ADD `semDriver` boolean DEFAULT false NOT NULL;

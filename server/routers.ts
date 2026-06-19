@@ -41,6 +41,7 @@ const productSchema = z.object({
   dissipador: z.string().optional().default(""),
   qtdDissipador: z.number().int().min(1).default(1),
   dissipadorNaoAplicavel: z.boolean().default(false),
+  semDriver: z.boolean().default(false),
   driverOnoff220: z.string().optional().default(""),
   qtdDriverOnoff220: z.number().int().min(1).default(1),
   driverOnoffBivolt: z.string().optional().default(""),
@@ -128,6 +129,7 @@ const bulkProductSchema = z.object({
   dissipador: z.string().default(""),
   qtdDissipador: z.number().int().min(1).default(1),
   dissipadorNaoAplicavel: z.boolean().default(false),
+  semDriver: z.boolean().default(false),
   driverOnoff220: z.string().default(""),
   qtdDriverOnoff220: z.number().int().min(1).default(1),
   driverOnoffBivolt: z.string().optional().default(""),
@@ -236,7 +238,8 @@ export const appRouter = router({
           qtdHolder: input.qtdHolder ?? 1,
           dissipador: input.dissipadorNaoAplicavel ? "NÃO APLICÁVEL" : input.dissipador.toUpperCase(),
           qtdDissipador: input.qtdDissipador ?? 1,
-          driverOnoff220: input.driverOnoff220.toUpperCase(),
+          semDriver: input.semDriver ?? false,
+          driverOnoff220: input.semDriver ? "" : input.driverOnoff220.toUpperCase(),
           qtdDriverOnoff220: input.qtdDriverOnoff220 ?? 1,
           driverOnoffBivolt: input.driverOnoffBivolt.toUpperCase(),
           qtdDriverOnoffBivolt: input.qtdDriverOnoffBivolt ?? 1,
@@ -312,6 +315,7 @@ export const appRouter = router({
         if (d.dissipador !== undefined) update.dissipador = d.dissipadorNaoAplicavel ? "NÃO APLICÁVEL" : d.dissipador.toUpperCase();
         if (d.qtdDissipador !== undefined) update.qtdDissipador = d.qtdDissipador;
         if (d.dissipadorNaoAplicavel !== undefined) update.dissipadorNaoAplicavel = d.dissipadorNaoAplicavel;
+        if (d.semDriver !== undefined) update.semDriver = d.semDriver;
         if (d.driverOnoff220 !== undefined) update.driverOnoff220 = d.driverOnoff220.toUpperCase();
         if (d.qtdDriverOnoff220 !== undefined) update.qtdDriverOnoff220 = d.qtdDriverOnoff220;
         if (d.driverOnoffBivolt !== undefined) update.driverOnoffBivolt = d.driverOnoffBivolt.toUpperCase();

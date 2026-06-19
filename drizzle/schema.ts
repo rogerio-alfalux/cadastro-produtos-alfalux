@@ -48,6 +48,7 @@ export const products = mysqlTable("products", {
   dissipador: text("dissipador").notNull(),
   qtdDissipador: int("qtdDissipador").default(1).notNull(),
   dissipadorNaoAplicavel: boolean("dissipadorNaoAplicavel").default(false).notNull(),
+  semDriver: boolean("semDriver").default(false).notNull(),
 
   // Drivers
   driverOnoff220: text("driverOnoff220").notNull(),
