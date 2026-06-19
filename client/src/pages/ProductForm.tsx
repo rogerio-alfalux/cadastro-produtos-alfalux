@@ -540,7 +540,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         dissipador: (existingProduct.dissipadorNaoAplicavel || !existingProduct.dissipador) ? "" : existingProduct.dissipador,
         qtdDissipador: (p.qtdDissipador != null ? Number(p.qtdDissipador) : 1),
         dissipadorNaoAplicavel: existingProduct.dissipadorNaoAplicavel || !existingProduct.dissipador || false,
-        semDriver: (p as any).semDriver || false,
+        semDriver: Boolean((p as any).semDriver),
         driverOnoff220: existingProduct.driverOnoff220 || "",
         qtdDriverOnoff220: (p.qtdDriverOnoff220 != null ? Number(p.qtdDriverOnoff220) : 1),
         custoDriverOnoff220: p.custoDriverOnoff220 ? String(p.custoDriverOnoff220) : "",
@@ -821,8 +821,13 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
   };
 
   // handleSubmit: verifica se há algum driver preenchido; se não, exibe aviso antes de salvar
+  // Exceção: quando semDriver=true, salva diretamente sem exibir o alerta
   const handleSubmit = () => {
     const f = formRef.current;
+    if (f.semDriver) {
+      doSubmit();
+      return;
+    }
     const temAlgumDriver =
       (f.driverOnoff220 && f.driverOnoff220.trim()) ||
       (f.driverOnoffBivolt && f.driverOnoffBivolt.trim() && !f.driverOnoffBivoltNaoAplicavel) ||
