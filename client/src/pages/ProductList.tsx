@@ -397,6 +397,18 @@ export default function ProductList() {
                               DALI
                             </span>
                           )}
+                          {!product.driverDimTriac110vNaoAplicavel && product.driverDimTriac110v && (
+                            <span className="text-[10px] text-orange-400/80 flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-orange-400/60 inline-block" />
+                              TRIAC 110V
+                            </span>
+                          )}
+                          {!product.driverDimTriac220vNaoAplicavel && product.driverDimTriac220v && (
+                            <span className="text-[10px] text-amber-400/80 flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400/60 inline-block" />
+                              TRIAC 220V
+                            </span>
+                          )}
                         </div>
                       </td>
 
