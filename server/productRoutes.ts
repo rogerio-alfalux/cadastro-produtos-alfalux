@@ -667,6 +667,33 @@ router.get("/all", async (_req, res) => {
       result.ledModuleQtd = p.moduloLed ? qtdLed : null;
       result.holderQtd = p.holderNaoAplicavel ? null : qtdHolder;
 
+      // ── Módulo LED por CCT ────────────────────────────────────────────────
+      const ml2700 = (p as any).moduloLed2700 as string | null;
+      const ml3000 = (p as any).moduloLed3000 as string | null;
+      const ml4000 = (p as any).moduloLed4000 as string | null;
+      const ml5000 = (p as any).moduloLed5000 as string | null;
+      const hasCctModules = !!(ml2700 || ml3000 || ml4000 || ml5000);
+
+      result.ledModule2700 = ml2700 ? withQty(ml2700, Number((p as any).qtdModuloLed2700) || 1) : null;
+      result.ledModule3000 = ml3000 ? withQty(ml3000, Number((p as any).qtdModuloLed3000) || 1) : null;
+      result.ledModule4000 = ml4000 ? withQty(ml4000, Number((p as any).qtdModuloLed4000) || 1) : null;
+      result.ledModule5000 = ml5000 ? withQty(ml5000, Number((p as any).qtdModuloLed5000) || 1) : null;
+      result.ledModuleQtd2700 = ml2700 ? (Number((p as any).qtdModuloLed2700) || 1) : null;
+      result.ledModuleQtd3000 = ml3000 ? (Number((p as any).qtdModuloLed3000) || 1) : null;
+      result.ledModuleQtd4000 = ml4000 ? (Number((p as any).qtdModuloLed4000) || 1) : null;
+      result.ledModuleQtd5000 = ml5000 ? (Number((p as any).qtdModuloLed5000) || 1) : null;
+
+      // Derivar temperaturasCor automaticamente dos módulos preenchidos
+      // Se o produto usa o novo modelo CCT, sobrescreve o campo temperaturasCor
+      if (hasCctModules) {
+        const derivedTemps: string[] = [];
+        if (ml2700) derivedTemps.push("2700");
+        if (ml3000) derivedTemps.push("3000");
+        if (ml4000) derivedTemps.push("4000");
+        if (ml5000) derivedTemps.push("5000");
+        result.temperaturasCor = derivedTemps;
+      }
+
       // Campos de preço por metro linear para categoria PERFIS
       // Retorna null quando o controle não está disponível para o produto
       const isPerfil = cat === "PERFIS";

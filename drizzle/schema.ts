@@ -39,6 +39,15 @@ export const products = mysqlTable("products", {
   // Componentes
   moduloLed: text("moduloLed").notNull(),
   qtdModuloLed: decimal("qtdModuloLed", { precision: 10, scale: 2 }).default("1.00").notNull(),
+  // Módulo LED por temperatura de cor (CCT)
+  moduloLed2700: text("moduloLed2700"),
+  moduloLed3000: text("moduloLed3000"),
+  moduloLed4000: text("moduloLed4000"),
+  moduloLed5000: text("moduloLed5000"),
+  qtdModuloLed2700: decimal("qtdModuloLed2700", { precision: 10, scale: 2 }),
+  qtdModuloLed3000: decimal("qtdModuloLed3000", { precision: 10, scale: 2 }),
+  qtdModuloLed4000: decimal("qtdModuloLed4000", { precision: 10, scale: 2 }),
+  qtdModuloLed5000: decimal("qtdModuloLed5000", { precision: 10, scale: 2 }),
   otica: text("otica").notNull(),
   qtdOtica: int("qtdOtica").default(1).notNull(),
   oticaNaoAplicavel: boolean("oticaNaoAplicavel").default(false).notNull(),

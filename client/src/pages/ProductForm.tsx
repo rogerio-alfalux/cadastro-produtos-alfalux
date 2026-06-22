@@ -351,6 +351,15 @@ interface FormData {
   produto: string;
   moduloLed: string;
   qtdModuloLed: number;
+  // Módulo LED por CCT
+  moduloLed2700: string;
+  moduloLed3000: string;
+  moduloLed4000: string;
+  moduloLed5000: string;
+  qtdModuloLed2700: number;
+  qtdModuloLed3000: number;
+  qtdModuloLed4000: number;
+  qtdModuloLed5000: number;
   otica: string;
   qtdOtica: number;
   oticaNaoAplicavel: boolean;
@@ -413,6 +422,15 @@ const defaultForm: FormData = {
   produto: "",
   moduloLed: "",
   qtdModuloLed: 1,
+  // Módulo LED por CCT
+  moduloLed2700: "",
+  moduloLed3000: "",
+  moduloLed4000: "",
+  moduloLed5000: "",
+  qtdModuloLed2700: 1,
+  qtdModuloLed3000: 1,
+  qtdModuloLed4000: 1,
+  qtdModuloLed5000: 1,
   otica: "",
   qtdOtica: 1,
   oticaNaoAplicavel: false,
@@ -529,6 +547,15 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         produto: existingProduct.produto || "",
         moduloLed: existingProduct.moduloLed || "",
         qtdModuloLed: (p.qtdModuloLed != null ? Number(p.qtdModuloLed) : 1),
+        // Módulo LED por CCT
+        moduloLed2700: p.moduloLed2700 || "",
+        moduloLed3000: p.moduloLed3000 || "",
+        moduloLed4000: p.moduloLed4000 || "",
+        moduloLed5000: p.moduloLed5000 || "",
+        qtdModuloLed2700: (p.qtdModuloLed2700 != null ? Number(p.qtdModuloLed2700) : 1),
+        qtdModuloLed3000: (p.qtdModuloLed3000 != null ? Number(p.qtdModuloLed3000) : 1),
+        qtdModuloLed4000: (p.qtdModuloLed4000 != null ? Number(p.qtdModuloLed4000) : 1),
+        qtdModuloLed5000: (p.qtdModuloLed5000 != null ? Number(p.qtdModuloLed5000) : 1),
         // Se o campo está vazio no banco (sem valor e sem flag naoAplicavel), trata como naoAplicavel=true
         // para evitar que o formulário fique bloqueado por campos obrigatórios vazios
         otica: (existingProduct.oticaNaoAplicavel || !existingProduct.otica) ? "" : existingProduct.otica,
@@ -737,11 +764,30 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       return;
     }
 
+    // Derivar temperaturasCor automaticamente dos módulos CCT preenchidos
+    const hasCctModules = !!(form.moduloLed2700 || form.moduloLed3000 || form.moduloLed4000 || form.moduloLed5000);
+    const derivedTemps = hasCctModules
+      ? [
+          ...(form.moduloLed2700 ? ["2700"] : []),
+          ...(form.moduloLed3000 ? ["3000"] : []),
+          ...(form.moduloLed4000 ? ["4000"] : []),
+          ...(form.moduloLed5000 ? ["5000"] : []),
+        ]
+      : form.temperaturasCor;
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const payload: any = {
       ...form,
       semDriver: form.semDriver,
-      temperaturasCor: JSON.stringify(form.temperaturasCor),
+      temperaturasCor: JSON.stringify(derivedTemps),
+      moduloLed2700: form.moduloLed2700 || undefined,
+      moduloLed3000: form.moduloLed3000 || undefined,
+      moduloLed4000: form.moduloLed4000 || undefined,
+      moduloLed5000: form.moduloLed5000 || undefined,
+      qtdModuloLed2700: form.moduloLed2700 ? form.qtdModuloLed2700 : undefined,
+      qtdModuloLed3000: form.moduloLed3000 ? form.qtdModuloLed3000 : undefined,
+      qtdModuloLed4000: form.moduloLed4000 ? form.qtdModuloLed4000 : undefined,
+      qtdModuloLed5000: form.moduloLed5000 ? form.qtdModuloLed5000 : undefined,
       custoLuminaria: form.custoLuminaria || undefined,
       custoDriverOnoff220: form.custoDriverOnoff220 || undefined,
       custoDriverOnoffBivolt: form.custoDriverOnoffBivolt || undefined,
@@ -1005,52 +1051,57 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
           </div>
 
           <div className="flex flex-col gap-5">
-            {/* Módulo LED */}
-            <FieldWrapper field="moduloLed" label="MÓDULO LED" required touched={touched} errors={errors}>
-              <div className="flex gap-3 items-center">
-                <div className="flex-1 min-w-0">
-                  <ComponentSelect
-                    tipo="MODULO_LED"
-                    value={form.moduloLed}
-                    onChange={(v) => { setField("moduloLed", v); setTouched((p) => ({ ...p, moduloLed: true })); }}
-                    onBlur={() => setTouched((p) => ({ ...p, moduloLed: true }))}
-                    placeholder="Ex: TRACE CIRCULAR 6 LEDS Ø50MM [CCT]"
-                    hasError={!!(touched.moduloLed && errors.moduloLed)}
-                  />
-                </div>
-                <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider">QTD</span>
-                  <Input
-                    className="input-dark text-sm text-center px-2 w-16"
-                    type="number"
-                    min="0.01"
-                    max="999"
-                    step="0.01"
-                    value={form.qtdModuloLed ?? 1}
-                    onChange={(e) => {
-                      const raw = e.target.value.replace(',', '.');
-                      const parsed = parseFloat(raw);
-                      setField("qtdModuloLed", isNaN(parsed) ? 1 : Math.max(0.01, Math.round(parsed * 1000) / 1000));
-                    }}
-                    onKeyDown={(e) => {
-                      // Permitir vírgula como separador decimal
-                      if (e.key === ',') {
-                        e.preventDefault();
-                        const el = e.target as HTMLInputElement;
-                        const pos = el.selectionStart ?? el.value.length;
-                        const val = el.value;
-                        if (!val.includes('.')) {
-                          el.value = val.slice(0, pos) + '.' + val.slice(pos);
-                          el.setSelectionRange(pos + 1, pos + 1);
-                          el.dispatchEvent(new Event('input', { bubbles: true }));
-                        }
-                      }
-                    }}
-                    title="Quantidade de módulos LED por produto (aceita decimais, ex: 1,5)"
-                  />
-                </div>
+            {/* Módulo LED por CCT */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">MÓDULO LED</span>
+                <span className="text-[10px] text-muted-foreground">Preencha o módulo para cada CCT disponível — CCT sem módulo será desabilitado</span>
               </div>
-            </FieldWrapper>
+              <div className="flex flex-col gap-3">
+                {([
+                  { cct: "2700", field: "moduloLed2700" as const, qtdField: "qtdModuloLed2700" as const, color: "oklch(0.75 0.15 65)" },
+                  { cct: "3000", field: "moduloLed3000" as const, qtdField: "qtdModuloLed3000" as const, color: "oklch(0.80 0.12 75)" },
+                  { cct: "4000", field: "moduloLed4000" as const, qtdField: "qtdModuloLed4000" as const, color: "oklch(0.85 0.05 200)" },
+                  { cct: "5000", field: "moduloLed5000" as const, qtdField: "qtdModuloLed5000" as const, color: "oklch(0.88 0.04 220)" },
+                ] as const).map(({ cct, field, qtdField, color }) => (
+                  <div key={cct} className="flex gap-3 items-center">
+                    <div
+                      className="flex-shrink-0 w-14 text-center text-xs font-bold rounded-md px-2 py-1.5 border"
+                      style={{ borderColor: color, color, backgroundColor: `${color}15` }}
+                    >
+                      {cct}K
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <ComponentSelect
+                        tipo="MODULO_LED"
+                        value={form[field]}
+                        onChange={(v) => setField(field, v)}
+                        placeholder={`Módulo ${cct}K (deixe vazio para desabilitar)`}
+                        hasError={false}
+                      />
+                    </div>
+                    {form[field] && (
+                      <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">QTD</span>
+                        <Input
+                          className="input-dark text-sm text-center px-2 w-16"
+                          type="number"
+                          min="0.01"
+                          max="999"
+                          step="0.01"
+                          value={form[qtdField] ?? 1}
+                          onChange={(e) => {
+                            const raw = e.target.value.replace(',', '.');
+                            const parsed = parseFloat(raw);
+                            setField(qtdField, isNaN(parsed) ? 1 : Math.max(0.01, Math.round(parsed * 1000) / 1000));
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
 
             {/* Ótica */}
             <FieldWrapper field="otica" label="ÓTICA MÓDULO LED" required={!form.oticaNaoAplicavel} touched={touched} errors={errors}>
@@ -1442,40 +1493,70 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
           <div className="flex items-center gap-2 mb-5">
             <Thermometer className="w-4 h-4 text-primary" />
             <h2 className="section-header mb-0">TEMPERATURA DE COR</h2>
-            <span className="text-[10px] text-muted-foreground ml-auto">Marcadas por padrão — desmarque se não aplicável</span>
+            {(form.moduloLed2700 || form.moduloLed3000 || form.moduloLed4000 || form.moduloLed5000) ? (
+              <span className="text-[10px] text-muted-foreground ml-auto">Derivado automaticamente dos módulos LED</span>
+            ) : (
+              <span className="text-[10px] text-muted-foreground ml-auto">Marcadas por padrão — desmarque se não aplicável</span>
+            )}
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            {TEMPERATURAS.map((temp) => {
-              const active = form.temperaturasCor.includes(temp);
-              const colors: Record<string, string> = {
-                "2700": "oklch(0.75 0.15 65)",
-                "3000": "oklch(0.80 0.12 75)",
-                "4000": "oklch(0.85 0.05 200)",
-                "5000": "oklch(0.88 0.04 220)",
-              };
-              return (
-                <button
-                  key={temp}
-                  type="button"
-                  onClick={() => toggleTemp(temp)}
-                  className={cn(
-                    "temp-badge",
-                    active ? "temp-badge-active" : "temp-badge-inactive"
-                  )}
-                  style={active ? { borderColor: colors[temp], color: colors[temp], backgroundColor: `${colors[temp]}20` } : {}}
-                >
-                  <span className="w-2 h-2 rounded-full mr-1.5 inline-block" style={{ backgroundColor: active ? colors[temp] : "currentColor", opacity: active ? 1 : 0.3 }} />
-                  {temp}K
-                </button>
-              );
-            })}
-          </div>
-          {form.temperaturasCor.length === 0 && (
-            <p className="text-xs text-destructive mt-2 flex items-center gap-1">
-              <AlertCircle className="w-3 h-3" />
-              Selecione pelo menos uma temperatura de cor
-            </p>
+          {(form.moduloLed2700 || form.moduloLed3000 || form.moduloLed4000 || form.moduloLed5000) ? (
+            // Modo derivado: CCTs determinados pelos módulos preenchidos
+            <div className="flex flex-wrap gap-3">
+              {TEMPERATURAS.map((temp) => {
+                const fieldMap: Record<string, keyof FormData> = {
+                  "2700": "moduloLed2700", "3000": "moduloLed3000",
+                  "4000": "moduloLed4000", "5000": "moduloLed5000",
+                };
+                const active = !!(form[fieldMap[temp]]);
+                const colors: Record<string, string> = {
+                  "2700": "oklch(0.75 0.15 65)", "3000": "oklch(0.80 0.12 75)",
+                  "4000": "oklch(0.85 0.05 200)", "5000": "oklch(0.88 0.04 220)",
+                };
+                return (
+                  <div
+                    key={temp}
+                    className={cn("temp-badge cursor-default select-none", active ? "temp-badge-active" : "temp-badge-inactive opacity-40")}
+                    style={active ? { borderColor: colors[temp], color: colors[temp], backgroundColor: `${colors[temp]}20` } : {}}
+                    title={active ? `Módulo ${temp}K cadastrado` : `Sem módulo ${temp}K — CCT desabilitado`}
+                  >
+                    <span className="w-2 h-2 rounded-full mr-1.5 inline-block" style={{ backgroundColor: active ? colors[temp] : "currentColor", opacity: active ? 1 : 0.3 }} />
+                    {temp}K
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            // Modo manual: seleção livre (produtos legados sem módulos CCT)
+            <>
+              <div className="flex flex-wrap gap-3">
+                {TEMPERATURAS.map((temp) => {
+                  const active = form.temperaturasCor.includes(temp);
+                  const colors: Record<string, string> = {
+                    "2700": "oklch(0.75 0.15 65)", "3000": "oklch(0.80 0.12 75)",
+                    "4000": "oklch(0.85 0.05 200)", "5000": "oklch(0.88 0.04 220)",
+                  };
+                  return (
+                    <button
+                      key={temp}
+                      type="button"
+                      onClick={() => toggleTemp(temp)}
+                      className={cn("temp-badge", active ? "temp-badge-active" : "temp-badge-inactive")}
+                      style={active ? { borderColor: colors[temp], color: colors[temp], backgroundColor: `${colors[temp]}20` } : {}}
+                    >
+                      <span className="w-2 h-2 rounded-full mr-1.5 inline-block" style={{ backgroundColor: active ? colors[temp] : "currentColor", opacity: active ? 1 : 0.3 }} />
+                      {temp}K
+                    </button>
+                  );
+                })}
+              </div>
+              {form.temperaturasCor.length === 0 && (
+                <p className="text-xs text-destructive mt-2 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  Selecione pelo menos uma temperatura de cor
+                </p>
+              )}
+            </>
           )}
         </section>
 

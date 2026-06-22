@@ -29,6 +29,15 @@ const productSchema = z.object({
   produto: z.string().min(1, "PRODUTO é obrigatório"),
   moduloLed: z.string().optional().default(""),
   qtdModuloLed: z.number().min(0.01).default(1),
+  // Módulo LED por CCT
+  moduloLed2700: z.string().nullish(),
+  moduloLed3000: z.string().nullish(),
+  moduloLed4000: z.string().nullish(),
+  moduloLed5000: z.string().nullish(),
+  qtdModuloLed2700: z.number().min(0.01).nullish(),
+  qtdModuloLed3000: z.number().min(0.01).nullish(),
+  qtdModuloLed4000: z.number().min(0.01).nullish(),
+  qtdModuloLed5000: z.number().min(0.01).nullish(),
   // Ótica: obrigatório a menos que NaoAplicavel=true
   otica: z.string().optional().default(""),
   qtdOtica: z.number().int().min(1).default(1),
@@ -120,6 +129,15 @@ const bulkProductSchema = z.object({
   produto: z.string().default(""),
   moduloLed: z.string().default(""),
   qtdModuloLed: z.number().min(0.01).default(1),
+  // Módulo LED por CCT
+  moduloLed2700: z.string().optional(),
+  moduloLed3000: z.string().optional(),
+  moduloLed4000: z.string().optional(),
+  moduloLed5000: z.string().optional(),
+  qtdModuloLed2700: z.number().min(0.01).optional(),
+  qtdModuloLed3000: z.number().min(0.01).optional(),
+  qtdModuloLed4000: z.number().min(0.01).optional(),
+  qtdModuloLed5000: z.number().min(0.01).optional(),
   otica: z.string().default(""),
   qtdOtica: z.number().int().min(1).default(1),
   oticaNaoAplicavel: z.boolean().default(false),
@@ -232,6 +250,14 @@ export const appRouter = router({
           produto: input.produto.toUpperCase(),
           moduloLed: input.moduloLed.toUpperCase(),
           qtdModuloLed: String(input.qtdModuloLed ?? 1),
+          moduloLed2700: input.moduloLed2700?.toUpperCase() || null,
+          moduloLed3000: input.moduloLed3000?.toUpperCase() || null,
+          moduloLed4000: input.moduloLed4000?.toUpperCase() || null,
+          moduloLed5000: input.moduloLed5000?.toUpperCase() || null,
+          qtdModuloLed2700: input.qtdModuloLed2700 ? String(input.qtdModuloLed2700) : null,
+          qtdModuloLed3000: input.qtdModuloLed3000 ? String(input.qtdModuloLed3000) : null,
+          qtdModuloLed4000: input.qtdModuloLed4000 ? String(input.qtdModuloLed4000) : null,
+          qtdModuloLed5000: input.qtdModuloLed5000 ? String(input.qtdModuloLed5000) : null,
           otica: input.oticaNaoAplicavel ? "NÃO APLICÁVEL" : input.otica.toUpperCase(),
           qtdOtica: input.qtdOtica ?? 1,
           holder: input.holderNaoAplicavel ? "NÃO APLICÁVEL" : input.holder.toUpperCase(),
@@ -306,6 +332,14 @@ export const appRouter = router({
         if (d.produto !== undefined) update.produto = d.produto.toUpperCase();
         if (d.moduloLed !== undefined) update.moduloLed = d.moduloLed.toUpperCase();
         if (d.qtdModuloLed !== undefined) update.qtdModuloLed = String(d.qtdModuloLed);
+        if (d.moduloLed2700 !== undefined) update.moduloLed2700 = d.moduloLed2700?.toUpperCase() || null;
+        if (d.moduloLed3000 !== undefined) update.moduloLed3000 = d.moduloLed3000?.toUpperCase() || null;
+        if (d.moduloLed4000 !== undefined) update.moduloLed4000 = d.moduloLed4000?.toUpperCase() || null;
+        if (d.moduloLed5000 !== undefined) update.moduloLed5000 = d.moduloLed5000?.toUpperCase() || null;
+        if (d.qtdModuloLed2700 !== undefined) update.qtdModuloLed2700 = d.qtdModuloLed2700 ? String(d.qtdModuloLed2700) : null;
+        if (d.qtdModuloLed3000 !== undefined) update.qtdModuloLed3000 = d.qtdModuloLed3000 ? String(d.qtdModuloLed3000) : null;
+        if (d.qtdModuloLed4000 !== undefined) update.qtdModuloLed4000 = d.qtdModuloLed4000 ? String(d.qtdModuloLed4000) : null;
+        if (d.qtdModuloLed5000 !== undefined) update.qtdModuloLed5000 = d.qtdModuloLed5000 ? String(d.qtdModuloLed5000) : null;
         if (d.otica !== undefined) update.otica = d.oticaNaoAplicavel ? "NÃO APLICÁVEL" : d.otica.toUpperCase();
         if (d.qtdOtica !== undefined) update.qtdOtica = d.qtdOtica;
         if (d.oticaNaoAplicavel !== undefined) update.oticaNaoAplicavel = d.oticaNaoAplicavel;
