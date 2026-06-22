@@ -3,8 +3,8 @@ import multer from "multer";
 import * as XLSX from "xlsx";
 import { getDb } from "./db";
 import { components } from "../drizzle/schema";
-import { eq, and, ne } from "drizzle-orm";
-import { storagePut } from "./storage";
+import { eq, and, ne, asc } from "drizzle-orm";
+import { storagePut, storageGetSignedUrl } from "./storage";
 
 const router = express.Router();
 
@@ -318,6 +318,80 @@ router.post("/import-excel", uploadExcel.single("file"), async (req, res) => {
   } catch (err) {
     console.error("[components/import-excel]", err);
     return res.status(500).json({ error: "Erro ao importar Excel: " + String(err) });
+  }
+});
+
+// ─── GET /all — Endpoint público para o Configurador ───────────────────────
+// Retorna todos os componentes agrupados por tipo, com URLs públicas de foto
+// GET /api/components/all  (sem autenticação — consumido pelo Configurador)
+router.get("/all", async (_req, res) => {
+  try {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET");
+    res.setHeader("Cache-Control", "no-cache");
+
+    const db = await getDb();
+    if (!db) return res.status(503).json({ error: "Banco de dados indisponível" });
+
+    const rows = await db
+      .select()
+      .from(components)
+      .orderBy(asc(components.tipo), asc(components.modelo));
+
+    // Resolver URLs públicas do S3 para componentes com foto
+    const extractKey = (url: string | null | undefined): string | null => {
+      if (!url) return null;
+      const match = url.match(/^\/manus-storage\/(.+)$/);
+      return match ? match[1] : (url.startsWith("http") ? null : url);
+    };
+
+    const signedUrlMap = new Map<string, string>();
+    const keysToSign = rows
+      .map((c) => extractKey(c.fotoUrl))
+      .filter((k): k is string => !!k);
+    const uniqueKeys = Array.from(new Set(keysToSign));
+    await Promise.all(
+      uniqueKeys.map(async (key) => {
+        try {
+          const publicUrl = await storageGetSignedUrl(key);
+          signedUrlMap.set(key, publicUrl);
+        } catch {
+          // Se falhar, mantém null — não bloqueia o endpoint
+        }
+      })
+    );
+
+    // Formatar cada componente para o Configurador
+    const formatted = rows.map((c) => {
+      const rawKey = extractKey(c.fotoUrl);
+      const resolvedFotoUrl = rawKey ? (signedUrlMap.get(rawKey) ?? null) : null;
+      return {
+        id: c.id,
+        tipo: c.tipo,
+        modelo: c.modelo,
+        codigo: c.codigo ?? null,
+        observacao: c.observacao ?? null,
+        custo: c.custo ? Number(c.custo) : null,
+        fotoUrl: resolvedFotoUrl,
+      };
+    });
+
+    // Agrupar por tipo para facilitar o consumo pelo Configurador
+    const grouped: Record<string, typeof formatted> = {};
+    for (const item of formatted) {
+      if (!grouped[item.tipo]) grouped[item.tipo] = [];
+      grouped[item.tipo].push(item);
+    }
+
+    return res.json({
+      total: formatted.length,
+      tipos: Object.keys(grouped),
+      items: formatted,
+      byTipo: grouped,
+    });
+  } catch (err) {
+    console.error("[components/all]", err);
+    return res.status(500).json({ error: "Erro ao buscar componentes" });
   }
 });
 
