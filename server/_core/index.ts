@@ -12,6 +12,7 @@ import productRoutes from "../productRoutes";
 import revendaRoutes from "../revendaRoutes";
 import accessoriesRoutes from "../accessoriesRoutes";
 import componentsRoutes from "../componentsRoutes";
+import componentesPublicRoutes from "../componentesPublicRoutes";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -44,6 +45,8 @@ async function startServer() {
   app.use("/api/revenda", revendaRoutes);
   app.use("/api/acessorios", accessoriesRoutes);
   app.use("/api/components", componentsRoutes);
+  // Endpoint público para o Sistema Luna (configurador de orçamentos)
+  app.use("/api/componentes", componentesPublicRoutes);
   // tRPC API
   app.use(
     "/api/trpc",
