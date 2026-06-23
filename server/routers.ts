@@ -102,6 +102,25 @@ const productSchema = z.object({
   precoVendaDimDaliD1:       z.string().nullish(),
   precoVendaDimDaliD1D2:     z.string().nullish(),
   configuracaoPlanos:         z.enum(["D1", "D2", "D1+D2"]).nullish(),
+  // Custo do corpo por tipo de driver (sem driver) + markups
+  custoCorpoOnoff220v: z.string().nullish(),
+  mkpPadraoOnoff220v: z.string().nullish(),
+  mkpMinimoOnoff220v: z.string().nullish(),
+  custoCorpoOnoffBivolt: z.string().nullish(),
+  mkpPadraoOnoffBivolt: z.string().nullish(),
+  mkpMinimoOnoffBivolt: z.string().nullish(),
+  custoCorpoDim110v: z.string().nullish(),
+  mkpPadraoDim110v: z.string().nullish(),
+  mkpMinimoDim110v: z.string().nullish(),
+  custoCorpoDimDali: z.string().nullish(),
+  mkpPadraoDimDali: z.string().nullish(),
+  mkpMinimoDimDali: z.string().nullish(),
+  custoCorpoDimTriac110v: z.string().nullish(),
+  mkpPadraoDimTriac110v: z.string().nullish(),
+  mkpMinimoDimTriac110v: z.string().nullish(),
+  custoCorpoDimTriac220v: z.string().nullish(),
+  mkpPadraoDimTriac220v: z.string().nullish(),
+  mkpMinimoDimTriac220v: z.string().nullish(),
 }).superRefine((data, ctx) => {
   // Validar Ótica: obrigatório se não for NaoAplicavel
   if (!data.oticaNaoAplicavel && (!data.otica || data.otica.trim() === "")) {
@@ -311,6 +330,24 @@ export const appRouter = router({
           precoVendaDimDaliD1:       input.precoVendaDimDaliD1       || null,
           precoVendaDimDaliD1D2:     input.precoVendaDimDaliD1D2     || null,
           configuracaoPlanos:         input.configuracaoPlanos          ?? null,
+          custoCorpoOnoff220v: input.custoCorpoOnoff220v || null,
+          mkpPadraoOnoff220v: input.mkpPadraoOnoff220v || null,
+          mkpMinimoOnoff220v: input.mkpMinimoOnoff220v || null,
+          custoCorpoOnoffBivolt: input.custoCorpoOnoffBivolt || null,
+          mkpPadraoOnoffBivolt: input.mkpPadraoOnoffBivolt || null,
+          mkpMinimoOnoffBivolt: input.mkpMinimoOnoffBivolt || null,
+          custoCorpoDim110v: input.custoCorpoDim110v || null,
+          mkpPadraoDim110v: input.mkpPadraoDim110v || null,
+          mkpMinimoDim110v: input.mkpMinimoDim110v || null,
+          custoCorpoDimDali: input.custoCorpoDimDali || null,
+          mkpPadraoDimDali: input.mkpPadraoDimDali || null,
+          mkpMinimoDimDali: input.mkpMinimoDimDali || null,
+          custoCorpoDimTriac110v: input.custoCorpoDimTriac110v || null,
+          mkpPadraoDimTriac110v: input.mkpPadraoDimTriac110v || null,
+          mkpMinimoDimTriac110v: input.mkpMinimoDimTriac110v || null,
+          custoCorpoDimTriac220v: input.custoCorpoDimTriac220v || null,
+          mkpPadraoDimTriac220v: input.mkpPadraoDimTriac220v || null,
+          mkpMinimoDimTriac220v: input.mkpMinimoDimTriac220v || null,
         };
         await createProduct(data);
         return { success: true };
@@ -417,8 +454,25 @@ export const appRouter = router({
         if (d.precoVendaDim110vD1D2 !== undefined)     update.precoVendaDim110vD1D2     = d.precoVendaDim110vD1D2     || null;
         if (d.precoVendaDimDaliD1 !== undefined)       update.precoVendaDimDaliD1       = d.precoVendaDimDaliD1       || null;
         if (d.precoVendaDimDaliD1D2 !== undefined)     update.precoVendaDimDaliD1D2     = d.precoVendaDimDaliD1D2     || null;
-        if (d.configuracaoPlanos !== undefined)          update.configuracaoPlanos        = d.configuracaoPlanos         ?? null;
-
+                if (d.configuracaoPlanos !== undefined)          update.configuracaoPlanos        = d.configuracaoPlanos         ?? null;
+        if (d.custoCorpoOnoff220v !== undefined) update.custoCorpoOnoff220v = d.custoCorpoOnoff220v || null;
+        if (d.mkpPadraoOnoff220v !== undefined) update.mkpPadraoOnoff220v = d.mkpPadraoOnoff220v || null;
+        if (d.mkpMinimoOnoff220v !== undefined) update.mkpMinimoOnoff220v = d.mkpMinimoOnoff220v || null;
+        if (d.custoCorpoOnoffBivolt !== undefined) update.custoCorpoOnoffBivolt = d.custoCorpoOnoffBivolt || null;
+        if (d.mkpPadraoOnoffBivolt !== undefined) update.mkpPadraoOnoffBivolt = d.mkpPadraoOnoffBivolt || null;
+        if (d.mkpMinimoOnoffBivolt !== undefined) update.mkpMinimoOnoffBivolt = d.mkpMinimoOnoffBivolt || null;
+        if (d.custoCorpoDim110v !== undefined) update.custoCorpoDim110v = d.custoCorpoDim110v || null;
+        if (d.mkpPadraoDim110v !== undefined) update.mkpPadraoDim110v = d.mkpPadraoDim110v || null;
+        if (d.mkpMinimoDim110v !== undefined) update.mkpMinimoDim110v = d.mkpMinimoDim110v || null;
+        if (d.custoCorpoDimDali !== undefined) update.custoCorpoDimDali = d.custoCorpoDimDali || null;
+        if (d.mkpPadraoDimDali !== undefined) update.mkpPadraoDimDali = d.mkpPadraoDimDali || null;
+        if (d.mkpMinimoDimDali !== undefined) update.mkpMinimoDimDali = d.mkpMinimoDimDali || null;
+        if (d.custoCorpoDimTriac110v !== undefined) update.custoCorpoDimTriac110v = d.custoCorpoDimTriac110v || null;
+        if (d.mkpPadraoDimTriac110v !== undefined) update.mkpPadraoDimTriac110v = d.mkpPadraoDimTriac110v || null;
+        if (d.mkpMinimoDimTriac110v !== undefined) update.mkpMinimoDimTriac110v = d.mkpMinimoDimTriac110v || null;
+        if (d.custoCorpoDimTriac220v !== undefined) update.custoCorpoDimTriac220v = d.custoCorpoDimTriac220v || null;
+        if (d.mkpPadraoDimTriac220v !== undefined) update.mkpPadraoDimTriac220v = d.mkpPadraoDimTriac220v || null;
+        if (d.mkpMinimoDimTriac220v !== undefined) update.mkpMinimoDimTriac220v = d.mkpMinimoDimTriac220v || null;
         await updateProduct(input.id, update as any);
         return { success: true };
       }),

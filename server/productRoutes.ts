@@ -657,6 +657,25 @@ router.get("/all", async (_req, res) => {
         custoDriverDimDali: (p as any).custoDriverDimDali ? Number((p as any).custoDriverDimDali) : null,
         custoDriverDimTriac110v: (p as any).custoDriverDimTriac110v ? Number((p as any).custoDriverDimTriac110v) : null,
         custoDriverDimTriac220v: (p as any).custoDriverDimTriac220v ? Number((p as any).custoDriverDimTriac220v) : null,
+        // Custo do corpo por tipo de driver (sem driver) + markups
+        custoCorpoOnoff220v: (p as any).custoCorpoOnoff220v ? Number((p as any).custoCorpoOnoff220v) : null,
+        mkpPadraoOnoff220v: (p as any).mkpPadraoOnoff220v ? Number((p as any).mkpPadraoOnoff220v) : null,
+        mkpMinimoOnoff220v: (p as any).mkpMinimoOnoff220v ? Number((p as any).mkpMinimoOnoff220v) : null,
+        custoCorpoOnoffBivolt: (p as any).custoCorpoOnoffBivolt ? Number((p as any).custoCorpoOnoffBivolt) : null,
+        mkpPadraoOnoffBivolt: (p as any).mkpPadraoOnoffBivolt ? Number((p as any).mkpPadraoOnoffBivolt) : null,
+        mkpMinimoOnoffBivolt: (p as any).mkpMinimoOnoffBivolt ? Number((p as any).mkpMinimoOnoffBivolt) : null,
+        custoCorpoDim110v: (p as any).custoCorpoDim110v ? Number((p as any).custoCorpoDim110v) : null,
+        mkpPadraoDim110v: (p as any).mkpPadraoDim110v ? Number((p as any).mkpPadraoDim110v) : null,
+        mkpMinimoDim110v: (p as any).mkpMinimoDim110v ? Number((p as any).mkpMinimoDim110v) : null,
+        custoCorpoDimDali: (p as any).custoCorpoDimDali ? Number((p as any).custoCorpoDimDali) : null,
+        mkpPadraoDimDali: (p as any).mkpPadraoDimDali ? Number((p as any).mkpPadraoDimDali) : null,
+        mkpMinimoDimDali: (p as any).mkpMinimoDimDali ? Number((p as any).mkpMinimoDimDali) : null,
+        custoCorpoDimTriac110v: (p as any).custoCorpoDimTriac110v ? Number((p as any).custoCorpoDimTriac110v) : null,
+        mkpPadraoDimTriac110v: (p as any).mkpPadraoDimTriac110v ? Number((p as any).mkpPadraoDimTriac110v) : null,
+        mkpMinimoDimTriac110v: (p as any).mkpMinimoDimTriac110v ? Number((p as any).mkpMinimoDimTriac110v) : null,
+        custoCorpoDimTriac220v: (p as any).custoCorpoDimTriac220v ? Number((p as any).custoCorpoDimTriac220v) : null,
+        mkpPadraoDimTriac220v: (p as any).mkpPadraoDimTriac220v ? Number((p as any).mkpPadraoDimTriac220v) : null,
+        mkpMinimoDimTriac220v: (p as any).mkpMinimoDimTriac220v ? Number((p as any).mkpMinimoDimTriac220v) : null,
       };
 
       // oticaPrimaria e oticaSecundaria: sempre retornados (não apenas DOWNLIGHTS/SPOTS)

@@ -128,6 +128,25 @@ export const products = mysqlTable("products", {
   // D1 = iluminação para baixo, D2 = iluminação para cima, D1+D2 = dois planos
   configuracaoPlanos: mysqlEnum("configuracaoPlanos", ["D1", "D2", "D1+D2"]),
 
+  // Custo do corpo da luminária por tipo de driver (sem driver)
+  custoCorpoOnoff220v: decimal("custoCorpoOnoff220v", { precision: 10, scale: 4 }),
+  mkpPadraoOnoff220v: decimal("mkpPadraoOnoff220v", { precision: 6, scale: 4 }),
+  mkpMinimoOnoff220v: decimal("mkpMinimoOnoff220v", { precision: 6, scale: 4 }),
+  custoCorpoOnoffBivolt: decimal("custoCorpoOnoffBivolt", { precision: 10, scale: 4 }),
+  mkpPadraoOnoffBivolt: decimal("mkpPadraoOnoffBivolt", { precision: 6, scale: 4 }),
+  mkpMinimoOnoffBivolt: decimal("mkpMinimoOnoffBivolt", { precision: 6, scale: 4 }),
+  custoCorpoDim110v: decimal("custoCorpoDim110v", { precision: 10, scale: 4 }),
+  mkpPadraoDim110v: decimal("mkpPadraoDim110v", { precision: 6, scale: 4 }),
+  mkpMinimoDim110v: decimal("mkpMinimoDim110v", { precision: 6, scale: 4 }),
+  custoCorpoDimDali: decimal("custoCorpoDimDali", { precision: 10, scale: 4 }),
+  mkpPadraoDimDali: decimal("mkpPadraoDimDali", { precision: 6, scale: 4 }),
+  mkpMinimoDimDali: decimal("mkpMinimoDimDali", { precision: 6, scale: 4 }),
+  custoCorpoDimTriac110v: decimal("custoCorpoDimTriac110v", { precision: 10, scale: 4 }),
+  mkpPadraoDimTriac110v: decimal("mkpPadraoDimTriac110v", { precision: 6, scale: 4 }),
+  mkpMinimoDimTriac110v: decimal("mkpMinimoDimTriac110v", { precision: 6, scale: 4 }),
+  custoCorpoDimTriac220v: decimal("custoCorpoDimTriac220v", { precision: 10, scale: 4 }),
+  mkpPadraoDimTriac220v: decimal("mkpPadraoDimTriac220v", { precision: 6, scale: 4 }),
+  mkpMinimoDimTriac220v: decimal("mkpMinimoDimTriac220v", { precision: 6, scale: 4 }),
   // Metadados
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -168,6 +187,9 @@ export const components = mysqlTable("components", {
 
     // Custo unitário do componente
   custo: decimal("custo", { precision: 10, scale: 2 }),
+  // Custo e markup para drivers (usados pelo configurador)
+  custoDriver: decimal("custoDriver", { precision: 10, scale: 4 }),
+  mkpPadraoDriver: decimal("mkpPadraoDriver", { precision: 6, scale: 4 }),
   // Foto do componente (opcional)
   fotoUrl: text("fotoUrl"),
   fotoKey: text("fotoKey"),

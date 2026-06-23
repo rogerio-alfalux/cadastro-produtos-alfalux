@@ -1,0 +1,20 @@
+ALTER TABLE `components` ADD `custoDriver` decimal(10,4);--> statement-breakpoint
+ALTER TABLE `components` ADD `mkpPadraoDriver` decimal(6,4);--> statement-breakpoint
+ALTER TABLE `products` ADD `custoCorpoOnoff220v` decimal(10,4);--> statement-breakpoint
+ALTER TABLE `products` ADD `mkpPadraoOnoff220v` decimal(6,4);--> statement-breakpoint
+ALTER TABLE `products` ADD `mkpMinimoOnoff220v` decimal(6,4);--> statement-breakpoint
+ALTER TABLE `products` ADD `custoCorpoOnoffBivolt` decimal(10,4);--> statement-breakpoint
+ALTER TABLE `products` ADD `mkpPadraoOnoffBivolt` decimal(6,4);--> statement-breakpoint
+ALTER TABLE `products` ADD `mkpMinimoOnoffBivolt` decimal(6,4);--> statement-breakpoint
+ALTER TABLE `products` ADD `custoCorpoDim110v` decimal(10,4);--> statement-breakpoint
+ALTER TABLE `products` ADD `mkpPadraoDim110v` decimal(6,4);--> statement-breakpoint
+ALTER TABLE `products` ADD `mkpMinimoDim110v` decimal(6,4);--> statement-breakpoint
+ALTER TABLE `products` ADD `custoCorpoDimDali` decimal(10,4);--> statement-breakpoint
+ALTER TABLE `products` ADD `mkpPadraoDimDali` decimal(6,4);--> statement-breakpoint
+ALTER TABLE `products` ADD `mkpMinimoDimDali` decimal(6,4);--> statement-breakpoint
+ALTER TABLE `products` ADD `custoCorpoDimTriac110v` decimal(10,4);--> statement-breakpoint
+ALTER TABLE `products` ADD `mkpPadraoDimTriac110v` decimal(6,4);--> statement-breakpoint
+ALTER TABLE `products` ADD `mkpMinimoDimTriac110v` decimal(6,4);--> statement-breakpoint
+ALTER TABLE `products` ADD `custoCorpoDimTriac220v` decimal(10,4);--> statement-breakpoint
+ALTER TABLE `products` ADD `mkpPadraoDimTriac220v` decimal(6,4);--> statement-breakpoint
+ALTER TABLE `products` ADD `mkpMinimoDimTriac220v` decimal(6,4);

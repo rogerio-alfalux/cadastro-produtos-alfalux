@@ -92,6 +92,9 @@ router.get("/all", async (_req, res) => {
       const rawKey = extractKey(c.fotoUrl);
       const resolvedFotoUrl = rawKey ? (signedUrlMap.get(rawKey) ?? null) : null;
       const modelo = c.modelo ?? "";
+      const custoDriver = (c as any).custoDriver ? Number((c as any).custoDriver) : (c.custo ? Number(c.custo) : null);
+      const mkpPadrao = (c as any).mkpPadraoDriver ? Number((c as any).mkpPadraoDriver) : null;
+      const precoVenda = custoDriver && mkpPadrao ? Math.round(custoDriver * mkpPadrao * 100) / 100 : null;
       return {
         codigo: c.codigo ?? null,
         descricao: modelo,
@@ -100,7 +103,9 @@ router.get("/all", async (_req, res) => {
         potencia: extractPotencia(modelo),
         tensaoEntrada: extractTensaoEntrada(modelo, c.tipo),
         corrente: extractCorrente(modelo),
-        precoVenda: c.custo ? Number(c.custo) : null,
+        custoDriver,
+        mkpPadrao,
+        precoVenda,
         fotoUrl: resolvedFotoUrl,
         observacoes: c.observacao ?? null,
         disponivel: true,
