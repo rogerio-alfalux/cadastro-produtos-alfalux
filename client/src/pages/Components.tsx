@@ -64,6 +64,8 @@ interface ComponentRow {
   codigo: string | null;
   observacao: string | null;
   custo: string | null;
+  custoDriver: string | null;
+  mkpPadraoDriver: string | null;
   fotoUrl: string | null;
   fotoKey: string | null;
 }
@@ -74,6 +76,8 @@ interface FormState {
   codigo: string;
   observacao: string;
   custo: string;
+  custoDriver: string;
+  mkpPadraoDriver: string;
   fotoUrl: string;
   fotoKey: string;
 }
@@ -84,6 +88,8 @@ const EMPTY_FORM: FormState = {
   codigo: "",
   observacao: "",
   custo: "",
+  custoDriver: "",
+  mkpPadraoDriver: "",
   fotoUrl: "",
   fotoKey: "",
 };
@@ -424,6 +430,8 @@ export default function Components() {
       codigo: c.codigo ?? "",
       observacao: c.observacao ?? "",
       custo: c.custo ?? "",
+      custoDriver: (c as any).custoDriver ?? "",
+      mkpPadraoDriver: (c as any).mkpPadraoDriver ?? "",
       fotoUrl: c.fotoUrl ?? "",
       fotoKey: c.fotoKey ?? "",
     });
@@ -441,9 +449,9 @@ export default function Components() {
       return;
     }
     if (editTarget) {
-      updateMut.mutate({ id: editTarget.id, modelo: form.modelo, codigo: form.codigo, observacao: form.observacao, custo: form.custo, fotoUrl: form.fotoUrl || undefined, fotoKey: form.fotoKey || undefined });
+      updateMut.mutate({ id: editTarget.id, modelo: form.modelo, codigo: form.codigo, observacao: form.observacao, custo: form.custo, custoDriver: form.custoDriver || undefined, mkpPadraoDriver: form.mkpPadraoDriver || undefined, fotoUrl: form.fotoUrl || undefined, fotoKey: form.fotoKey || undefined });
     } else {
-      createMut.mutate({ tipo: form.tipo as ComponentType, modelo: form.modelo, codigo: form.codigo, observacao: form.observacao, custo: form.custo, fotoUrl: form.fotoUrl || undefined, fotoKey: form.fotoKey || undefined });
+      createMut.mutate({ tipo: form.tipo as ComponentType, modelo: form.modelo, codigo: form.codigo, observacao: form.observacao, custo: form.custo, custoDriver: form.custoDriver || undefined, mkpPadraoDriver: form.mkpPadraoDriver || undefined, fotoUrl: form.fotoUrl || undefined, fotoKey: form.fotoKey || undefined });
     }
   };
 
@@ -1069,6 +1077,38 @@ export default function Components() {
                 />
               </div>
             </div>
+
+            {/* Custo Driver + Markup — só para tipos de driver */}
+            {form.tipo && form.tipo.startsWith("DRIVER_") && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>Custo Driver (R$) <span className="text-muted-foreground text-xs">(opcional)</span></Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-medium">R$</span>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      className="pl-8"
+                      value={form.custoDriver}
+                      onChange={(e) => setForm((p) => ({ ...p, custoDriver: e.target.value }))}
+                      placeholder="0,00"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Markup Padrão <span className="text-muted-foreground text-xs">(ex: 3)</span></Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    min="1"
+                    value={form.mkpPadraoDriver}
+                    onChange={(e) => setForm((p) => ({ ...p, mkpPadraoDriver: e.target.value }))}
+                    placeholder="3"
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Foto */}
             <div className="space-y-1.5">
