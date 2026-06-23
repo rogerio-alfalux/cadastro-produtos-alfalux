@@ -418,6 +418,13 @@ interface FormData {
   mkpMinimoDimDali: string;
   mkpMinimoDimTriac110v: string;
   mkpMinimoDimTriac220v: string;
+  // Custo D1+D2 (apenas PERFIS)
+  custoCorpoOnoff220vD1D2: string;
+  custoCorpoOnoffBivoltD1D2: string;
+  custoCorpoDim110vD1D2: string;
+  custoCorpoDimDaliD1D2: string;
+  custoCorpoDimTriac110vD1D2: string;
+  custoCorpoDimTriac220vD1D2: string;
   precoVendaOnoff220: string;
   precoVendaOnoffBivolt: string;
   precoVendaDim110v: string;
@@ -510,6 +517,12 @@ const defaultForm: FormData = {
   mkpMinimoDimDali: "",
   mkpMinimoDimTriac110v: "",
   mkpMinimoDimTriac220v: "",
+  custoCorpoOnoff220vD1D2: "",
+  custoCorpoOnoffBivoltD1D2: "",
+  custoCorpoDim110vD1D2: "",
+  custoCorpoDimDaliD1D2: "",
+  custoCorpoDimTriac110vD1D2: "",
+  custoCorpoDimTriac220vD1D2: "",
   precoVendaOnoff220: "",
   precoVendaOnoffBivolt: "",
   precoVendaDim110v: "",
@@ -658,6 +671,12 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         mkpMinimoDimDali: p.mkpMinimoDimDali ? String(p.mkpMinimoDimDali) : "",
         mkpMinimoDimTriac110v: p.mkpMinimoDimTriac110v ? String(p.mkpMinimoDimTriac110v) : "",
         mkpMinimoDimTriac220v: p.mkpMinimoDimTriac220v ? String(p.mkpMinimoDimTriac220v) : "",
+        custoCorpoOnoff220vD1D2: (p as any).custoCorpoOnoff220vD1D2 ? String((p as any).custoCorpoOnoff220vD1D2) : "",
+        custoCorpoOnoffBivoltD1D2: (p as any).custoCorpoOnoffBivoltD1D2 ? String((p as any).custoCorpoOnoffBivoltD1D2) : "",
+        custoCorpoDim110vD1D2: (p as any).custoCorpoDim110vD1D2 ? String((p as any).custoCorpoDim110vD1D2) : "",
+        custoCorpoDimDaliD1D2: (p as any).custoCorpoDimDaliD1D2 ? String((p as any).custoCorpoDimDaliD1D2) : "",
+        custoCorpoDimTriac110vD1D2: (p as any).custoCorpoDimTriac110vD1D2 ? String((p as any).custoCorpoDimTriac110vD1D2) : "",
+        custoCorpoDimTriac220vD1D2: (p as any).custoCorpoDimTriac220vD1D2 ? String((p as any).custoCorpoDimTriac220vD1D2) : "",
         precoVendaOnoff220: p.precoVendaOnoff220 ? String(p.precoVendaOnoff220) : "",
         precoVendaOnoffBivolt: p.precoVendaOnoffBivolt ? String(p.precoVendaOnoffBivolt) : "",
         precoVendaDim110v: p.precoVendaDim110v ? String(p.precoVendaDim110v) : "",
@@ -873,6 +892,12 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       mkpMinimoDimDali: form.mkpMinimoDimDali || undefined,
       mkpMinimoDimTriac110v: form.mkpMinimoDimTriac110v || undefined,
       mkpMinimoDimTriac220v: form.mkpMinimoDimTriac220v || undefined,
+      custoCorpoOnoff220vD1D2: form.custoCorpoOnoff220vD1D2 || undefined,
+      custoCorpoOnoffBivoltD1D2: form.custoCorpoOnoffBivoltD1D2 || undefined,
+      custoCorpoDim110vD1D2: form.custoCorpoDim110vD1D2 || undefined,
+      custoCorpoDimDaliD1D2: form.custoCorpoDimDaliD1D2 || undefined,
+      custoCorpoDimTriac110vD1D2: form.custoCorpoDimTriac110vD1D2 || undefined,
+      custoCorpoDimTriac220vD1D2: form.custoCorpoDimTriac220vD1D2 || undefined,
       custoDriverOnoff220: form.custoDriverOnoff220 || undefined,
       custoDriverOnoffBivolt: form.custoDriverOnoffBivolt || undefined,
       custoDriverDim110v: form.custoDriverDim110v || undefined,
@@ -1721,77 +1746,108 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
           </p>
 
           {/* Tabela de custo + markup por tipo de driver */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left text-[10px] text-muted-foreground uppercase tracking-wider pb-2 pr-4 font-medium">Tipo de Driver</th>
-                  <th className="text-center text-[10px] text-muted-foreground uppercase tracking-wider pb-2 px-2 font-medium">Custo do Corpo (R$)</th>
-                  <th className="text-center text-[10px] text-muted-foreground uppercase tracking-wider pb-2 px-2 font-medium">Markup Padrão</th>
-                  <th className="text-center text-[10px] text-muted-foreground uppercase tracking-wider pb-2 px-2 font-medium">Markup Mínimo</th>
-                  <th className="text-center text-[10px] text-muted-foreground uppercase tracking-wider pb-2 pl-2 font-medium">Preço de Lista (calc.)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/40">
-                {([
-                  { label: "ON/OFF 220Vac",    custoField: "custoCorpoOnoff220v"   as keyof FormData, mkpPField: "mkpPadraoOnoff220v"   as keyof FormData, mkpMField: "mkpMinimoOnoff220v"   as keyof FormData },
-                  { label: "ON/OFF Bivolt",    custoField: "custoCorpoOnoffBivolt" as keyof FormData, mkpPField: "mkpPadraoOnoffBivolt" as keyof FormData, mkpMField: "mkpMinimoOnoffBivolt" as keyof FormData },
-                  { label: "Dim 1-10V 220Vac", custoField: "custoCorpoDim110v"    as keyof FormData, mkpPField: "mkpPadraoDim110v"    as keyof FormData, mkpMField: "mkpMinimoDim110v"    as keyof FormData },
-                  { label: "Dim DALI",         custoField: "custoCorpoDimDali"     as keyof FormData, mkpPField: "mkpPadraoDimDali"     as keyof FormData, mkpMField: "mkpMinimoDimDali"     as keyof FormData },
-                  { label: "Dim Triac 110Vac", custoField: "custoCorpoDimTriac110v" as keyof FormData, mkpPField: "mkpPadraoDimTriac110v" as keyof FormData, mkpMField: "mkpMinimoDimTriac110v" as keyof FormData },
-                  { label: "Dim Triac 220Vac", custoField: "custoCorpoDimTriac220v" as keyof FormData, mkpPField: "mkpPadraoDimTriac220v" as keyof FormData, mkpMField: "mkpMinimoDimTriac220v" as keyof FormData },
-                ] as Array<{ label: string; custoField: keyof FormData; mkpPField: keyof FormData; mkpMField: keyof FormData }>).map(({ label, custoField, mkpPField, mkpMField }) => {
-                  const custo = parseFloat(form[custoField] as string) || 0;
-                  const mkpP = parseFloat(form[mkpPField] as string) || 0;
-                  const precoLista = custo > 0 && mkpP > 0 ? (custo * mkpP).toFixed(2) : "—";
-                  return (
-                    <tr key={custoField} className="group">
-                      <td className="py-2.5 pr-4">
-                        <span className="text-xs font-medium text-foreground/80">{label}</span>
-                      </td>
-                      <td className="py-2.5 px-2">
-                        <div className="relative w-32">
-                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-medium pointer-events-none">R$</span>
-                          <Input
-                            className="input-dark pl-8 text-sm h-8"
-                            type="number" step="0.01" min="0"
-                            value={form[custoField] as string}
-                            onChange={(e) => setField(custoField, e.target.value)}
-                            placeholder="0,00"
-                          />
-                        </div>
-                      </td>
-                      <td className="py-2.5 px-2">
-                        <Input
-                          className="input-dark text-sm h-8 w-24 text-center"
-                          type="number" step="0.1" min="1"
-                          value={form[mkpPField] as string}
-                          onChange={(e) => setField(mkpPField, e.target.value)}
-                          placeholder="ex: 4"
-                        />
-                      </td>
-                      <td className="py-2.5 px-2">
-                        <Input
-                          className="input-dark text-sm h-8 w-24 text-center"
-                          type="number" step="0.1" min="1"
-                          value={form[mkpMField] as string}
-                          onChange={(e) => setField(mkpMField, e.target.value)}
-                          placeholder="ex: 3"
-                        />
-                      </td>
-                      <td className="py-2.5 pl-2 text-center">
-                        <span className={`text-sm font-semibold ${
-                          precoLista !== "—" ? "text-emerald-400" : "text-muted-foreground/40"
-                        }`}>
-                          {precoLista !== "—" ? `R$ ${precoLista}` : "—"}
-                        </span>
-                      </td>
+          {(() => {
+            const isPerfil = form.categoria?.toUpperCase() === "PERFIS";
+            const drivers: Array<{
+              label: string;
+              custoField: keyof FormData;
+              custoD1D2Field?: keyof FormData;
+              mkpPField: keyof FormData;
+              mkpMField: keyof FormData;
+            }> = [
+              { label: "ON/OFF 220Vac",    custoField: "custoCorpoOnoff220v",    custoD1D2Field: "custoCorpoOnoff220vD1D2",    mkpPField: "mkpPadraoOnoff220v",    mkpMField: "mkpMinimoOnoff220v" },
+              { label: "ON/OFF Bivolt",    custoField: "custoCorpoOnoffBivolt",  custoD1D2Field: "custoCorpoOnoffBivoltD1D2",  mkpPField: "mkpPadraoOnoffBivolt",  mkpMField: "mkpMinimoOnoffBivolt" },
+              { label: "Dim 1-10V 220Vac", custoField: "custoCorpoDim110v",      custoD1D2Field: "custoCorpoDim110vD1D2",      mkpPField: "mkpPadraoDim110v",      mkpMField: "mkpMinimoDim110v" },
+              { label: "Dim DALI",         custoField: "custoCorpoDimDali",       custoD1D2Field: "custoCorpoDimDaliD1D2",       mkpPField: "mkpPadraoDimDali",       mkpMField: "mkpMinimoDimDali" },
+              { label: "Dim Triac 110Vac", custoField: "custoCorpoDimTriac110v",  custoD1D2Field: "custoCorpoDimTriac110vD1D2",  mkpPField: "mkpPadraoDimTriac110v",  mkpMField: "mkpMinimoDimTriac110v" },
+              { label: "Dim Triac 220Vac", custoField: "custoCorpoDimTriac220v",  custoD1D2Field: "custoCorpoDimTriac220vD1D2",  mkpPField: "mkpPadraoDimTriac220v",  mkpMField: "mkpMinimoDimTriac220v" },
+            ];
+            return (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left text-[10px] text-muted-foreground uppercase tracking-wider pb-2 pr-4 font-medium">Tipo de Driver</th>
+                      <th className="text-center text-[10px] text-muted-foreground uppercase tracking-wider pb-2 px-2 font-medium">
+                        {isPerfil ? "Custo D1 — Ilum. Direta (R$)" : "Custo do Corpo (R$)"}
+                      </th>
+                      {isPerfil && (
+                        <th className="text-center text-[10px] text-amber-400/80 uppercase tracking-wider pb-2 px-2 font-medium">Custo D1+D2 — Dir.+Indir. (R$)</th>
+                      )}
+                      <th className="text-center text-[10px] text-muted-foreground uppercase tracking-wider pb-2 px-2 font-medium">Markup Padrão</th>
+                      <th className="text-center text-[10px] text-muted-foreground uppercase tracking-wider pb-2 px-2 font-medium">Markup Mínimo</th>
+                      <th className="text-center text-[10px] text-muted-foreground uppercase tracking-wider pb-2 pl-2 font-medium">Preço de Lista (calc.)</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                  </thead>
+                  <tbody className="divide-y divide-border/40">
+                    {drivers.map(({ label, custoField, custoD1D2Field, mkpPField, mkpMField }) => {
+                      const custo = parseFloat(form[custoField] as string) || 0;
+                      const mkpP = parseFloat(form[mkpPField] as string) || 0;
+                      const precoLista = custo > 0 && mkpP > 0 ? (custo * mkpP).toFixed(2) : "—";
+                      return (
+                        <tr key={custoField} className="group">
+                          <td className="py-2.5 pr-4">
+                            <span className="text-xs font-medium text-foreground/80">{label}</span>
+                          </td>
+                          <td className="py-2.5 px-2">
+                            <div className="relative w-32">
+                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-medium pointer-events-none">R$</span>
+                              <Input
+                                className="input-dark pl-8 text-sm h-8"
+                                type="number" step="0.01" min="0"
+                                value={form[custoField] as string}
+                                onChange={(e) => setField(custoField, e.target.value)}
+                                placeholder="0,00"
+                              />
+                            </div>
+                          </td>
+                          {isPerfil && custoD1D2Field && (
+                            <td className="py-2.5 px-2">
+                              <div className="relative w-32">
+                                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-amber-400/60 text-xs font-medium pointer-events-none">R$</span>
+                                <Input
+                                  className="input-dark pl-8 text-sm h-8 border-amber-400/30 focus:border-amber-400/60"
+                                  type="number" step="0.01" min="0"
+                                  value={form[custoD1D2Field] as string}
+                                  onChange={(e) => setField(custoD1D2Field, e.target.value)}
+                                  placeholder="0,00"
+                                />
+                              </div>
+                            </td>
+                          )}
+                          <td className="py-2.5 px-2">
+                            <Input
+                              className="input-dark text-sm h-8 w-24 text-center"
+                              type="number" step="0.1" min="1"
+                              value={form[mkpPField] as string}
+                              onChange={(e) => setField(mkpPField, e.target.value)}
+                              placeholder="ex: 4"
+                            />
+                          </td>
+                          <td className="py-2.5 px-2">
+                            <Input
+                              className="input-dark text-sm h-8 w-24 text-center"
+                              type="number" step="0.1" min="1"
+                              value={form[mkpMField] as string}
+                              onChange={(e) => setField(mkpMField, e.target.value)}
+                              placeholder="ex: 3"
+                            />
+                          </td>
+                          <td className="py-2.5 pl-2 text-center">
+                            <span className={`text-sm font-semibold ${
+                              precoLista !== "—" ? "text-emerald-400" : "text-muted-foreground/40"
+                            }`}>
+                              {precoLista !== "—" ? `R$ ${precoLista}` : "—"}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
 
         </section>
 

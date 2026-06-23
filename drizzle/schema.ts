@@ -147,6 +147,13 @@ export const products = mysqlTable("products", {
   custoCorpoDimTriac220v: decimal("custoCorpoDimTriac220v", { precision: 10, scale: 4 }),
   mkpPadraoDimTriac220v: decimal("mkpPadraoDimTriac220v", { precision: 6, scale: 4 }),
   mkpMinimoDimTriac220v: decimal("mkpMinimoDimTriac220v", { precision: 6, scale: 4 }),
+  // Custo do corpo D1+D2 (apenas para PERFIS com iluminação direta + indireta)
+  custoCorpoOnoff220vD1D2: decimal("custoCorpoOnoff220vD1D2", { precision: 10, scale: 4 }),
+  custoCorpoOnoffBivoltD1D2: decimal("custoCorpoOnoffBivoltD1D2", { precision: 10, scale: 4 }),
+  custoCorpoDim110vD1D2: decimal("custoCorpoDim110vD1D2", { precision: 10, scale: 4 }),
+  custoCorpoDimDaliD1D2: decimal("custoCorpoDimDaliD1D2", { precision: 10, scale: 4 }),
+  custoCorpoDimTriac110vD1D2: decimal("custoCorpoDimTriac110vD1D2", { precision: 10, scale: 4 }),
+  custoCorpoDimTriac220vD1D2: decimal("custoCorpoDimTriac220vD1D2", { precision: 10, scale: 4 }),
   // Metadados
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

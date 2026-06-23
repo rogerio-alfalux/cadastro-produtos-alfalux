@@ -121,6 +121,13 @@ const productSchema = z.object({
   custoCorpoDimTriac220v: z.string().nullish(),
   mkpPadraoDimTriac220v: z.string().nullish(),
   mkpMinimoDimTriac220v: z.string().nullish(),
+  // Custo D1+D2 (apenas para PERFIS com iluminação direta + indireta)
+  custoCorpoOnoff220vD1D2: z.string().nullish(),
+  custoCorpoOnoffBivoltD1D2: z.string().nullish(),
+  custoCorpoDim110vD1D2: z.string().nullish(),
+  custoCorpoDimDaliD1D2: z.string().nullish(),
+  custoCorpoDimTriac110vD1D2: z.string().nullish(),
+  custoCorpoDimTriac220vD1D2: z.string().nullish(),
 }).superRefine((data, ctx) => {
   // Validar Ótica: obrigatório se não for NaoAplicavel
   if (!data.oticaNaoAplicavel && (!data.otica || data.otica.trim() === "")) {
@@ -348,6 +355,12 @@ export const appRouter = router({
           custoCorpoDimTriac220v: input.custoCorpoDimTriac220v || null,
           mkpPadraoDimTriac220v: input.mkpPadraoDimTriac220v || null,
           mkpMinimoDimTriac220v: input.mkpMinimoDimTriac220v || null,
+          custoCorpoOnoff220vD1D2: input.custoCorpoOnoff220vD1D2 || null,
+          custoCorpoOnoffBivoltD1D2: input.custoCorpoOnoffBivoltD1D2 || null,
+          custoCorpoDim110vD1D2: input.custoCorpoDim110vD1D2 || null,
+          custoCorpoDimDaliD1D2: input.custoCorpoDimDaliD1D2 || null,
+          custoCorpoDimTriac110vD1D2: input.custoCorpoDimTriac110vD1D2 || null,
+          custoCorpoDimTriac220vD1D2: input.custoCorpoDimTriac220vD1D2 || null,
         };
         await createProduct(data);
         return { success: true };
@@ -473,6 +486,12 @@ export const appRouter = router({
         if (d.custoCorpoDimTriac220v !== undefined) update.custoCorpoDimTriac220v = d.custoCorpoDimTriac220v || null;
         if (d.mkpPadraoDimTriac220v !== undefined) update.mkpPadraoDimTriac220v = d.mkpPadraoDimTriac220v || null;
         if (d.mkpMinimoDimTriac220v !== undefined) update.mkpMinimoDimTriac220v = d.mkpMinimoDimTriac220v || null;
+        if (d.custoCorpoOnoff220vD1D2 !== undefined) update.custoCorpoOnoff220vD1D2 = d.custoCorpoOnoff220vD1D2 || null;
+        if (d.custoCorpoOnoffBivoltD1D2 !== undefined) update.custoCorpoOnoffBivoltD1D2 = d.custoCorpoOnoffBivoltD1D2 || null;
+        if (d.custoCorpoDim110vD1D2 !== undefined) update.custoCorpoDim110vD1D2 = d.custoCorpoDim110vD1D2 || null;
+        if (d.custoCorpoDimDaliD1D2 !== undefined) update.custoCorpoDimDaliD1D2 = d.custoCorpoDimDaliD1D2 || null;
+        if (d.custoCorpoDimTriac110vD1D2 !== undefined) update.custoCorpoDimTriac110vD1D2 = d.custoCorpoDimTriac110vD1D2 || null;
+        if (d.custoCorpoDimTriac220vD1D2 !== undefined) update.custoCorpoDimTriac220vD1D2 = d.custoCorpoDimTriac220vD1D2 || null;
         await updateProduct(input.id, update as any);
         return { success: true };
       }),
