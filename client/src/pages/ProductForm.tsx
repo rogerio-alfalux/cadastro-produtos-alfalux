@@ -1736,7 +1736,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                 {([
                   { label: "ON/OFF 220Vac",    custoField: "custoCorpoOnoff220v"   as keyof FormData, mkpPField: "mkpPadraoOnoff220v"   as keyof FormData, mkpMField: "mkpMinimoOnoff220v"   as keyof FormData },
                   { label: "ON/OFF Bivolt",    custoField: "custoCorpoOnoffBivolt" as keyof FormData, mkpPField: "mkpPadraoOnoffBivolt" as keyof FormData, mkpMField: "mkpMinimoOnoffBivolt" as keyof FormData },
-                  { label: "Dim 1-10V 110Vac", custoField: "custoCorpoDim110v"    as keyof FormData, mkpPField: "mkpPadraoDim110v"    as keyof FormData, mkpMField: "mkpMinimoDim110v"    as keyof FormData },
+                  { label: "Dim 1-10V 220Vac", custoField: "custoCorpoDim110v"    as keyof FormData, mkpPField: "mkpPadraoDim110v"    as keyof FormData, mkpMField: "mkpMinimoDim110v"    as keyof FormData },
                   { label: "Dim DALI",         custoField: "custoCorpoDimDali"     as keyof FormData, mkpPField: "mkpPadraoDimDali"     as keyof FormData, mkpMField: "mkpMinimoDimDali"     as keyof FormData },
                   { label: "Dim Triac 110Vac", custoField: "custoCorpoDimTriac110v" as keyof FormData, mkpPField: "mkpPadraoDimTriac110v" as keyof FormData, mkpMField: "mkpMinimoDimTriac110v" as keyof FormData },
                   { label: "Dim Triac 220Vac", custoField: "custoCorpoDimTriac220v" as keyof FormData, mkpPField: "mkpPadraoDimTriac220v" as keyof FormData, mkpMField: "mkpMinimoDimTriac220v" as keyof FormData },
@@ -1793,23 +1793,6 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
             </table>
           </div>
 
-          {/* Campo legado de custo único — mantido para compatibilidade */}
-          <div className="mt-5 pt-4 border-t border-border/40">
-            <div className="max-w-xs">
-              <FieldWrapper label="CUSTO ÚNICO (legado — R$)" touched={touched} errors={errors}>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
-                  <Input
-                    className="input-dark pl-9"
-                    type="number" step="0.01" min="0"
-                    value={form.custoLuminaria}
-                    onChange={(e) => setField("custoLuminaria", e.target.value)}
-                    placeholder="0,00"
-                  />
-                </div>
-              </FieldWrapper>
-            </div>
-          </div>
         </section>
 
         {/* ─── Seção 7: Preço de Venda ────────────────────────────────── */}
