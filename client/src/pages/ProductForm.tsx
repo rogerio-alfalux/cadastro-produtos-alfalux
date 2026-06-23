@@ -397,6 +397,27 @@ interface FormData {
   fotoUrl: string;
   fotoKey: string;
   custoLuminaria: string;
+  // Custo do corpo por tipo de driver
+  custoCorpoOnoff220v: string;
+  custoCorpoOnoffBivolt: string;
+  custoCorpoDim110v: string;
+  custoCorpoDimDali: string;
+  custoCorpoDimTriac110v: string;
+  custoCorpoDimTriac220v: string;
+  // Markup padrão por tipo de driver
+  mkpPadraoOnoff220v: string;
+  mkpPadraoOnoffBivolt: string;
+  mkpPadraoDim110v: string;
+  mkpPadraoDimDali: string;
+  mkpPadraoDimTriac110v: string;
+  mkpPadraoDimTriac220v: string;
+  // Markup mínimo por tipo de driver
+  mkpMinimoOnoff220v: string;
+  mkpMinimoOnoffBivolt: string;
+  mkpMinimoDim110v: string;
+  mkpMinimoDimDali: string;
+  mkpMinimoDimTriac110v: string;
+  mkpMinimoDimTriac220v: string;
   precoVendaOnoff220: string;
   precoVendaOnoffBivolt: string;
   precoVendaDim110v: string;
@@ -468,6 +489,27 @@ const defaultForm: FormData = {
   fotoUrl: "",
   fotoKey: "",
   custoLuminaria: "",
+  // Custo do corpo por tipo de driver
+  custoCorpoOnoff220v: "",
+  custoCorpoOnoffBivolt: "",
+  custoCorpoDim110v: "",
+  custoCorpoDimDali: "",
+  custoCorpoDimTriac110v: "",
+  custoCorpoDimTriac220v: "",
+  // Markup padrão por tipo de driver
+  mkpPadraoOnoff220v: "",
+  mkpPadraoOnoffBivolt: "",
+  mkpPadraoDim110v: "",
+  mkpPadraoDimDali: "",
+  mkpPadraoDimTriac110v: "",
+  mkpPadraoDimTriac220v: "",
+  // Markup mínimo por tipo de driver
+  mkpMinimoOnoff220v: "",
+  mkpMinimoOnoffBivolt: "",
+  mkpMinimoDim110v: "",
+  mkpMinimoDimDali: "",
+  mkpMinimoDimTriac110v: "",
+  mkpMinimoDimTriac220v: "",
   precoVendaOnoff220: "",
   precoVendaOnoffBivolt: "",
   precoVendaDim110v: "",
@@ -595,6 +637,27 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         fotoUrl: existingProduct.fotoUrl || "",
         fotoKey: existingProduct.fotoKey || "",
         custoLuminaria: existingProduct.custoLuminaria ? String(existingProduct.custoLuminaria) : "",
+        // Custo do corpo por tipo de driver
+        custoCorpoOnoff220v: p.custoCorpoOnoff220v ? String(p.custoCorpoOnoff220v) : "",
+        custoCorpoOnoffBivolt: p.custoCorpoOnoffBivolt ? String(p.custoCorpoOnoffBivolt) : "",
+        custoCorpoDim110v: p.custoCorpoDim110v ? String(p.custoCorpoDim110v) : "",
+        custoCorpoDimDali: p.custoCorpoDimDali ? String(p.custoCorpoDimDali) : "",
+        custoCorpoDimTriac110v: p.custoCorpoDimTriac110v ? String(p.custoCorpoDimTriac110v) : "",
+        custoCorpoDimTriac220v: p.custoCorpoDimTriac220v ? String(p.custoCorpoDimTriac220v) : "",
+        // Markup padrão por tipo de driver
+        mkpPadraoOnoff220v: p.mkpPadraoOnoff220v ? String(p.mkpPadraoOnoff220v) : "",
+        mkpPadraoOnoffBivolt: p.mkpPadraoOnoffBivolt ? String(p.mkpPadraoOnoffBivolt) : "",
+        mkpPadraoDim110v: p.mkpPadraoDim110v ? String(p.mkpPadraoDim110v) : "",
+        mkpPadraoDimDali: p.mkpPadraoDimDali ? String(p.mkpPadraoDimDali) : "",
+        mkpPadraoDimTriac110v: p.mkpPadraoDimTriac110v ? String(p.mkpPadraoDimTriac110v) : "",
+        mkpPadraoDimTriac220v: p.mkpPadraoDimTriac220v ? String(p.mkpPadraoDimTriac220v) : "",
+        // Markup mínimo por tipo de driver
+        mkpMinimoOnoff220v: p.mkpMinimoOnoff220v ? String(p.mkpMinimoOnoff220v) : "",
+        mkpMinimoOnoffBivolt: p.mkpMinimoOnoffBivolt ? String(p.mkpMinimoOnoffBivolt) : "",
+        mkpMinimoDim110v: p.mkpMinimoDim110v ? String(p.mkpMinimoDim110v) : "",
+        mkpMinimoDimDali: p.mkpMinimoDimDali ? String(p.mkpMinimoDimDali) : "",
+        mkpMinimoDimTriac110v: p.mkpMinimoDimTriac110v ? String(p.mkpMinimoDimTriac110v) : "",
+        mkpMinimoDimTriac220v: p.mkpMinimoDimTriac220v ? String(p.mkpMinimoDimTriac220v) : "",
         precoVendaOnoff220: p.precoVendaOnoff220 ? String(p.precoVendaOnoff220) : "",
         precoVendaOnoffBivolt: p.precoVendaOnoffBivolt ? String(p.precoVendaOnoffBivolt) : "",
         precoVendaDim110v: p.precoVendaDim110v ? String(p.precoVendaDim110v) : "",
@@ -789,6 +852,27 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       qtdModuloLed4000: form.moduloLed4000 ? form.qtdModuloLed4000 : undefined,
       qtdModuloLed5000: form.moduloLed5000 ? form.qtdModuloLed5000 : undefined,
       custoLuminaria: form.custoLuminaria || undefined,
+      // Custo do corpo por tipo de driver
+      custoCorpoOnoff220v: form.custoCorpoOnoff220v || undefined,
+      custoCorpoOnoffBivolt: form.custoCorpoOnoffBivolt || undefined,
+      custoCorpoDim110v: form.custoCorpoDim110v || undefined,
+      custoCorpoDimDali: form.custoCorpoDimDali || undefined,
+      custoCorpoDimTriac110v: form.custoCorpoDimTriac110v || undefined,
+      custoCorpoDimTriac220v: form.custoCorpoDimTriac220v || undefined,
+      // Markup padrão por tipo de driver
+      mkpPadraoOnoff220v: form.mkpPadraoOnoff220v || undefined,
+      mkpPadraoOnoffBivolt: form.mkpPadraoOnoffBivolt || undefined,
+      mkpPadraoDim110v: form.mkpPadraoDim110v || undefined,
+      mkpPadraoDimDali: form.mkpPadraoDimDali || undefined,
+      mkpPadraoDimTriac110v: form.mkpPadraoDimTriac110v || undefined,
+      mkpPadraoDimTriac220v: form.mkpPadraoDimTriac220v || undefined,
+      // Markup mínimo por tipo de driver
+      mkpMinimoOnoff220v: form.mkpMinimoOnoff220v || undefined,
+      mkpMinimoOnoffBivolt: form.mkpMinimoOnoffBivolt || undefined,
+      mkpMinimoDim110v: form.mkpMinimoDim110v || undefined,
+      mkpMinimoDimDali: form.mkpMinimoDimDali || undefined,
+      mkpMinimoDimTriac110v: form.mkpMinimoDimTriac110v || undefined,
+      mkpMinimoDimTriac220v: form.mkpMinimoDimTriac220v || undefined,
       custoDriverOnoff220: form.custoDriverOnoff220 || undefined,
       custoDriverOnoffBivolt: form.custoDriverOnoffBivolt || undefined,
       custoDriverDim110v: form.custoDriverDim110v || undefined,
@@ -1625,29 +1709,106 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
           />
         </section>
 
-        {/* ─── Seção 6: Custo da Luminária ─────────────────────────────── */}
+        {/* ─── Seção 6: Custo e Markup da Luminária ────────────────────── */}
         <section className="alfalux-card p-6">
-          <div className="flex items-center gap-2 mb-5">
+          <div className="flex items-center gap-2 mb-1">
             <DollarSign className="w-4 h-4 text-primary" />
-            <h2 className="section-header mb-0">CUSTO DA LUMINÁRIA</h2>
-            <span className="text-[10px] text-muted-foreground ml-auto">OPCIONAL — VALOR EM R$</span>
+            <h2 className="section-header mb-0">CUSTO E MARKUP DA LUMINÁRIA</h2>
+            <span className="text-[10px] text-muted-foreground ml-auto">OPCIONAL — VALORES POR TIPO DE DRIVER</span>
+          </div>
+          <p className="text-xs text-muted-foreground mb-5">
+            Informe o custo do corpo da luminária e os markups para cada tipo de driver. O Markup Padrão define o preço de lista; o Markup Mínimo é a trava de desconto máximo.
+          </p>
+
+          {/* Tabela de custo + markup por tipo de driver */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left text-[10px] text-muted-foreground uppercase tracking-wider pb-2 pr-4 font-medium">Tipo de Driver</th>
+                  <th className="text-center text-[10px] text-muted-foreground uppercase tracking-wider pb-2 px-2 font-medium">Custo do Corpo (R$)</th>
+                  <th className="text-center text-[10px] text-muted-foreground uppercase tracking-wider pb-2 px-2 font-medium">Markup Padrão</th>
+                  <th className="text-center text-[10px] text-muted-foreground uppercase tracking-wider pb-2 px-2 font-medium">Markup Mínimo</th>
+                  <th className="text-center text-[10px] text-muted-foreground uppercase tracking-wider pb-2 pl-2 font-medium">Preço de Lista (calc.)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/40">
+                {([
+                  { label: "ON/OFF 220Vac",    custoField: "custoCorpoOnoff220v"   as keyof FormData, mkpPField: "mkpPadraoOnoff220v"   as keyof FormData, mkpMField: "mkpMinimoOnoff220v"   as keyof FormData },
+                  { label: "ON/OFF Bivolt",    custoField: "custoCorpoOnoffBivolt" as keyof FormData, mkpPField: "mkpPadraoOnoffBivolt" as keyof FormData, mkpMField: "mkpMinimoOnoffBivolt" as keyof FormData },
+                  { label: "Dim 1-10V 110Vac", custoField: "custoCorpoDim110v"    as keyof FormData, mkpPField: "mkpPadraoDim110v"    as keyof FormData, mkpMField: "mkpMinimoDim110v"    as keyof FormData },
+                  { label: "Dim DALI",         custoField: "custoCorpoDimDali"     as keyof FormData, mkpPField: "mkpPadraoDimDali"     as keyof FormData, mkpMField: "mkpMinimoDimDali"     as keyof FormData },
+                  { label: "Dim Triac 110Vac", custoField: "custoCorpoDimTriac110v" as keyof FormData, mkpPField: "mkpPadraoDimTriac110v" as keyof FormData, mkpMField: "mkpMinimoDimTriac110v" as keyof FormData },
+                  { label: "Dim Triac 220Vac", custoField: "custoCorpoDimTriac220v" as keyof FormData, mkpPField: "mkpPadraoDimTriac220v" as keyof FormData, mkpMField: "mkpMinimoDimTriac220v" as keyof FormData },
+                ] as Array<{ label: string; custoField: keyof FormData; mkpPField: keyof FormData; mkpMField: keyof FormData }>).map(({ label, custoField, mkpPField, mkpMField }) => {
+                  const custo = parseFloat(form[custoField] as string) || 0;
+                  const mkpP = parseFloat(form[mkpPField] as string) || 0;
+                  const precoLista = custo > 0 && mkpP > 0 ? (custo * mkpP).toFixed(2) : "—";
+                  return (
+                    <tr key={custoField} className="group">
+                      <td className="py-2.5 pr-4">
+                        <span className="text-xs font-medium text-foreground/80">{label}</span>
+                      </td>
+                      <td className="py-2.5 px-2">
+                        <div className="relative w-32">
+                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-medium pointer-events-none">R$</span>
+                          <Input
+                            className="input-dark pl-8 text-sm h-8"
+                            type="number" step="0.01" min="0"
+                            value={form[custoField] as string}
+                            onChange={(e) => setField(custoField, e.target.value)}
+                            placeholder="0,00"
+                          />
+                        </div>
+                      </td>
+                      <td className="py-2.5 px-2">
+                        <Input
+                          className="input-dark text-sm h-8 w-24 text-center"
+                          type="number" step="0.1" min="1"
+                          value={form[mkpPField] as string}
+                          onChange={(e) => setField(mkpPField, e.target.value)}
+                          placeholder="ex: 4"
+                        />
+                      </td>
+                      <td className="py-2.5 px-2">
+                        <Input
+                          className="input-dark text-sm h-8 w-24 text-center"
+                          type="number" step="0.1" min="1"
+                          value={form[mkpMField] as string}
+                          onChange={(e) => setField(mkpMField, e.target.value)}
+                          placeholder="ex: 3"
+                        />
+                      </td>
+                      <td className="py-2.5 pl-2 text-center">
+                        <span className={`text-sm font-semibold ${
+                          precoLista !== "—" ? "text-emerald-400" : "text-muted-foreground/40"
+                        }`}>
+                          {precoLista !== "—" ? `R$ ${precoLista}` : "—"}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
 
-          <div className="max-w-xs">
-            <FieldWrapper label="CUSTO DO CORPO DA LUMINÁRIA (R$)" touched={touched} errors={errors}>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
-                <Input
-                  className="input-dark pl-9"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={form.custoLuminaria}
-                  onChange={(e) => setField("custoLuminaria", e.target.value)}
-                  placeholder="0,00"
-                />
-              </div>
-            </FieldWrapper>
+          {/* Campo legado de custo único — mantido para compatibilidade */}
+          <div className="mt-5 pt-4 border-t border-border/40">
+            <div className="max-w-xs">
+              <FieldWrapper label="CUSTO ÚNICO (legado — R$)" touched={touched} errors={errors}>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
+                  <Input
+                    className="input-dark pl-9"
+                    type="number" step="0.01" min="0"
+                    value={form.custoLuminaria}
+                    onChange={(e) => setField("custoLuminaria", e.target.value)}
+                    placeholder="0,00"
+                  />
+                </div>
+              </FieldWrapper>
+            </div>
           </div>
         </section>
 
