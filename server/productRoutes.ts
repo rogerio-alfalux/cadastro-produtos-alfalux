@@ -657,7 +657,7 @@ router.get("/all", async (_req, res) => {
         custoDriverDimDali: (p as any).custoDriverDimDali ? Number((p as any).custoDriverDimDali) : null,
         custoDriverDimTriac110v: (p as any).custoDriverDimTriac110v ? Number((p as any).custoDriverDimTriac110v) : null,
         custoDriverDimTriac220v: (p as any).custoDriverDimTriac220v ? Number((p as any).custoDriverDimTriac220v) : null,
-        // Custo do corpo por tipo de driver (sem driver) + markups
+        // Custo do corpo por tipo de driver (sem driver) + markups (nomenclatura interna mkp*)
         custoCorpoOnoff220v: (p as any).custoCorpoOnoff220v ? Number((p as any).custoCorpoOnoff220v) : null,
         mkpPadraoOnoff220v: (p as any).mkpPadraoOnoff220v ? Number((p as any).mkpPadraoOnoff220v) : null,
         mkpMinimoOnoff220v: (p as any).mkpMinimoOnoff220v ? Number((p as any).mkpMinimoOnoff220v) : null,
@@ -676,6 +676,36 @@ router.get("/all", async (_req, res) => {
         custoCorpoDimTriac220v: (p as any).custoCorpoDimTriac220v ? Number((p as any).custoCorpoDimTriac220v) : null,
         mkpPadraoDimTriac220v: (p as any).mkpPadraoDimTriac220v ? Number((p as any).mkpPadraoDimTriac220v) : null,
         mkpMinimoDimTriac220v: (p as any).mkpMinimoDimTriac220v ? Number((p as any).mkpMinimoDimTriac220v) : null,
+        // ── Campos de markup com nomenclatura esperada pelo Sistema Luna ──────
+        // markupPadrao* / markupMinimo* — aliases dos campos mkp* acima
+        markupPadraoOnoff220v:    (p as any).mkpPadraoOnoff220v    ? Number((p as any).mkpPadraoOnoff220v)    : null,
+        markupMinimoOnoff220v:    (p as any).mkpMinimoOnoff220v    ? Number((p as any).mkpMinimoOnoff220v)    : null,
+        markupPadraoOnoffBivolt:  (p as any).mkpPadraoOnoffBivolt  ? Number((p as any).mkpPadraoOnoffBivolt)  : null,
+        markupMinimoOnoffBivolt:  (p as any).mkpMinimoOnoffBivolt  ? Number((p as any).mkpMinimoOnoffBivolt)  : null,
+        markupPadraoDim110v:      (p as any).mkpPadraoDim110v      ? Number((p as any).mkpPadraoDim110v)      : null,
+        markupMinimoDim110v:      (p as any).mkpMinimoDim110v      ? Number((p as any).mkpMinimoDim110v)      : null,
+        markupPadraoDimDali:      (p as any).mkpPadraoDimDali      ? Number((p as any).mkpPadraoDimDali)      : null,
+        markupMinimoDimDali:      (p as any).mkpMinimoDimDali      ? Number((p as any).mkpMinimoDimDali)      : null,
+        markupPadraoDimTriac110v: (p as any).mkpPadraoDimTriac110v ? Number((p as any).mkpPadraoDimTriac110v) : null,
+        markupMinimoDimTriac110v: (p as any).mkpMinimoDimTriac110v ? Number((p as any).mkpMinimoDimTriac110v) : null,
+        markupPadraoDimTriac220v: (p as any).mkpPadraoDimTriac220v ? Number((p as any).mkpPadraoDimTriac220v) : null,
+        markupMinimoDimTriac220v: (p as any).mkpMinimoDimTriac220v ? Number((p as any).mkpMinimoDimTriac220v) : null,
+        // Markup do driver por tipo de controle
+        markupPadraoDriverOnoff220v:    (p as any).mkpPadraoDriverOnoff220v    ? Number((p as any).mkpPadraoDriverOnoff220v)    : null,
+        markupPadraoDriverOnoffBivolt:  (p as any).mkpPadraoDriverOnoffBivolt  ? Number((p as any).mkpPadraoDriverOnoffBivolt)  : null,
+        markupPadraoDriverDim110v:      (p as any).mkpPadraoDriverDim110v      ? Number((p as any).mkpPadraoDriverDim110v)      : null,
+        markupPadraoDriverDimDali:      (p as any).mkpPadraoDriverDimDali      ? Number((p as any).mkpPadraoDriverDimDali)      : null,
+        markupPadraoDriverDimTriac110v: (p as any).mkpPadraoDriverDimTriac110v ? Number((p as any).mkpPadraoDriverDimTriac110v) : null,
+        markupPadraoDriverDimTriac220v: (p as any).mkpPadraoDriverDimTriac220v ? Number((p as any).mkpPadraoDriverDimTriac220v) : null,
+        // Markup mínimo do driver — valor global fixo (padrão 3.0)
+        markupMinimoDriver: (p as any).mkpMinimoDriver ? Number((p as any).mkpMinimoDriver) : 3,
+        // Custo do corpo D1+D2 (apenas para PERFIS com iluminação direta + indireta)
+        custoCorpoOnoff220vD1D2:    (p as any).custoCorpoOnoff220vD1D2    ? Number((p as any).custoCorpoOnoff220vD1D2)    : null,
+        custoCorpoOnoffBivoltD1D2:  (p as any).custoCorpoOnoffBivoltD1D2  ? Number((p as any).custoCorpoOnoffBivoltD1D2)  : null,
+        custoCorpoDim110vD1D2:      (p as any).custoCorpoDim110vD1D2      ? Number((p as any).custoCorpoDim110vD1D2)      : null,
+        custoCorpoDimDaliD1D2:      (p as any).custoCorpoDimDaliD1D2      ? Number((p as any).custoCorpoDimDaliD1D2)      : null,
+        custoCorpoDimTriac110vD1D2: (p as any).custoCorpoDimTriac110vD1D2 ? Number((p as any).custoCorpoDimTriac110vD1D2) : null,
+        custoCorpoDimTriac220vD1D2: (p as any).custoCorpoDimTriac220vD1D2 ? Number((p as any).custoCorpoDimTriac220vD1D2) : null,
       };
 
       // oticaPrimaria e oticaSecundaria: sempre retornados (não apenas DOWNLIGHTS/SPOTS)
