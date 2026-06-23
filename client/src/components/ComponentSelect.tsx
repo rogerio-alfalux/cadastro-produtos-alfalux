@@ -19,6 +19,7 @@ interface ComponentSelectProps {
   tipo: ComponentType;
   value: string;
   onChange: (value: string) => void;
+  onSelectComponent?: (component: { modelo: string; mkpPadraoDriver: string | null; custoDriver: string | null }) => void;
   onBlur?: () => void;
   placeholder?: string;
   disabled?: boolean;
@@ -30,6 +31,7 @@ export function ComponentSelect({
   tipo,
   value,
   onChange,
+  onSelectComponent,
   onBlur,
   placeholder,
   disabled,
@@ -68,12 +70,23 @@ export function ComponentSelect({
     onChange(modelo);
     setInputValue(modelo);
     setOpen(false);
+    // Emite o componente completo se callback fornecido
+    if (onSelectComponent) {
+      const found = allComponents.find((c) => c.modelo === modelo);
+      if (found) {
+        onSelectComponent({
+          modelo: found.modelo,
+          mkpPadraoDriver: (found as any).mkpPadraoDriver ?? null,
+          custoDriver: (found as any).custoDriver ?? null,
+        });
+      }
+    }
     // Devolve o foco ao input após seleção
     requestAnimationFrame(() => {
       inputRef.current?.focus();
       suppressBlurRef.current = false;
     });
-  }, [onChange]);
+  }, [onChange, onSelectComponent, allComponents]);
 
   const handleClear = useCallback((e: React.MouseEvent) => {
     e.preventDefault();

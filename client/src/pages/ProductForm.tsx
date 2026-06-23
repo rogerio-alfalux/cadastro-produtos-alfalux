@@ -69,6 +69,7 @@ interface DriverRowProps {
   driverField: keyof FormData;
   custoField: keyof FormData;
   qtdField: keyof FormData;
+  mkpPadraoDriverField?: keyof FormData;
   naoAplicavelField?: keyof FormData;
   label: string;
   required?: boolean;
@@ -93,7 +94,7 @@ const driverTypeMap: Record<string, "DRIVER_ONOFF_220" | "DRIVER_ONOFF_BIVOLT" |
 };
 
 const DriverRow = ({
-  driverField, custoField, qtdField, naoAplicavelField, label, required, placeholder, optional,
+  driverField, custoField, qtdField, mkpPadraoDriverField, naoAplicavelField, label, required, placeholder, optional,
   form, touched, errors, setField, setForm, setErrors, setTouched,
 }: DriverRowProps) => {
   const isNaoAplicavel = naoAplicavelField ? !!form[naoAplicavelField] : false;
@@ -147,6 +148,11 @@ const DriverRow = ({
                 onChange={(v) => {
                   setField(driverField, v);
                   setTouched((p) => ({ ...p, [driverField]: true }));
+                }}
+                onSelectComponent={(comp) => {
+                  if (mkpPadraoDriverField && comp.mkpPadraoDriver) {
+                    setField(mkpPadraoDriverField, comp.mkpPadraoDriver);
+                  }
                 }}
                 onBlur={() => setTouched((p) => ({ ...p, [driverField]: true }))}
                 placeholder={placeholder}
@@ -418,6 +424,13 @@ interface FormData {
   mkpMinimoDimDali: string;
   mkpMinimoDimTriac110v: string;
   mkpMinimoDimTriac220v: string;
+  // Markup do driver por tipo (preenchido automaticamente ao selecionar o driver)
+  mkpPadraoDriverOnoff220v: string;
+  mkpPadraoDriverOnoffBivolt: string;
+  mkpPadraoDriverDim110v: string;
+  mkpPadraoDriverDimDali: string;
+  mkpPadraoDriverDimTriac110v: string;
+  mkpPadraoDriverDimTriac220v: string;
   // Custo D1+D2 (apenas PERFIS)
   custoCorpoOnoff220vD1D2: string;
   custoCorpoOnoffBivoltD1D2: string;
@@ -517,6 +530,13 @@ const defaultForm: FormData = {
   mkpMinimoDimDali: "",
   mkpMinimoDimTriac110v: "",
   mkpMinimoDimTriac220v: "",
+  // Markup do driver por tipo (preenchido automaticamente ao selecionar o driver)
+  mkpPadraoDriverOnoff220v: "",
+  mkpPadraoDriverOnoffBivolt: "",
+  mkpPadraoDriverDim110v: "",
+  mkpPadraoDriverDimDali: "",
+  mkpPadraoDriverDimTriac110v: "",
+  mkpPadraoDriverDimTriac220v: "",
   custoCorpoOnoff220vD1D2: "",
   custoCorpoOnoffBivoltD1D2: "",
   custoCorpoDim110vD1D2: "",
@@ -690,6 +710,13 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         precoVendaDim110vD1D2: (p as any).precoVendaDim110vD1D2 ? String((p as any).precoVendaDim110vD1D2) : "",
         precoVendaDimDaliD1: (p as any).precoVendaDimDaliD1 ? String((p as any).precoVendaDimDaliD1) : "",
         precoVendaDimDaliD1D2: (p as any).precoVendaDimDaliD1D2 ? String((p as any).precoVendaDimDaliD1D2) : "",
+        // Markup do driver por tipo (salvo no banco)
+        mkpPadraoDriverOnoff220v:    (p as any).mkpPadraoDriverOnoff220v    ? String((p as any).mkpPadraoDriverOnoff220v)    : "",
+        mkpPadraoDriverOnoffBivolt:  (p as any).mkpPadraoDriverOnoffBivolt  ? String((p as any).mkpPadraoDriverOnoffBivolt)  : "",
+        mkpPadraoDriverDim110v:      (p as any).mkpPadraoDriverDim110v      ? String((p as any).mkpPadraoDriverDim110v)      : "",
+        mkpPadraoDriverDimDali:      (p as any).mkpPadraoDriverDimDali      ? String((p as any).mkpPadraoDriverDimDali)      : "",
+        mkpPadraoDriverDimTriac110v: (p as any).mkpPadraoDriverDimTriac110v ? String((p as any).mkpPadraoDriverDimTriac110v) : "",
+        mkpPadraoDriverDimTriac220v: (p as any).mkpPadraoDriverDimTriac220v ? String((p as any).mkpPadraoDriverDimTriac220v) : "",
       };
 
       // Carregar drivers extras do banco
@@ -935,6 +962,13 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         : (form.driverDimTriac220v || undefined),
       custoDriverDimTriac110v: form.custoDriverDimTriac110v || undefined,
       custoDriverDimTriac220v: form.custoDriverDimTriac220v || undefined,
+      // Markup do driver por tipo (buscado do componente ao selecionar)
+      mkpPadraoDriverOnoff220v:    form.mkpPadraoDriverOnoff220v    || undefined,
+      mkpPadraoDriverOnoffBivolt:  form.mkpPadraoDriverOnoffBivolt  || undefined,
+      mkpPadraoDriverDim110v:      form.mkpPadraoDriverDim110v      || undefined,
+      mkpPadraoDriverDimDali:      form.mkpPadraoDriverDimDali      || undefined,
+      mkpPadraoDriverDimTriac110v: form.mkpPadraoDriverDimTriac110v || undefined,
+      mkpPadraoDriverDimTriac220v: form.mkpPadraoDriverDimTriac220v || undefined,
     };
     // Se os campos DIM estão vazios E não marcados como NÃO APLICÁVEL,
     // remove os campos NaoAplicavel do payload para não sobrescrever o banco com false
@@ -1444,6 +1478,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                 driverField="driverOnoff220"
                 custoField="custoDriverOnoff220"
                 qtdField="qtdDriverOnoff220"
+                mkpPadraoDriverField="mkpPadraoDriverOnoff220v"
                 label="ON/OFF DRIVER 220Vac"
                 required
                 placeholder="Ex: PHILIPS XITANIUM 19W 350MA (EQ00346)"
@@ -1468,6 +1503,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                 driverField="driverOnoffBivolt"
                 custoField="custoDriverOnoffBivolt"
                 qtdField="qtdDriverOnoffBivolt"
+                mkpPadraoDriverField="mkpPadraoDriverOnoffBivolt"
                 naoAplicavelField="driverOnoffBivoltNaoAplicavel"
                 label="ON/OFF DRIVER BIVOLT"
                 required
@@ -1499,6 +1535,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                     driverField="driverDim110v"
                     custoField="custoDriverDim110v"
                     qtdField="qtdDriverDim110v"
+                    mkpPadraoDriverField="mkpPadraoDriverDim110v"
                     naoAplicavelField="driverDim110vNaoAplicavel"
                     label="DIM 1-10V"
                     optional
@@ -1524,6 +1561,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                     driverField="driverDimDali"
                     custoField="custoDriverDimDali"
                     qtdField="qtdDriverDimDali"
+                    mkpPadraoDriverField="mkpPadraoDriverDimDali"
                     naoAplicavelField="driverDimDaliNaoAplicavel"
                     label="DIM DALI"
                     optional
@@ -1549,6 +1587,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                     driverField="driverDimTriac110v"
                     custoField="custoDriverDimTriac110v"
                     qtdField="qtdDriverDimTriac110v"
+                    mkpPadraoDriverField="mkpPadraoDriverDimTriac110v"
                     naoAplicavelField="driverDimTriac110vNaoAplicavel"
                     label="DIM TRIAC 110V"
                     optional
@@ -1574,6 +1613,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                     driverField="driverDimTriac220v"
                     custoField="custoDriverDimTriac220v"
                     qtdField="qtdDriverDimTriac220v"
+                    mkpPadraoDriverField="mkpPadraoDriverDimTriac220v"
                     naoAplicavelField="driverDimTriac220vNaoAplicavel"
                     label="DIM TRIAC 220V"
                     optional

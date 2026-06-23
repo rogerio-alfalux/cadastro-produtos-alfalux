@@ -147,6 +147,13 @@ export const products = mysqlTable("products", {
   custoCorpoDimTriac220v: decimal("custoCorpoDimTriac220v", { precision: 10, scale: 4 }),
   mkpPadraoDimTriac220v: decimal("mkpPadraoDimTriac220v", { precision: 6, scale: 4 }),
   mkpMinimoDimTriac220v: decimal("mkpMinimoDimTriac220v", { precision: 6, scale: 4 }),
+  // Markup do driver por tipo (buscado do cadastro de componentes ao salvar o produto)
+  mkpPadraoDriverOnoff220v:    decimal("mkpPadraoDriverOnoff220v",    { precision: 6, scale: 4 }),
+  mkpPadraoDriverOnoffBivolt:  decimal("mkpPadraoDriverOnoffBivolt",  { precision: 6, scale: 4 }),
+  mkpPadraoDriverDim110v:      decimal("mkpPadraoDriverDim110v",      { precision: 6, scale: 4 }),
+  mkpPadraoDriverDimDali:      decimal("mkpPadraoDriverDimDali",      { precision: 6, scale: 4 }),
+  mkpPadraoDriverDimTriac110v: decimal("mkpPadraoDriverDimTriac110v", { precision: 6, scale: 4 }),
+  mkpPadraoDriverDimTriac220v: decimal("mkpPadraoDriverDimTriac220v", { precision: 6, scale: 4 }),
   // Custo do corpo D1+D2 (apenas para PERFIS com iluminação direta + indireta)
   custoCorpoOnoff220vD1D2: decimal("custoCorpoOnoff220vD1D2", { precision: 10, scale: 4 }),
   custoCorpoOnoffBivoltD1D2: decimal("custoCorpoOnoffBivoltD1D2", { precision: 10, scale: 4 }),

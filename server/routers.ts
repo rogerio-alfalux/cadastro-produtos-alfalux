@@ -121,6 +121,13 @@ const productSchema = z.object({
   custoCorpoDimTriac220v: z.string().nullish(),
   mkpPadraoDimTriac220v: z.string().nullish(),
   mkpMinimoDimTriac220v: z.string().nullish(),
+  // Markup do driver por tipo (buscado do componente ao salvar — não exibido no formulário)
+  mkpPadraoDriverOnoff220v:    z.string().nullish(),
+  mkpPadraoDriverOnoffBivolt:  z.string().nullish(),
+  mkpPadraoDriverDim110v:      z.string().nullish(),
+  mkpPadraoDriverDimDali:      z.string().nullish(),
+  mkpPadraoDriverDimTriac110v: z.string().nullish(),
+  mkpPadraoDriverDimTriac220v: z.string().nullish(),
   // Custo D1+D2 (apenas para PERFIS com iluminação direta + indireta)
   custoCorpoOnoff220vD1D2: z.string().nullish(),
   custoCorpoOnoffBivoltD1D2: z.string().nullish(),
@@ -355,6 +362,12 @@ export const appRouter = router({
           custoCorpoDimTriac220v: input.custoCorpoDimTriac220v || null,
           mkpPadraoDimTriac220v: input.mkpPadraoDimTriac220v || null,
           mkpMinimoDimTriac220v: input.mkpMinimoDimTriac220v || null,
+          mkpPadraoDriverOnoff220v:    input.mkpPadraoDriverOnoff220v    || null,
+          mkpPadraoDriverOnoffBivolt:  input.mkpPadraoDriverOnoffBivolt  || null,
+          mkpPadraoDriverDim110v:      input.mkpPadraoDriverDim110v      || null,
+          mkpPadraoDriverDimDali:      input.mkpPadraoDriverDimDali      || null,
+          mkpPadraoDriverDimTriac110v: input.mkpPadraoDriverDimTriac110v || null,
+          mkpPadraoDriverDimTriac220v: input.mkpPadraoDriverDimTriac220v || null,
           custoCorpoOnoff220vD1D2: input.custoCorpoOnoff220vD1D2 || null,
           custoCorpoOnoffBivoltD1D2: input.custoCorpoOnoffBivoltD1D2 || null,
           custoCorpoDim110vD1D2: input.custoCorpoDim110vD1D2 || null,
@@ -486,6 +499,12 @@ export const appRouter = router({
         if (d.custoCorpoDimTriac220v !== undefined) update.custoCorpoDimTriac220v = d.custoCorpoDimTriac220v || null;
         if (d.mkpPadraoDimTriac220v !== undefined) update.mkpPadraoDimTriac220v = d.mkpPadraoDimTriac220v || null;
         if (d.mkpMinimoDimTriac220v !== undefined) update.mkpMinimoDimTriac220v = d.mkpMinimoDimTriac220v || null;
+        if (d.mkpPadraoDriverOnoff220v !== undefined)    update.mkpPadraoDriverOnoff220v    = d.mkpPadraoDriverOnoff220v    || null;
+        if (d.mkpPadraoDriverOnoffBivolt !== undefined)  update.mkpPadraoDriverOnoffBivolt  = d.mkpPadraoDriverOnoffBivolt  || null;
+        if (d.mkpPadraoDriverDim110v !== undefined)      update.mkpPadraoDriverDim110v      = d.mkpPadraoDriverDim110v      || null;
+        if (d.mkpPadraoDriverDimDali !== undefined)      update.mkpPadraoDriverDimDali      = d.mkpPadraoDriverDimDali      || null;
+        if (d.mkpPadraoDriverDimTriac110v !== undefined) update.mkpPadraoDriverDimTriac110v = d.mkpPadraoDriverDimTriac110v || null;
+        if (d.mkpPadraoDriverDimTriac220v !== undefined) update.mkpPadraoDriverDimTriac220v = d.mkpPadraoDriverDimTriac220v || null;
         if (d.custoCorpoOnoff220vD1D2 !== undefined) update.custoCorpoOnoff220vD1D2 = d.custoCorpoOnoff220vD1D2 || null;
         if (d.custoCorpoOnoffBivoltD1D2 !== undefined) update.custoCorpoOnoffBivoltD1D2 = d.custoCorpoOnoffBivoltD1D2 || null;
         if (d.custoCorpoDim110vD1D2 !== undefined) update.custoCorpoDim110vD1D2 = d.custoCorpoDim110vD1D2 || null;
