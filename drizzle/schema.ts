@@ -154,6 +154,8 @@ export const products = mysqlTable("products", {
   mkpPadraoDriverDimDali:      decimal("mkpPadraoDriverDimDali",      { precision: 6, scale: 4 }),
   mkpPadraoDriverDimTriac110v: decimal("mkpPadraoDriverDimTriac110v", { precision: 6, scale: 4 }),
   mkpPadraoDriverDimTriac220v: decimal("mkpPadraoDriverDimTriac220v", { precision: 6, scale: 4 }),
+  // Markup mínimo do driver — valor global fixo (padrão 3.0)
+  mkpMinimoDriver: decimal("mkpMinimoDriver", { precision: 6, scale: 4 }),
   // Custo do corpo D1+D2 (apenas para PERFIS com iluminação direta + indireta)
   custoCorpoOnoff220vD1D2: decimal("custoCorpoOnoff220vD1D2", { precision: 10, scale: 4 }),
   custoCorpoOnoffBivoltD1D2: decimal("custoCorpoOnoffBivoltD1D2", { precision: 10, scale: 4 }),
@@ -204,6 +206,7 @@ export const components = mysqlTable("components", {
   // Custo e markup para drivers (usados pelo configurador)
   custoDriver: decimal("custoDriver", { precision: 10, scale: 4 }),
   mkpPadraoDriver: decimal("mkpPadraoDriver", { precision: 6, scale: 4 }),
+  mkpMinimoDriver:  decimal("mkpMinimoDriver",  { precision: 6, scale: 4 }),
   // Foto do componente (opcional)
   fotoUrl: text("fotoUrl"),
   fotoKey: text("fotoKey"),
