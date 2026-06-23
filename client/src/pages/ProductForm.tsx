@@ -150,8 +150,13 @@ const DriverRow = ({
                   setTouched((p) => ({ ...p, [driverField]: true }));
                 }}
                 onSelectComponent={(comp) => {
+                  // Preenche o markup do driver automaticamente
                   if (mkpPadraoDriverField && comp.mkpPadraoDriver) {
                     setField(mkpPadraoDriverField, comp.mkpPadraoDriver);
+                  }
+                  // Preenche o custo do driver automaticamente
+                  if (comp.custoDriver) {
+                    setField(custoField, comp.custoDriver);
                   }
                 }}
                 onBlur={() => setTouched((p) => ({ ...p, [driverField]: true }))}
