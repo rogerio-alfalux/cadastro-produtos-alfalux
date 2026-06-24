@@ -602,6 +602,9 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
   // never reads a stale closure value
   const formRef = useRef<FormData>(form);
   useEffect(() => { formRef.current = form; }, [form]);
+  // Flag to ensure the form is only initialized once from the server data,
+  // preventing tRPC re-fetches from overwriting user edits
+  const initializedRef = useRef(false);
   const isEdit = !!editId;
   const isDuplicate = !!duplicarDeId;
 
@@ -609,11 +612,12 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
   const loadId = editId ?? duplicarDeId;
   const { data: existingProduct } = trpc.products.getById.useQuery(
     { id: loadId! },
-    { enabled: !!loadId }
+    { enabled: !!loadId, staleTime: Infinity, refetchOnWindowFocus: false }
   );
 
   useEffect(() => {
-    if (existingProduct) {
+    if (existingProduct && !initializedRef.current) {
+      initializedRef.current = true;
       const temps = (() => {
         try { return JSON.parse(existingProduct.temperaturasCor || "[]"); }
         catch { return ["2700", "3000", "4000", "5000"]; }
