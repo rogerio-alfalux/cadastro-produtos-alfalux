@@ -350,7 +350,7 @@ const OticaExtraRow = ({ index, item, onChange, onRemove }: OticaExtraRowProps) 
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const CATEGORIAS = ["PERFIS", "DOWNLIGHTS", "PAINÉIS", "SPOTS", "ARANDELAS", "ÁREA EXTERNA", "BALIZADORES", "DECORATIVAS"];
+const CATEGORIAS = ["PERFIS", "DOWNLIGHTS", "PAINÉIS", "SPOTS", "ARANDELAS", "ÁREA EXTERNA", "BALIZADORES", "DECORATIVAS", "CUSTOMIZADOS"];
 const INSTALACOES = ["EMBUTIR", "SOBREPOR", "PENDENTE", "ARANDELA", "NO FRAME"];
 const TEMPERATURAS = ["2700", "3000", "4000", "5000"];
 
