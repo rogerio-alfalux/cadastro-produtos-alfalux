@@ -775,6 +775,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
   const updateMutation = trpc.products.update.useMutation({
     onSuccess: () => {
       utils.products.list.invalidate();
+      if (editId) utils.products.getById.invalidate({ id: editId });
       toast.success("Produto atualizado com sucesso!");
       if (onSuccess) onSuccess();
       else navigate("/");

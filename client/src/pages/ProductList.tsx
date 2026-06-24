@@ -507,6 +507,7 @@ export default function ProductList() {
           </DialogHeader>
           {duplicarId && (
             <ProductForm
+              key={duplicarId}
               duplicarDeId={duplicarId}
               onSuccess={() => setDuplicarId(null)}
             />
@@ -522,6 +523,7 @@ export default function ProductList() {
           </DialogHeader>
           {editId && (
             <ProductForm
+              key={editId}
               editId={editId}
               onSuccess={() => setEditId(null)}
             />
