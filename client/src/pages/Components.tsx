@@ -746,7 +746,10 @@ export default function Components() {
                         <div className="text-xs text-muted-foreground font-mono truncate">{c.codigo ?? "—"}</div>
                         <div className="text-xs text-muted-foreground truncate">{c.observacao ?? "—"}</div>
                         <div className="text-xs text-emerald-400 text-right">
-                          {c.custo ? `R$ ${Number(c.custo).toFixed(2)}` : "—"}
+                          {(() => {
+                            const val = (c as any).custoDriver ?? c.custo;
+                            return val ? `R$ ${Number(val).toFixed(2)}` : "—";
+                          })()}
                         </div>
                         <div className="flex justify-end gap-1 items-center">
                           <button
