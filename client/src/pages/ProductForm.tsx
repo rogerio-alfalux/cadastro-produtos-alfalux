@@ -1901,8 +1901,8 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
 
         </section>
 
-        {/* ─── Seção 7: Preço de Venda ────────────────────────────────── */}
-        <section className="alfalux-card p-6">
+        {/* Seção 7: Preço de Venda — REMOVIDA conforme solicitação */}
+        {false && <section className="alfalux-card p-6">
           <div className="flex items-center gap-2 mb-5">
             <Tag className="w-4 h-4 text-emerald-400" />
             <h2 className="section-header mb-0">PREÇO DE VENDA</h2>
@@ -2100,7 +2100,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
               </div>
             )}
           </div>
-        </section>
+        </section>}
 
         {/* ─── Validação Summary ───────────────────────────────────────── */}
         {Object.entries(errors).some(([, msg]) => !!msg) && (

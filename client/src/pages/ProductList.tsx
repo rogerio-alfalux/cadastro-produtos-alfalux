@@ -643,9 +643,7 @@ function ProductDetail({ id }: { id: number }) {
             {(product as any).custoDriverOnoff220 && (
               <span className="block text-[10px] text-primary/80 mt-0.5">Custo: R$ {Number((product as any).custoDriverOnoff220).toFixed(2).replace(".", ",")}</span>
             )}
-            {(product as any).precoVendaOnoff220 && (
-              <span className="block text-[10px] text-emerald-400 font-semibold mt-0.5">Venda: R$ {Number((product as any).precoVendaOnoff220).toFixed(2).replace(".", ",")}{product.categoria?.toUpperCase() === "PERFIS" ? "/m" : "/pc"}</span>
-            )}
+
           </div>
         </div>
         {/* ON/OFF BIVOLT */}
@@ -657,9 +655,7 @@ function ProductDetail({ id }: { id: number }) {
             {(product as any).custoDriverOnoffBivolt && (
               <span className="block text-[10px] text-primary/80 mt-0.5">Custo: R$ {Number((product as any).custoDriverOnoffBivolt).toFixed(2).replace(".", ",")}</span>
             )}
-            {(product as any).precoVendaOnoffBivolt && (
-              <span className="block text-[10px] text-emerald-400 font-semibold mt-0.5">Venda: R$ {Number((product as any).precoVendaOnoffBivolt).toFixed(2).replace(".", ",")}{product.categoria?.toUpperCase() === "PERFIS" ? "/m" : "/pc"}</span>
-            )}
+
           </div>
         </div>
         )}
@@ -672,9 +668,7 @@ function ProductDetail({ id }: { id: number }) {
               {(product as any).custoDriverDim110v && (
                 <span className="block text-[10px] text-primary/80 mt-0.5">Custo: R$ {Number((product as any).custoDriverDim110v).toFixed(2).replace(".", ",")}</span>
               )}
-              {(product as any).precoVendaDim110v && (
-                <span className="block text-[10px] text-emerald-400 font-semibold mt-0.5">Venda: R$ {Number((product as any).precoVendaDim110v).toFixed(2).replace(".", ",")}{product.categoria?.toUpperCase() === "PERFIS" ? "/m" : "/pc"}</span>
-              )}
+
             </div>
           </div>
         )}
@@ -687,9 +681,7 @@ function ProductDetail({ id }: { id: number }) {
               {(product as any).custoDriverDimDali && (
                 <span className="block text-[10px] text-primary/80 mt-0.5">Custo: R$ {Number((product as any).custoDriverDimDali).toFixed(2).replace(".", ",")}</span>
               )}
-              {(product as any).precoVendaDimDali && (
-                <span className="block text-[10px] text-emerald-400 font-semibold mt-0.5">Venda: R$ {Number((product as any).precoVendaDimDali).toFixed(2).replace(".", ",")}{product.categoria?.toUpperCase() === "PERFIS" ? "/m" : "/pc"}</span>
-              )}
+
             </div>
           </div>
         )}
