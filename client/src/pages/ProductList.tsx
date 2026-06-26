@@ -315,6 +315,7 @@ export default function ProductList() {
                   <th className="text-left px-4 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider hidden xl:table-cell">INSTALAÇÃO</th>
                   <th className="text-left px-4 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider hidden xl:table-cell">CATEGORIA</th>
                   <th className="text-left px-4 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider hidden lg:table-cell">DRIVERS</th>
+                  <th className="text-right px-4 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider hidden lg:table-cell">CUSTO</th>
                   <th className="text-right px-4 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider">AÇÕES</th>
                 </tr>
               </thead>
@@ -410,6 +411,27 @@ export default function ProductList() {
                             </span>
                           )}
                         </div>
+                      </td>
+
+                      {/* Custo */}
+                      <td className="px-4 py-3 hidden lg:table-cell">
+                        {(() => {
+                          const custo =
+                            parseFloat(product.custoCorpoOnoff220v as string) ||
+                            parseFloat(product.custoCorpoOnoffBivolt as string) ||
+                            parseFloat(product.custoCorpoDim110v as string) ||
+                            parseFloat(product.custoCorpoDimDali as string) ||
+                            parseFloat(product.custoCorpoDimTriac110v as string) ||
+                            parseFloat(product.custoCorpoDimTriac220v as string) ||
+                            0;
+                          return custo > 0 ? (
+                            <span className="text-xs font-semibold text-foreground/80 tabular-nums">
+                              R$ {custo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground/40">—</span>
+                          );
+                        })()}
                       </td>
 
                       {/* Actions */}
