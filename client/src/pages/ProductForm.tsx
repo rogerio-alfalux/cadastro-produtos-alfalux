@@ -1802,7 +1802,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
 
           {/* Tabela de custo + markup por tipo de driver */}
           {(() => {
-            const isPerfil = form.categoria?.toUpperCase() === "PERFIS";
+            const isPerfil = form.categoria?.toUpperCase() === "PERFIS" && form.familia?.toUpperCase() !== "ALDA";
             const drivers: Array<{
               label: string;
               custoField: keyof FormData;
