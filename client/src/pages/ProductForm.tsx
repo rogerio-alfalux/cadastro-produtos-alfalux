@@ -1803,8 +1803,9 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
           {/* Tabela de custo + markup por tipo de driver */}
           {(() => {
             const familiaUpper = form.familia?.toUpperCase() ?? "";
-            const familiasD1Only = ["ALDA", "MINI BAGEO"];
-            const isPerfil = form.categoria?.toUpperCase() === "PERFIS" && !familiasD1Only.includes(familiaUpper);
+            // Apenas estas famílias de perfis têm opção de luz indireta (D1+D2)
+            const familiasComD1D2 = ["BLAZE H", "EASY H PLUS", "BAGEO", "HIT"];
+            const isPerfil = form.categoria?.toUpperCase() === "PERFIS" && familiasComD1D2.includes(familiaUpper);
             const drivers: Array<{
               label: string;
               custoField: keyof FormData;
