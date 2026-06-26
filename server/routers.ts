@@ -3,7 +3,7 @@ import { z } from "zod";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { adminProcedure, publicProcedure, router } from "./_core/trpc";
 import { componentsRouter } from "./routers/components";
 import { bulkOpsRouter } from "./routers/bulkOps";
 import { revendaRouter } from "./routers/revenda";
@@ -384,11 +384,27 @@ export const appRouter = router({
 
     update: publicProcedure
       .input(z.object({ id: z.number(), data: productSchema.partial() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const existing = await getProductById(input.id);
         if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Produto não encontrado" });
 
         const d = input.data;
+        const isAdmin = ctx.user?.role === 'admin';
+
+        // Bloquear alteração de mkpMinimo para não-admins
+        const MKP_MINIMO_FIELDS = [
+          'mkpMinimoOnoff220v', 'mkpMinimoOnoffBivolt',
+          'mkpMinimoDim110v', 'mkpMinimoDimDali',
+          'mkpMinimoDimTriac110v', 'mkpMinimoDimTriac220v',
+        ] as const;
+        if (!isAdmin) {
+          for (const field of MKP_MINIMO_FIELDS) {
+            if (d[field] !== undefined) {
+              throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas administradores podem alterar o markup mínimo.' });
+            }
+          }
+        }
+
         const update: Record<string, unknown> = {};
 
         if (d.categoria !== undefined) update.categoria = d.categoria;
@@ -486,6 +502,7 @@ export const appRouter = router({
                 if (d.configuracaoPlanos !== undefined)          update.configuracaoPlanos        = d.configuracaoPlanos         ?? null;
         if (d.custoCorpoOnoff220v !== undefined) update.custoCorpoOnoff220v = d.custoCorpoOnoff220v || null;
         if (d.mkpPadraoOnoff220v !== undefined) update.mkpPadraoOnoff220v = d.mkpPadraoOnoff220v || null;
+        // mkpMinimo — apenas admin pode alterar
         if (d.mkpMinimoOnoff220v !== undefined) update.mkpMinimoOnoff220v = d.mkpMinimoOnoff220v || null;
         if (d.custoCorpoOnoffBivolt !== undefined) update.custoCorpoOnoffBivolt = d.custoCorpoOnoffBivolt || null;
         if (d.mkpPadraoOnoffBivolt !== undefined) update.mkpPadraoOnoffBivolt = d.mkpPadraoOnoffBivolt || null;

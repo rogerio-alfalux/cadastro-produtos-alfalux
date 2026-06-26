@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -588,6 +589,8 @@ interface ProductFormProps {
 
 export default function ProductForm({ editId, duplicarDeId, onSuccess }: ProductFormProps) {
   const [, navigate] = useLocation();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const [form, setForm] = useState<FormData>(defaultForm);
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
   const [touched, setTouched] = useState<Partial<Record<keyof FormData, boolean>>>({});
@@ -922,13 +925,15 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       mkpPadraoDimDali: form.mkpPadraoDimDali || undefined,
       mkpPadraoDimTriac110v: form.mkpPadraoDimTriac110v || undefined,
       mkpPadraoDimTriac220v: form.mkpPadraoDimTriac220v || undefined,
-      // Markup mínimo por tipo de driver
-      mkpMinimoOnoff220v: form.mkpMinimoOnoff220v || undefined,
-      mkpMinimoOnoffBivolt: form.mkpMinimoOnoffBivolt || undefined,
-      mkpMinimoDim110v: form.mkpMinimoDim110v || undefined,
-      mkpMinimoDimDali: form.mkpMinimoDimDali || undefined,
-      mkpMinimoDimTriac110v: form.mkpMinimoDimTriac110v || undefined,
-      mkpMinimoDimTriac220v: form.mkpMinimoDimTriac220v || undefined,
+      // Markup mínimo por tipo de driver — apenas admin pode alterar
+      ...(isAdmin ? {
+        mkpMinimoOnoff220v: form.mkpMinimoOnoff220v || undefined,
+        mkpMinimoOnoffBivolt: form.mkpMinimoOnoffBivolt || undefined,
+        mkpMinimoDim110v: form.mkpMinimoDim110v || undefined,
+        mkpMinimoDimDali: form.mkpMinimoDimDali || undefined,
+        mkpMinimoDimTriac110v: form.mkpMinimoDimTriac110v || undefined,
+        mkpMinimoDimTriac220v: form.mkpMinimoDimTriac220v || undefined,
+      } : {}),
       custoCorpoOnoff220vD1D2: form.custoCorpoOnoff220vD1D2 || undefined,
       custoCorpoOnoffBivoltD1D2: form.custoCorpoOnoffBivoltD1D2 || undefined,
       custoCorpoDim110vD1D2: form.custoCorpoDim110vD1D2 || undefined,
@@ -1875,13 +1880,20 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                             />
                           </td>
                           <td className="py-2.5 px-2">
-                            <Input
-                              className="input-dark text-sm h-8 w-24 text-center"
-                              type="number" step="0.1" min="1"
-                              value={form[mkpMField] as string}
-                              onChange={(e) => setField(mkpMField, e.target.value)}
-                              placeholder="ex: 3"
-                            />
+                            {isAdmin ? (
+                              <Input
+                                className="input-dark text-sm h-8 w-24 text-center"
+                                type="number" step="0.1" min="1"
+                                value={form[mkpMField] as string}
+                                onChange={(e) => setField(mkpMField, e.target.value)}
+                                placeholder="ex: 3"
+                              />
+                            ) : (
+                              <div className="w-24 h-8 flex items-center justify-center rounded-md bg-muted/30 border border-border/40 cursor-not-allowed" title="Apenas administradores podem alterar o markup mínimo">
+                                <span className="text-sm font-semibold text-amber-400">{form[mkpMField] || '2'}</span>
+                                <span className="ml-1 text-[9px] text-muted-foreground/60">🔒</span>
+                              </div>
+                            )}
                           </td>
                           <td className="py-2.5 pl-2 text-center">
                             <span className={`text-sm font-semibold ${
