@@ -1,6 +1,6 @@
 import { and, asc, eq, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertProduct, InsertUser, products, users } from "../drizzle/schema";
+import { InsertProduct, InsertUser, components, products, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -107,11 +107,92 @@ export async function listProducts(opts?: {
   return { items, total: Number(countResult[0]?.count ?? 0) };
 }
 
+/**
+ * Busca os códigos EQ dos módulos LED de um produto a partir dos nomes armazenados.
+ * Faz lookup na tabela components pelo campo `modelo` (nome do módulo).
+ */
+async function enrichWithModuloLedEq(db: ReturnType<typeof drizzle>, product: typeof products.$inferSelect) {
+  const moduloNames = [
+    product.moduloLed,
+    product.moduloLed2700,
+    product.moduloLed3000,
+    product.moduloLed4000,
+    product.moduloLed5000,
+  ].filter((n): n is string => !!n);
+
+  const uniqueNames = Array.from(new Set(moduloNames));
+  if (uniqueNames.length === 0) return product;
+
+  // Busca todos os componentes do tipo MODULO_LED que correspondem aos nomes
+  const comps = await db
+    .select({ modelo: components.modelo, codigo: components.codigo })
+    .from(components)
+    .where(
+      and(
+        eq(components.tipo, "MODULO_LED" as any),
+        sql`${components.modelo} IN (${sql.join(uniqueNames.map((n) => sql`${n}`), sql`, `)})`
+      )
+    );
+
+  const eqMap = new Map(comps.map((c) => [c.modelo, c.codigo ?? null]));
+
+  return {
+    ...product,
+    eqModuloLed:     product.moduloLed     ? (eqMap.get(product.moduloLed)     ?? null) : null,
+    eqModuloLed2700: product.moduloLed2700 ? (eqMap.get(product.moduloLed2700) ?? null) : null,
+    eqModuloLed3000: product.moduloLed3000 ? (eqMap.get(product.moduloLed3000) ?? null) : null,
+    eqModuloLed4000: product.moduloLed4000 ? (eqMap.get(product.moduloLed4000) ?? null) : null,
+    eqModuloLed5000: product.moduloLed5000 ? (eqMap.get(product.moduloLed5000) ?? null) : null,
+  };
+}
+
+/**
+ * Enriquece uma lista de produtos com códigos EQ dos módulos LED.
+ * Faz uma única query na tabela components para todos os produtos.
+ */
+export async function enrichManyWithModuloLedEq(
+  db: ReturnType<typeof drizzle>,
+  items: (typeof products.$inferSelect)[]
+) {
+  const allNames = new Set<string>();
+  for (const p of items) {
+    if (p.moduloLed)     allNames.add(p.moduloLed);
+    if (p.moduloLed2700) allNames.add(p.moduloLed2700);
+    if (p.moduloLed3000) allNames.add(p.moduloLed3000);
+    if (p.moduloLed4000) allNames.add(p.moduloLed4000);
+    if (p.moduloLed5000) allNames.add(p.moduloLed5000);
+  }
+  if (allNames.size === 0) return items.map((p) => ({ ...p, eqModuloLed: null, eqModuloLed2700: null, eqModuloLed3000: null, eqModuloLed4000: null, eqModuloLed5000: null }));
+
+  const uniqueNames = Array.from(allNames);
+  const comps = await db
+    .select({ modelo: components.modelo, codigo: components.codigo })
+    .from(components)
+    .where(
+      and(
+        eq(components.tipo, "MODULO_LED" as any),
+        sql`${components.modelo} IN (${sql.join(uniqueNames.map((n) => sql`${n}`), sql`, `)})`
+      )
+    );
+
+  const eqMap = new Map(comps.map((c) => [c.modelo, c.codigo ?? null]));
+
+  return items.map((p) => ({
+    ...p,
+    eqModuloLed:     p.moduloLed     ? (eqMap.get(p.moduloLed)     ?? null) : null,
+    eqModuloLed2700: p.moduloLed2700 ? (eqMap.get(p.moduloLed2700) ?? null) : null,
+    eqModuloLed3000: p.moduloLed3000 ? (eqMap.get(p.moduloLed3000) ?? null) : null,
+    eqModuloLed4000: p.moduloLed4000 ? (eqMap.get(p.moduloLed4000) ?? null) : null,
+    eqModuloLed5000: p.moduloLed5000 ? (eqMap.get(p.moduloLed5000) ?? null) : null,
+  }));
+}
+
 export async function getProductById(id: number) {
   const db = await getDb();
   if (!db) return null;
   const result = await db.select().from(products).where(eq(products.id, id)).limit(1);
-  return result[0] ?? null;
+  if (!result[0]) return null;
+  return enrichWithModuloLedEq(db, result[0]);
 }
 
 export async function createProduct(data: InsertProduct) {

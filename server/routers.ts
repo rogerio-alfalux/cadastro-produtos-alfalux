@@ -13,6 +13,8 @@ import {
   countProducts,
   createProduct,
   deleteProduct,
+  enrichManyWithModuloLedEq,
+  getDb,
   getFieldSuggestions,
   getProductById,
   listProducts,
@@ -578,7 +580,9 @@ export const appRouter = router({
 
     getAll: publicProcedure.query(async () => {
       const result = await listProducts({ limit: 2000, offset: 0 });
-      return result.items;
+      const db = await getDb();
+      if (!db) return result.items;
+      return enrichManyWithModuloLedEq(db, result.items);
     }),
 
     // Autocomplete suggestions for free-text fields
