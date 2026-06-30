@@ -13,6 +13,7 @@ import revendaRoutes from "../revendaRoutes";
 import accessoriesRoutes from "../accessoriesRoutes";
 import componentsRoutes from "../componentsRoutes";
 import componentesPublicRoutes from "../componentesPublicRoutes";
+import { backupCronHandler } from "../backupHandler";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -47,6 +48,8 @@ async function startServer() {
   app.use("/api/components", componentsRoutes);
   // Endpoint público para o Sistema Luna (configurador de orçamentos)
   app.use("/api/componentes", componentesPublicRoutes);
+  // Backup diário agendado
+  app.post("/api/scheduled/backup", backupCronHandler);
   // tRPC API
   app.use(
     "/api/trpc",

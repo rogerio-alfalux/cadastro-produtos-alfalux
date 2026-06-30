@@ -418,3 +418,11 @@
 - [x] Backend: Zod schemas (create + update), routers.ts, productRoutes.ts (/api/products/all)
 - [x] Frontend: FormData, defaultForm, carregamento existingProduct, payload doSubmit, JSX DriverRow + DriverExtraRow
 - [x] Todos os 75 testes passando
+
+## Backup Diário
+- [x] Tabela `backups` criada no banco (schema + SQL executado)
+- [x] Handler do cron `/api/scheduled/backup` implementado
+- [x] tRPC procedures: backups.list, backups.generate, backups.getDownloadUrl
+- [x] Página /backups com listagem, estatísticas e download
+- [x] Item BACKUPS adicionado na navegação
+- [ ] Cron diário registrado via manus-config schedule (requer deploy publicado)

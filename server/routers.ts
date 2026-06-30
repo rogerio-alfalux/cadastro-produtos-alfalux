@@ -20,6 +20,10 @@ import {
   listProducts,
   updateProduct,
 } from "./db";
+import { runBackup } from "./backupHandler";
+import { backups } from "../drizzle/schema";
+import { desc } from "drizzle-orm";
+import { storageGetSignedUrl, storageGet } from "./storage";
 
 // ─── Validation schema ────────────────────────────────────────────────────────
 
@@ -574,6 +578,42 @@ export const appRouter = router({
     count: publicProcedure.query(async () => {
       return { count: await countProducts() };
     }),
+  }),
+
+  // ─── Backups ───────────────────────────────────────────────────────────────
+  backups: router({
+    // Listar backups disponíveis (somente admin)
+    list: adminProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      const rows = await db.select().from(backups).orderBy(desc(backups.createdAt)).limit(30);
+      return rows;
+    }),
+
+    // Gerar backup manual (somente admin)
+    generate: adminProcedure.mutation(async () => {
+      const result = await runBackup();
+      if (!result.ok) throw new Error(result.error || "Falha ao gerar backup");
+      return { ok: true, backupId: result.backupId };
+    }),
+
+    // Obter URL de download de um backup (somente admin)
+    getDownloadUrl: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database not available");
+        const { eq: eqFn } = await import("drizzle-orm");
+        const [backup] = await db.select().from(backups).where(eqFn(backups.id, input.id)).limit(1);
+        if (!backup) throw new Error("Backup não encontrado");
+        if (!backup.storageKey) throw new Error("Backup sem arquivo");
+        const url = await storageGetSignedUrl(backup.storageKey);
+        return { url, filename: backup.filename };
+      }),
+  }),
+
+  // ─── (continuação products) ────────────────────────────────────────────────
+  _products_tail: router({
 
     getAll: publicProcedure.query(async () => {
       const result = await listProducts({ limit: 2000, offset: 0 });

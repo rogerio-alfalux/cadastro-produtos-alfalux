@@ -267,3 +267,27 @@ export const accessories = mysqlTable("accessories", {
 });
 export type Accessory = typeof accessories.$inferSelect;
 export type InsertAccessory = typeof accessories.$inferInsert;
+
+// Tabela de backups do banco de dados
+export const backups = mysqlTable("backups", {
+  id: int("id").autoincrement().primaryKey(),
+  // Nome do arquivo de backup
+  filename: varchar("filename", { length: 500 }).notNull(),
+  // Chave no storage (para download)
+  storageKey: varchar("storageKey", { length: 500 }).notNull(),
+  // Tamanho em bytes
+  sizeBytes: int("sizeBytes").default(0).notNull(),
+  // Contagem de registros por tabela (JSON)
+  counts: text("counts"),
+  // Status do backup
+  status: mysqlEnum("status", ["success", "error"]).default("success").notNull(),
+  // Mensagem de erro (se houver)
+  errorMessage: text("errorMessage"),
+  // task_uid do cron que gerou o backup
+  scheduleCronTaskUid: varchar("scheduleCronTaskUid", { length: 65 }),
+  // Metadados
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Backup = typeof backups.$inferSelect;
+export type InsertBackup = typeof backups.$inferInsert;

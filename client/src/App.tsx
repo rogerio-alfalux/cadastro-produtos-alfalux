@@ -10,7 +10,8 @@ import ProductForm from "./pages/ProductForm";
 import ComponentsPage from "./pages/Components";
 import BulkOpsPage from "./pages/BulkOps";
 import RevendaPage from "./pages/Revenda";
-import AccessoriesPage from "./pages/Accessories";
+import AccessoriesPage from "@/pages/Accessories";
+import BackupsPage from "@/pages/Backups";
 
 function CadastrarPage() {
   return <ProductForm />;
@@ -26,6 +27,7 @@ function Router() {
         <Route path="/operacoes-em-massa" component={BulkOpsPage} />
         <Route path="/revenda" component={RevendaPage} />
         <Route path="/acessorios" component={AccessoriesPage} />
+        <Route path="/backups" component={BackupsPage} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
