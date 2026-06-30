@@ -152,10 +152,7 @@ const productSchema = z.object({
   if (!data.dissipadorNaoAplicavel && (!data.dissipador || data.dissipador.trim() === "")) {
     ctx.addIssue({ code: "custom", path: ["dissipador"], message: "DISSIPADOR é obrigatório" });
   }
-  // Validar ON/OFF BIVOLT: obrigatório se não for NaoAplicavel
-  if (!data.driverOnoffBivoltNaoAplicavel && (!data.driverOnoffBivolt || data.driverOnoffBivolt.trim() === "")) {
-    ctx.addIssue({ code: "custom", path: ["driverOnoffBivolt"], message: "ON/OFF DRIVER BIVOLT é obrigatório" });
-  }
+  // ON/OFF BIVOLT: opcional — não é obrigatório
 });
 
 const bulkProductSchema = z.object({
