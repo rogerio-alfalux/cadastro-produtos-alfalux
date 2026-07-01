@@ -55,12 +55,12 @@ export function AutocompleteInput({
     };
   }, [value]);
 
-  const { data: suggestions = [] } = trpc.products.suggestions.useQuery(
+  const { data: suggestions = [] } = trpc._products_tail.suggestions.useQuery(
     { field, query: debouncedQuery },
     {
       enabled: open && debouncedQuery.length >= 1,
       staleTime: 30_000,
-      placeholderData: (prev) => prev,
+      placeholderData: (prev: string[] | undefined) => prev,
     }
   );
 
@@ -175,7 +175,7 @@ export function AutocompleteInput({
           onMouseDown={() => { mouseDownOnListRef.current = true; }}
           onMouseUp={() => { mouseDownOnListRef.current = false; }}
         >
-          {suggestions.map((suggestion, index) => (
+          {suggestions.map((suggestion: string, index: number) => (
             <li
               key={suggestion}
               role="option"

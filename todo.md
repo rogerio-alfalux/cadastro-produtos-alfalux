@@ -440,3 +440,12 @@
 - [x] Verificar onde timestamps são exibidos no frontend
 - [x] Garantir que datas sejam exibidas em UTC-3 / horário de Brasília em todas as páginas
 - [x] Verificar configuração de timezone no servidor Express
+
+## Campo "Corrente do Driver" no Cadastro de Produtos
+- [x] Adicionar coluna `corrente_driver` (text, nullable) no schema drizzle e executar migração SQL
+- [x] Atualizar server/db.ts para incluir o campo nas queries de produto
+- [x] Atualizar server/routers.ts para incluir o campo no create/update de produtos
+- [x] Atualizar ProductForm.tsx: mostrar campo apenas quando módulo NÃO for FITA LED e driver NÃO for "Sem Driver"
+- [x] Implementar lógica de preenchimento automático no ProductForm com base nas regras de wattagem/tipo
+- [x] Popular produtos existentes no banco com os valores corretos de corrente do driver (798 atualizados, 514 sem corrente)
+- [x] Expor o campo no endpoint público /api/products/all e /api/products/:sku

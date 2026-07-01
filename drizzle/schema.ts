@@ -163,6 +163,9 @@ export const products = mysqlTable("products", {
   custoCorpoDimDaliD1D2: decimal("custoCorpoDimDaliD1D2", { precision: 10, scale: 4 }),
   custoCorpoDimTriac110vD1D2: decimal("custoCorpoDimTriac110vD1D2", { precision: 10, scale: 4 }),
   custoCorpoDimTriac220vD1D2: decimal("custoCorpoDimTriac220vD1D2", { precision: 10, scale: 4 }),
+  // Corrente de programação do driver (ex: "programar em 350mA")
+  // Null para produtos com FITA LED ou sem driver
+  correnteDriver: varchar("correnteDriver", { length: 100 }),
   // Metadados
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

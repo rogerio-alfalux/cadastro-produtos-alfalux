@@ -143,6 +143,7 @@ const productSchema = z.object({
   custoCorpoDimDaliD1D2: z.string().nullish(),
   custoCorpoDimTriac110vD1D2: z.string().nullish(),
   custoCorpoDimTriac220vD1D2: z.string().nullish(),
+  correnteDriver: z.string().nullish(),
 }).superRefine((data, ctx) => {
   // Validar Ótica: obrigatório se não for NaoAplicavel
   if (!data.oticaNaoAplicavel && (!data.otica || data.otica.trim() === "")) {
@@ -380,6 +381,7 @@ export const appRouter = router({
           custoCorpoDimDaliD1D2: input.custoCorpoDimDaliD1D2 || null,
           custoCorpoDimTriac110vD1D2: input.custoCorpoDimTriac110vD1D2 || null,
           custoCorpoDimTriac220vD1D2: input.custoCorpoDimTriac220vD1D2 || null,
+          correnteDriver: input.correnteDriver || null,
         };
         await createProduct(data);
         return { success: true };
@@ -529,6 +531,7 @@ export const appRouter = router({
         if (d.mkpPadraoDriverDimTriac110v !== undefined) update.mkpPadraoDriverDimTriac110v = d.mkpPadraoDriverDimTriac110v || null;
         if (d.mkpPadraoDriverDimTriac220v !== undefined) update.mkpPadraoDriverDimTriac220v = d.mkpPadraoDriverDimTriac220v || null;
         if (d.mkpMinimoDriver !== undefined) update.mkpMinimoDriver = d.mkpMinimoDriver || "3";
+        if (d.correnteDriver !== undefined) update.correnteDriver = d.correnteDriver || null;
         if (d.custoCorpoOnoff220vD1D2 !== undefined) update.custoCorpoOnoff220vD1D2 = d.custoCorpoOnoff220vD1D2 || null;
         if (d.custoCorpoOnoffBivoltD1D2 !== undefined) update.custoCorpoOnoffBivoltD1D2 = d.custoCorpoOnoffBivoltD1D2 || null;
         if (d.custoCorpoDim110vD1D2 !== undefined) update.custoCorpoDim110vD1D2 = d.custoCorpoDim110vD1D2 || null;

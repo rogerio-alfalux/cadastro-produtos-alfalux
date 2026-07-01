@@ -811,6 +811,8 @@ router.get("/all", async (_req, res) => {
       result.driverQtdDimTriac220v = (!(p as any).driverDimTriac220vNaoAplicavel && isValidDriver((p as any).driverDimTriac220v))
         ? ((p as any).qtdDriverDimTriac220v != null ? Number((p as any).qtdDriverDimTriac220v) : 1)
         : null;
+      // Corrente de programação do driver
+      result.correnteDriver = (p as any).correnteDriver ?? null;
 
       return result;
     });

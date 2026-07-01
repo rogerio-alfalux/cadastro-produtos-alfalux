@@ -450,6 +450,8 @@ interface FormData {
   precoVendaDimDali: string;
   // Configuração de planos (exclusivo para PERFIS)
   configuracaoPlanos: "D1" | "D2" | "D1+D2" | "";
+  // Corrente de programação do driver (ex: "programar em 350mA")
+  correnteDriver: string;
   // Preço D1/D1+D2 (perfis com dois planos)
   precoVendaOnoff220D1: string;
   precoVendaOnoff220D1D2: string;
@@ -554,6 +556,7 @@ const defaultForm: FormData = {
   precoVendaDim110v: "",
   precoVendaDimDali: "",
   configuracaoPlanos: "",
+  correnteDriver: "",
   precoVendaOnoff220D1: "",
   precoVendaOnoff220D1D2: "",
   precoVendaOnoffBivoltD1: "",
@@ -585,6 +588,87 @@ interface ProductFormProps {
   editId?: number;
   duplicarDeId?: number;
   onSuccess?: () => void;
+}
+
+/**
+ * Infere a corrente de programação do driver com base no produto, família e módulo LED.
+ * Retorna null para produtos com FITA LED ou sem driver.
+ */
+function inferirCorrenteDriver({
+  produto,
+  familia,
+  moduloLed,
+  semDriver,
+}: {
+  produto: string;
+  familia: string;
+  moduloLed: string;
+  semDriver: boolean;
+}): string | null {
+  const prod = produto.toUpperCase();
+  const fam  = familia.toUpperCase();
+  const mod  = moduloLed.toUpperCase();
+
+  // FITA LED ou SEM DRIVER não têm corrente de programação
+  if (semDriver) return null;
+  if (mod.includes("FITA LED") || mod.includes("FITA")) return null;
+
+  // ── PERFIS ──────────────────────────────────────────────────────────────────
+  // Perfis 18W → 350mA
+  if (fam.includes("PERFIL") || prod.includes("PERFIL")) {
+    // Stripline
+    if (prod.includes("STRIPLINE") || prod.includes("STRIP LINE")) {
+      // 36W Stripline → 250mA
+      if (prod.includes("36W") || prod.includes("36 W")) return "programar em 250mA";
+      // Outros Stripline → 350mA
+      return "programar em 350mA";
+    }
+    // Barra dupla 36W → 350mA
+    if ((prod.includes("36W") || prod.includes("36 W")) && prod.includes("BARRA DUPLA")) return "programar em 350mA";
+    // 18W → 350mA
+    if (prod.includes("18W") || prod.includes("18 W")) return "programar em 350mA";
+    // 26W → 500mA
+    if (prod.includes("26W") || prod.includes("26 W")) return "programar em 500mA";
+    // 36W genérico → 350mA
+    if (prod.includes("36W") || prod.includes("36 W")) return "programar em 350mA";
+  }
+
+  // ── LUMINÁRIAS COM LED COB ────────────────────────────────────────────────
+  if (mod.includes("COB") || prod.includes("COB")) {
+    if (prod.includes("13W") || prod.includes("13 W")) return "programar em 350mA";
+    if (prod.includes("18W") || prod.includes("18 W")) return "programar em 500mA";
+    if (prod.includes("26W") || prod.includes("26 W")) return "programar em 700mA";
+    if (prod.includes("38W") || prod.includes("38 W")) return "programar em 1050mA";
+  }
+
+  // ── LUX ROUND ─────────────────────────────────────────────────────────────
+  if (prod.includes("LUX ROUND")) {
+    // Ø80 36 LEDS → 350mA
+    if (prod.includes("Ø80") || prod.includes("80MM") || prod.includes("80 MM")) return "programar em 350mA";
+    // Ø120 54 LEDS → 350mA
+    if ((prod.includes("Ø120") || prod.includes("120MM") || prod.includes("120 MM")) && prod.includes("54")) return "programar em 350mA";
+    // Ø120 120 LED: 26W → 350mA, 36W → 500mA
+    if ((prod.includes("Ø120") || prod.includes("120MM") || prod.includes("120 MM")) && prod.includes("120")) {
+      if (prod.includes("26W") || prod.includes("26 W")) return "programar em 350mA";
+      if (prod.includes("36W") || prod.includes("36 W")) return "programar em 500mA";
+    }
+  }
+
+  // ── MÓDULOS Ø50 e Ø67mm ──────────────────────────────────────────────────
+  if (mod.includes("Ø50") || mod.includes("50MM") || mod.includes("50 MM") ||
+      mod.includes("Ø67") || mod.includes("67MM") || mod.includes("67 MM") ||
+      prod.includes("Ø50") || prod.includes("Ø67")) {
+    return "programar em 350mA";
+  }
+
+  // ── PAINÉIS COM STRIPFLEX ────────────────────────────────────────────────
+  if (mod.includes("STRIPFLEX") || prod.includes("STRIPFLEX")) {
+    if (prod.includes("26W") || prod.includes("26 W")) return "programar em 500mA";
+    // 9W, 18W, 36W → 350mA
+    return "programar em 350mA";
+  }
+
+  return null;
 }
 
 export default function ProductForm({ editId, duplicarDeId, onSuccess }: ProductFormProps) {
@@ -722,6 +806,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         precoVendaDim110vD1D2: (p as any).precoVendaDim110vD1D2 ? String((p as any).precoVendaDim110vD1D2) : "",
         precoVendaDimDaliD1: (p as any).precoVendaDimDaliD1 ? String((p as any).precoVendaDimDaliD1) : "",
         precoVendaDimDaliD1D2: (p as any).precoVendaDimDaliD1D2 ? String((p as any).precoVendaDimDaliD1D2) : "",
+        correnteDriver: (p as any).correnteDriver || "",
         // Markup do driver por tipo (salvo no banco)
         mkpPadraoDriverOnoff220v:    (p as any).mkpPadraoDriverOnoff220v    ? String((p as any).mkpPadraoDriverOnoff220v)    : "",
         mkpPadraoDriverOnoffBivolt:  (p as any).mkpPadraoDriverOnoffBivolt  ? String((p as any).mkpPadraoDriverOnoffBivolt)  : "",
@@ -761,7 +846,18 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         if (existingProduct.fotoUrl) setPhotoPreview(existingProduct.fotoUrl);
       }
     }
-  }, [existingProduct, isDuplicate]);
+    }, [existingProduct, isDuplicate]);
+
+  // ── Auto-inferir corrente do driver quando produto/família/módulo/semDriver mudam ──
+  useEffect(() => {
+    const corrente = inferirCorrenteDriver({
+      produto: form.produto,
+      familia: form.familia,
+      moduloLed: form.moduloLed,
+      semDriver: form.semDriver,
+    });
+    setForm((prev) => ({ ...prev, correnteDriver: corrente ?? "" }));
+  }, [form.produto, form.familia, form.moduloLed, form.semDriver]);
 
   const utils = trpc.useUtils();
   const createMutation = trpc.products.create.useMutation({
@@ -958,8 +1054,9 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       precoVendaOnoffBivoltD1D2: form.precoVendaOnoffBivoltD1D2 || undefined,
       precoVendaDim110vD1:       form.precoVendaDim110vD1       || undefined,
       precoVendaDim110vD1D2:     form.precoVendaDim110vD1D2     || undefined,
-      precoVendaDimDaliD1:       form.precoVendaDimDaliD1       || undefined,
-      precoVendaDimDaliD1D2:     form.precoVendaDimDaliD1D2     || undefined,
+            precoVendaDimDaliD1:     form.precoVendaDimDaliD1     || undefined,
+      precoVendaDimDaliD1D2:    form.precoVendaDimDaliD1D2    || undefined,
+      correnteDriver: form.correnteDriver || null,
       // Drivers ON/OFF
       driverOnoffBivolt: form.driverOnoffBivoltNaoAplicavel ? "NÃO APLICÁVEL" : (form.driverOnoffBivolt || undefined),
       // Drivers DIM: só envia se o usuário explicitamente marcou NÃO APLICÁVEL ou preencheu o campo.
@@ -1477,6 +1574,33 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
               <span className="text-xs text-muted-foreground ml-2">(módulo tensão de rede ou com lâmpada)</span>
             </label>
           </div>
+
+          {/* Campo: Corrente do Driver (auto-preenchido, oculto para FITA LED e SEM DRIVER) */}
+          {!form.semDriver && (() => {
+            const isFitaLed = form.moduloLed.toUpperCase().includes("FITA");
+            if (isFitaLed) return null;
+            return (
+              <div className="mb-5 p-4 rounded-lg border border-blue-500/30 bg-blue-500/5">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Cpu className="w-3.5 h-3.5 text-blue-400" />
+                  <span className="text-xs font-semibold text-blue-400 uppercase tracking-wider">Corrente do Driver</span>
+                  <span className="text-[10px] text-muted-foreground ml-1">(preenchida automaticamente)</span>
+                </div>
+                {form.correnteDriver ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-mono font-semibold text-blue-300 bg-blue-900/30 px-3 py-1.5 rounded-md border border-blue-500/20">
+                      {form.correnteDriver}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-xs text-muted-foreground italic">
+                    Não identificado automaticamente — verifique o produto e a família
+                  </span>
+                )}
+              </div>
+            );
+          })()}
+
           <div className={cn("space-y-5", form.semDriver && "opacity-40 pointer-events-none select-none")}>
             {/* Cabeçalho das colunas */}
             <div className="flex gap-2 items-center">
