@@ -15,6 +15,11 @@ import {
   Clock,
   HardDrive,
   ShieldAlert,
+  FileArchive,
+  FileJson,
+  FileCode2,
+  Image,
+  Info,
 } from "lucide-react";
 
 function formatBytes(bytes: number): string {
@@ -25,6 +30,7 @@ function formatBytes(bytes: number): string {
 
 function formatDate(date: Date | string): string {
   return new Date(date).toLocaleString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -59,7 +65,6 @@ export default function BackupsPage() {
     setDownloadingId(id);
     try {
       const result = await utils.backups.getDownloadUrl.fetch({ id });
-      // Abrir URL de download em nova aba
       const a = document.createElement("a");
       a.href = result.url;
       a.download = result.filename;
@@ -90,7 +95,7 @@ export default function BackupsPage() {
         <div>
           <h1 className="text-xl font-bold tracking-wide text-foreground">BACKUPS DO SISTEMA</h1>
           <p className="text-xs text-muted-foreground mt-1">
-            Backups automáticos diários às 3h (horário de Brasília). Últimos 30 backups disponíveis.
+            Backups automáticos diários às 3h UTC (meia-noite horário de Brasília). Últimos 30 backups disponíveis.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -114,6 +119,56 @@ export default function BackupsPage() {
           </Button>
         </div>
       </div>
+
+      {/* Conteúdo do ZIP */}
+      <Card className="border-border/40 bg-muted/5">
+        <CardHeader className="pb-2 pt-4 px-5">
+          <CardTitle className="text-xs font-semibold tracking-wide text-muted-foreground flex items-center gap-2">
+            <Info className="w-3.5 h-3.5" />
+            CONTEÚDO DO BACKUP (arquivo .zip)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-5 pb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="flex items-start gap-3 p-3 rounded-md bg-muted/10 border border-border/30">
+              <FileJson className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+              <div>
+                <div className="text-xs font-semibold text-foreground">backup.json</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">
+                  Todos os dados do banco: produtos, componentes, revenda, acessórios, usuários
+                </div>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-3 rounded-md bg-muted/10 border border-border/30">
+              <FileCode2 className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
+              <div>
+                <div className="text-xs font-semibold text-foreground">backup.sql</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">
+                  Dump SQL com INSERT statements para restauração em MySQL/TiDB
+                </div>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-3 rounded-md bg-muted/10 border border-border/30">
+              <Image className="w-5 h-5 text-yellow-400 shrink-0 mt-0.5" />
+              <div>
+                <div className="text-xs font-semibold text-foreground">imagens_urls.txt</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">
+                  Lista de todas as URLs de fotos de produtos, componentes e acessórios
+                </div>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-3 rounded-md bg-muted/10 border border-border/30">
+              <FileArchive className="w-5 h-5 text-purple-400 shrink-0 mt-0.5" />
+              <div>
+                <div className="text-xs font-semibold text-foreground">README.txt</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">
+                  Instruções de restauração e resumo do conteúdo do backup
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Stats */}
       {backupList && backupList.length > 0 && (
@@ -180,6 +235,7 @@ export default function BackupsPage() {
             <div className="divide-y divide-border/30">
               {backupList.map((backup) => {
                 const counts = backup.counts ? JSON.parse(backup.counts) : null;
+                const isZip = backup.filename.endsWith(".zip");
                 return (
                   <div
                     key={backup.id}
@@ -192,10 +248,17 @@ export default function BackupsPage() {
                         <XCircle className="w-4 h-4 text-destructive shrink-0" />
                       )}
                       <div className="min-w-0">
-                        <div className="text-sm font-medium text-foreground truncate">
-                          {backup.filename}
+                        <div className="flex items-center gap-2">
+                          <div className="text-sm font-medium text-foreground truncate">
+                            {backup.filename}
+                          </div>
+                          {isZip && (
+                            <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-purple-500/40 text-purple-400">
+                              ZIP
+                            </Badge>
+                          )}
                         </div>
-                        <div className="flex items-center gap-3 mt-0.5">
+                        <div className="flex items-center gap-3 mt-0.5 flex-wrap">
                           <span className="text-xs text-muted-foreground flex items-center gap-1">
                             <Clock className="w-3 h-3" />
                             {formatDate(backup.createdAt)}
@@ -210,7 +273,8 @@ export default function BackupsPage() {
                                   {counts.total?.toLocaleString("pt-BR")} registros
                                   {counts.products !== undefined && (
                                     <span className="ml-1 opacity-60">
-                                      ({counts.products} produtos · {counts.components} componentes)
+                                      ({counts.products} produtos · {counts.components} componentes
+                                      {counts.accessories ? ` · ${counts.accessories} acessórios` : ""})
                                     </span>
                                   )}
                                 </span>
@@ -241,7 +305,7 @@ export default function BackupsPage() {
                           onClick={() => handleDownload(backup.id, backup.filename)}
                         >
                           <Download className="w-3 h-3" />
-                          {downloadingId === backup.id ? "..." : "BAIXAR"}
+                          {downloadingId === backup.id ? "..." : isZip ? "BAIXAR ZIP" : "BAIXAR"}
                         </Button>
                       )}
                     </div>

@@ -425,4 +425,18 @@
 - [x] tRPC procedures: backups.list, backups.generate, backups.getDownloadUrl
 - [x] Página /backups com listagem, estatísticas e download
 - [x] Item BACKUPS adicionado na navegação
-- [ ] Cron diário registrado via manus-config schedule (requer deploy publicado)
+- [x] Cron diário registrado via manus-config schedule (ativo, executa às 3h UTC / meia-noite Brasília)
+
+## Backup Expandido v2 — ZIP completo com tudo
+- [x] Instalar biblioteca archiver para geração de ZIP no servidor
+- [x] Expandir backupHandler.ts: gerar arquivo ZIP contendo backup.json (todos os dados), backup.sql (dump SQL com INSERTs), imagens_urls.txt (lista de todas as URLs de fotos)
+- [x] Incluir tabela users no backup JSON (sem senhas/tokens sensíveis)
+- [x] Incluir tabela backups no backup JSON
+- [x] Atualizar página Backups.tsx: indicar que o arquivo baixado é um ZIP com múltiplos conteúdos
+- [x] Atualizar routers.ts: content-type do download para application/zip
+- [x] Testar geração manual do backup expandido
+
+## Ajuste de Horário — Brasília (America/Sao_Paulo)
+- [x] Verificar onde timestamps são exibidos no frontend
+- [x] Garantir que datas sejam exibidas em UTC-3 / horário de Brasília em todas as páginas
+- [x] Verificar configuração de timezone no servidor Express

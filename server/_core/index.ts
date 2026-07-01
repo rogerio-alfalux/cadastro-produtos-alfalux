@@ -1,4 +1,7 @@
 import "dotenv/config";
+// Configurar timezone do servidor para horário de Brasília
+process.env.TZ = "America/Sao_Paulo";
+
 import express from "express";
 import { createServer } from "http";
 import net from "net";
