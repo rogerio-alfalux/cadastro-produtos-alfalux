@@ -1581,22 +1581,17 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
             if (isFitaLed) return null;
             return (
               <div className="mb-5 p-4 rounded-lg border border-blue-500/30 bg-blue-500/5">
-                <div className="flex items-center gap-2 mb-1.5">
+                <div className="flex items-center gap-2 mb-2">
                   <Cpu className="w-3.5 h-3.5 text-blue-400" />
                   <span className="text-xs font-semibold text-blue-400 uppercase tracking-wider">Corrente do Driver</span>
-                  <span className="text-[10px] text-muted-foreground ml-1">(preenchida automaticamente)</span>
+                  <span className="text-[10px] text-muted-foreground ml-1">(preenchida automaticamente — editável)</span>
                 </div>
-                {form.correnteDriver ? (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-mono font-semibold text-blue-300 bg-blue-900/30 px-3 py-1.5 rounded-md border border-blue-500/20">
-                      {form.correnteDriver}
-                    </span>
-                  </div>
-                ) : (
-                  <span className="text-xs text-muted-foreground italic">
-                    Não identificado automaticamente — verifique o produto e a família
-                  </span>
-                )}
+                <Input
+                  value={form.correnteDriver}
+                  onChange={(e) => setForm((prev) => ({ ...prev, correnteDriver: e.target.value }))}
+                  placeholder="ex: programar em 350mA"
+                  className="font-mono text-sm text-blue-300 bg-blue-900/20 border-blue-500/30 placeholder:text-muted-foreground/40 focus-visible:ring-blue-500/40"
+                />
               </div>
             );
           })()}
