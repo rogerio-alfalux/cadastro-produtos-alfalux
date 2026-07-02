@@ -62,6 +62,7 @@ export const products = mysqlTable("products", {
   // Drivers
   driverOnoff220: text("driverOnoff220").notNull(),
   qtdDriverOnoff220: int("qtdDriverOnoff220").default(1).notNull(),
+  driverOnoff220NaoAplicavel: boolean("driverOnoff220NaoAplicavel").default(false).notNull(),
   driverOnoffBivolt: text("driverOnoffBivolt"),
   qtdDriverOnoffBivolt: int("qtdDriverOnoffBivolt").default(1).notNull(),
   driverOnoffBivoltNaoAplicavel: boolean("driverOnoffBivoltNaoAplicavel").default(false).notNull(),

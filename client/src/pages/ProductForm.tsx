@@ -384,6 +384,7 @@ interface FormData {
   semDriver: boolean;
   driverOnoff220: string;
   qtdDriverOnoff220: number;
+  driverOnoff220NaoAplicavel: boolean;
   custoDriverOnoff220: string;
   driverOnoffBivolt: string;
   qtdDriverOnoffBivolt: number;
@@ -492,6 +493,7 @@ const defaultForm: FormData = {
   semDriver: false,
   driverOnoff220: "",
   qtdDriverOnoff220: 1,
+  driverOnoff220NaoAplicavel: false,
   custoDriverOnoff220: "",
   driverOnoffBivolt: "",
   qtdDriverOnoffBivolt: 1,
@@ -742,6 +744,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         driverOnoff220: existingProduct.driverOnoff220 || "",
         qtdDriverOnoff220: (p.qtdDriverOnoff220 != null ? Number(p.qtdDriverOnoff220) : 1),
         custoDriverOnoff220: p.custoDriverOnoff220 ? String(p.custoDriverOnoff220) : "",
+        driverOnoff220NaoAplicavel: existingProduct.driverOnoff220NaoAplicavel || false,
         driverOnoffBivolt: existingProduct.driverOnoffBivoltNaoAplicavel ? "" : (existingProduct.driverOnoffBivolt || ""),
         qtdDriverOnoffBivolt: (p.qtdDriverOnoffBivolt != null ? Number(p.qtdDriverOnoffBivolt) : 1),
         driverOnoffBivoltNaoAplicavel: existingProduct.driverOnoffBivoltNaoAplicavel || false,
@@ -893,7 +896,8 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       if (field === "otica" && f.oticaNaoAplicavel) continue;
       if (field === "holder" && f.holderNaoAplicavel) continue;
       if (field === "dissipador" && f.dissipadorNaoAplicavel) continue;
-            if (field === "driverOnoffBivolt" && f.driverOnoffBivoltNaoAplicavel) continue;
+            if (field === "driverOnoff220" && f.driverOnoff220NaoAplicavel) continue;
+      if (field === "driverOnoffBivolt" && f.driverOnoffBivoltNaoAplicavel) continue;
       if ((field === "driverOnoff220" || field === "driverOnoffBivolt") && f.semDriver) continue;
       const value = f[field];
       if (!value || (typeof value === "string" && !value.trim())) {
@@ -916,6 +920,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       if (field === "otica" && form.oticaNaoAplicavel) continue;
       if (field === "holder" && form.holderNaoAplicavel) continue;
       if (field === "dissipador" && form.dissipadorNaoAplicavel) continue;
+      if (field === "driverOnoff220" && form.driverOnoff220NaoAplicavel) continue;
       if (field === "driverOnoffBivolt" && form.driverOnoffBivoltNaoAplicavel) continue;
       if ((field === "driverOnoff220" || field === "driverOnoffBivolt") && form.semDriver) continue;
       const value = form[field];
@@ -1058,6 +1063,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       precoVendaDimDaliD1D2:    form.precoVendaDimDaliD1D2    || undefined,
       correnteDriver: form.correnteDriver || null,
       // Drivers ON/OFF
+      driverOnoff220NaoAplicavel: form.driverOnoff220NaoAplicavel,
       driverOnoffBivolt: form.driverOnoffBivoltNaoAplicavel ? "NÃO APLICÁVEL" : (form.driverOnoffBivolt || undefined),
       // Drivers DIM: só envia se o usuário explicitamente marcou NÃO APLICÁVEL ou preencheu o campo.
       // Se ambos estão vazios/false, nÃo envia para não sobrescrever o estado do banco.
@@ -1131,7 +1137,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       return;
     }
     const temAlgumDriver =
-      (f.driverOnoff220 && f.driverOnoff220.trim()) ||
+      (f.driverOnoff220 && f.driverOnoff220.trim() && !f.driverOnoff220NaoAplicavel) ||
       (f.driverOnoffBivolt && f.driverOnoffBivolt.trim() && !f.driverOnoffBivoltNaoAplicavel) ||
       (f.driverDim110v && f.driverDim110v.trim() && !f.driverDim110vNaoAplicavel) ||
       (f.driverDimDali && f.driverDimDali.trim() && !f.driverDimDaliNaoAplicavel);
@@ -1607,15 +1613,15 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
               </div>
             </div>
 
-            {/* ON/OFF 220Vac — obrigatório */}
+            {/* ON/OFF 220Vac — opcional (com NÃO APLICÁVEL) */}
             <div className="space-y-2">
               <DriverRow
                 driverField="driverOnoff220"
                 custoField="custoDriverOnoff220"
                 qtdField="qtdDriverOnoff220"
                 mkpPadraoDriverField="mkpPadraoDriverOnoff220v"
+                naoAplicavelField="driverOnoff220NaoAplicavel"
                 label="ON/OFF DRIVER 220Vac"
-                required
                 placeholder="Ex: PHILIPS XITANIUM 19W 350MA (EQ00346)"
                 form={form} touched={touched} errors={errors}
                 setField={setField} setForm={setForm} setErrors={setErrors} setTouched={setTouched}

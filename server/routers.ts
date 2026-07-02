@@ -59,6 +59,7 @@ const productSchema = z.object({
   semDriver: z.boolean().default(false),
   driverOnoff220: z.string().optional().default(""),
   qtdDriverOnoff220: z.number().int().min(1).default(1),
+  driverOnoff220NaoAplicavel: z.boolean().default(false),
   driverOnoffBivolt: z.string().optional().default(""),
   qtdDriverOnoffBivolt: z.number().int().min(1).default(1),
   driverOnoffBivoltNaoAplicavel: z.boolean().default(false),
@@ -189,6 +190,7 @@ const bulkProductSchema = z.object({
   semDriver: z.boolean().default(false),
   driverOnoff220: z.string().default(""),
   qtdDriverOnoff220: z.number().int().min(1).default(1),
+  driverOnoff220NaoAplicavel: z.boolean().default(false),
   driverOnoffBivolt: z.string().optional().default(""),
   qtdDriverOnoffBivolt: z.number().int().min(1).default(1),
   driverOnoffBivoltNaoAplicavel: z.boolean().default(false),
@@ -304,8 +306,9 @@ export const appRouter = router({
           dissipador: input.dissipadorNaoAplicavel ? "NÃO APLICÁVEL" : input.dissipador.toUpperCase(),
           qtdDissipador: input.qtdDissipador ?? 1,
           semDriver: input.semDriver ?? false,
-          driverOnoff220: input.semDriver ? "" : input.driverOnoff220.toUpperCase(),
+          driverOnoff220: (input.semDriver || input.driverOnoff220NaoAplicavel) ? "NÃO APLICÁVEL" : input.driverOnoff220.toUpperCase(),
           qtdDriverOnoff220: input.qtdDriverOnoff220 ?? 1,
+          driverOnoff220NaoAplicavel: input.driverOnoff220NaoAplicavel ?? false,
           driverOnoffBivolt: input.driverOnoffBivolt.toUpperCase(),
           qtdDriverOnoffBivolt: input.qtdDriverOnoffBivolt ?? 1,
           driverDim110v: input.driverDim110v?.toUpperCase() || null,
@@ -439,6 +442,7 @@ export const appRouter = router({
         if (d.semDriver !== undefined) update.semDriver = d.semDriver;
         if (d.driverOnoff220 !== undefined) update.driverOnoff220 = d.driverOnoff220.toUpperCase();
         if (d.qtdDriverOnoff220 !== undefined) update.qtdDriverOnoff220 = d.qtdDriverOnoff220;
+        if (d.driverOnoff220NaoAplicavel !== undefined) update.driverOnoff220NaoAplicavel = d.driverOnoff220NaoAplicavel;
         if (d.driverOnoffBivolt !== undefined) update.driverOnoffBivolt = d.driverOnoffBivolt.toUpperCase();
         if (d.qtdDriverOnoffBivolt !== undefined) update.qtdDriverOnoffBivolt = d.qtdDriverOnoffBivolt;
         if (d.driverOnoffBivoltNaoAplicavel !== undefined) update.driverOnoffBivoltNaoAplicavel = d.driverOnoffBivoltNaoAplicavel;
