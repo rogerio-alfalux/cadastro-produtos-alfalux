@@ -1,5 +1,6 @@
 import express from "express";
 import multer from "multer";
+import * as XLSX from "xlsx";
 import { getDb } from "./db";
 import { accessories, components as componentsTable } from "../drizzle/schema";
 import { asc, eq, inArray } from "drizzle-orm";
@@ -206,7 +207,6 @@ const uploadExcel = multer({
 
 // ─── GET /template — baixar planilha modelo de acessórios ─────────────────────
 router.get("/template", (_req, res) => {
-  const XLSX = require("xlsx");
   const wb = XLSX.utils.book_new();
 
   // Aba de instruções
@@ -251,7 +251,6 @@ router.post("/import-excel", uploadExcel.single("file"), async (req, res) => {
       return res.status(400).json({ error: "Nenhum arquivo enviado" });
     }
 
-    const XLSX = require("xlsx");
     const wb = XLSX.read(req.file.buffer, { type: "buffer" });
 
     interface ParsedAccessory {
