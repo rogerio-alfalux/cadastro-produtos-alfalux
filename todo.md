@@ -450,6 +450,10 @@
 - [x] Popular produtos existentes no banco com os valores corretos de corrente do driver (798 atualizados, 514 sem corrente)
 - [x] Expor o campo no endpoint público /api/products/all e /api/products/:sku
 
+## Melhoria v39 — Ocultar Corrente do Driver para FONTE 24V
+- [x] Campo "Corrente do Driver" oculto quando qualquer driver do produto contém "FONTE 24V" no modelo
+- [x] Cobre todos os tipos: ON/OFF 220V, BIVOLT, DIM 1-10V, DIM DALI, DIM TRIAC 110V, DIM TRIAC 220V
+
 ## Feature v38 — Modo "Luminária com Lâmpada"
 - [x] Badge "LUM. C/ LÂMPADA" (âmbar) na seção Módulo LED — mutuamente exclusivo com RGBW
 - [x] Campo `moduloLampada` (boolean) salvo no banco (schema + migração SQL já aplicada)

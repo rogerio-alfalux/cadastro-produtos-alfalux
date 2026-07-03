@@ -1701,6 +1701,12 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
           {!form.semDriver && (() => {
             const isFitaLed = form.moduloLed.toUpperCase().includes("FITA");
             if (isFitaLed) return null;
+            const isFonte24v = [
+              form.driverOnoff220, form.driverOnoffBivolt,
+              form.driverDim110v, form.driverDimDali,
+              form.driverDimTriac110v, form.driverDimTriac220v,
+            ].some((d) => d && d.toUpperCase().includes("FONTE 24V"));
+            if (isFonte24v) return null;
             return (
               <div className="mb-5 p-4 rounded-lg border border-blue-500/30 bg-blue-500/5">
                 <div className="flex items-center gap-2 mb-2">
