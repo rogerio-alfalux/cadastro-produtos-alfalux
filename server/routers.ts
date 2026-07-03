@@ -37,6 +37,8 @@ const productSchema = z.object({
   qtdModuloLed: z.number().min(0.01).default(1),
   moduloRgbw: z.number().int().min(0).max(1).default(0),
   moduloLampada: z.number().int().min(0).max(1).default(0),
+  moduloLedRgbw: z.string().nullish(),
+  qtdModuloLedRgbw: z.number().min(0.01).nullish(),
   // Módulo LED por CCT
   moduloLed2700: z.string().nullish(),
   moduloLed3000: z.string().nullish(),
@@ -173,6 +175,8 @@ const bulkProductSchema = z.object({
   qtdModuloLed: z.number().min(0.01).default(1),
   moduloRgbw: z.number().int().min(0).max(1).default(0),
   moduloLampada: z.number().int().min(0).max(1).default(0),
+  moduloLedRgbw: z.string().optional(),
+  qtdModuloLedRgbw: z.number().min(0.01).optional(),
   // Módulo LED por CCT
   moduloLed2700: z.string().optional(),
   moduloLed3000: z.string().optional(),
@@ -297,6 +301,8 @@ export const appRouter = router({
           qtdModuloLed: String(input.qtdModuloLed ?? 1),
           moduloRgbw: input.moduloRgbw ?? 0,
           moduloLampada: input.moduloLampada ?? 0,
+          moduloLedRgbw: input.moduloLedRgbw?.toUpperCase() || null,
+          qtdModuloLedRgbw: input.qtdModuloLedRgbw ? String(input.qtdModuloLedRgbw) : null,
           moduloLed2700: input.moduloLed2700?.toUpperCase() || null,
           moduloLed3000: input.moduloLed3000?.toUpperCase() || null,
           moduloLed4000: input.moduloLed4000?.toUpperCase() || null,
@@ -430,6 +436,8 @@ export const appRouter = router({
         if (d.qtdModuloLed !== undefined) update.qtdModuloLed = String(d.qtdModuloLed);
         if (d.moduloRgbw !== undefined) update.moduloRgbw = d.moduloRgbw;
         if (d.moduloLampada !== undefined) update.moduloLampada = d.moduloLampada;
+        if (d.moduloLedRgbw !== undefined) update.moduloLedRgbw = d.moduloLedRgbw?.toUpperCase() || null;
+        if (d.qtdModuloLedRgbw !== undefined) update.qtdModuloLedRgbw = d.qtdModuloLedRgbw ? String(d.qtdModuloLedRgbw) : null;
         if (d.moduloLed2700 !== undefined) update.moduloLed2700 = d.moduloLed2700?.toUpperCase() || null;
         if (d.moduloLed3000 !== undefined) update.moduloLed3000 = d.moduloLed3000?.toUpperCase() || null;
         if (d.moduloLed4000 !== undefined) update.moduloLed4000 = d.moduloLed4000?.toUpperCase() || null;
@@ -572,6 +580,8 @@ export const appRouter = router({
           moduloLed: p.moduloLed.toUpperCase(),
           moduloRgbw: p.moduloRgbw ?? 0,
           moduloLampada: p.moduloLampada ?? 0,
+          moduloLedRgbw: p.moduloLedRgbw?.toUpperCase() || null,
+          qtdModuloLedRgbw: p.qtdModuloLedRgbw ? String(p.qtdModuloLedRgbw) : null,
           otica: p.oticaNaoAplicavel || p.otica.toUpperCase() === "NÃO APLICÁVEL" ? "NÃO APLICÁVEL" : p.otica.toUpperCase(),
           holder: p.holderNaoAplicavel || p.holder.toUpperCase() === "NÃO APLICÁVEL" ? "NÃO APLICÁVEL" : p.holder.toUpperCase(),
           dissipador: p.dissipadorNaoAplicavel || p.dissipador.toUpperCase() === "NÃO APLICÁVEL" ? "NÃO APLICÁVEL" : p.dissipador.toUpperCase(),

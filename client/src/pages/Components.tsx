@@ -1013,7 +1013,6 @@ export default function Components() {
               <Select
                 value={form.tipo}
                 onValueChange={(v) => setForm((p) => ({ ...p, tipo: v as ComponentType, modelo: "" }))}
-                disabled={!!editTarget}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o tipo..." />

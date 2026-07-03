@@ -41,6 +41,8 @@ export const products = mysqlTable("products", {
   qtdModuloLed: decimal("qtdModuloLed", { precision: 10, scale: 2 }).default("1.00").notNull(),
   moduloRgbw: int("moduloRgbw", { unsigned: true }).default(0).notNull(),
   moduloLampada: int("moduloLampada", { unsigned: true }).default(0).notNull(),
+  moduloLedRgbw: text("moduloLedRgbw"),
+  qtdModuloLedRgbw: decimal("qtdModuloLedRgbw", { precision: 10, scale: 2 }),
   // Módulo LED por temperatura de cor (CCT)
   moduloLed2700: text("moduloLed2700"),
   moduloLed3000: text("moduloLed3000"),

@@ -190,6 +190,13 @@
       "when": 1783087537757,
       "tag": "0026_cuddly_thaddeus_ross",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "5",
+      "when": 1783089216196,
+      "tag": "0027_rare_energizer",
+      "breakpoints": true
     }
   ]
 }

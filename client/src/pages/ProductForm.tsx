@@ -365,6 +365,8 @@ interface FormData {
   qtdModuloLed: number;
   moduloRgbw: boolean;
   moduloLampada: boolean;
+  moduloLedRgbw: string;
+  qtdModuloLedRgbw: number;
   // Módulo LED por CCT
   moduloLed2700: string;
   moduloLed3000: string;
@@ -476,6 +478,8 @@ const defaultForm: FormData = {
   qtdModuloLed: 1,
   moduloRgbw: false,
   moduloLampada: false,
+  moduloLedRgbw: "",
+  qtdModuloLedRgbw: 1,
   // Módulo LED por CCT
   moduloLed2700: "",
   moduloLed3000: "",
@@ -816,6 +820,8 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         correnteDriver: (p as any).correnteDriver || "",
         moduloRgbw: !!(p as any).moduloRgbw,
         moduloLampada: !!(p as any).moduloLampada,
+        moduloLedRgbw: (p as any).moduloLedRgbw || "",
+        qtdModuloLedRgbw: (p as any).qtdModuloLedRgbw ? Number((p as any).qtdModuloLedRgbw) : 1,
         // Markup do driver por tipo (salvo no banco)
         mkpPadraoDriverOnoff220v:    (p as any).mkpPadraoDriverOnoff220v    ? String((p as any).mkpPadraoDriverOnoff220v)    : "",
         mkpPadraoDriverOnoffBivolt:  (p as any).mkpPadraoDriverOnoffBivolt  ? String((p as any).mkpPadraoDriverOnoffBivolt)  : "",
@@ -1010,7 +1016,9 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       semDriver: form.semDriver,
       moduloRgbw: form.moduloRgbw ? 1 : 0,
       moduloLampada: form.moduloLampada ? 1 : 0,
-      temperaturasCor: JSON.stringify(derivedTemps),
+      moduloLedRgbw: form.moduloRgbw && form.moduloLedRgbw ? form.moduloLedRgbw : null,
+      qtdModuloLedRgbw: form.moduloRgbw && form.moduloLedRgbw ? form.qtdModuloLedRgbw : undefined,
+      temperaturasCor: form.moduloRgbw ? JSON.stringify(["RGBW"]) : JSON.stringify(derivedTemps),
       moduloLed2700: form.moduloLed2700 !== "" ? form.moduloLed2700 : null,
       moduloLed3000: form.moduloLed3000 !== "" ? form.moduloLed3000 : null,
       moduloLed4000: form.moduloLed4000 !== "" ? form.moduloLed4000 : null,
@@ -1367,12 +1375,48 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                   )}
                 </div>
               </div>
-              {/* Aviso quando modo especial ativo */}
-              {(form.moduloRgbw || form.moduloLampada) && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted/30 border border-border mb-3">
-                  <span className={cn("text-xs font-semibold", form.moduloRgbw ? "text-purple-300" : "text-amber-300")}>
-                    {form.moduloRgbw ? "🟣 Modo RGBW ativo" : "💡 Luminária com Lâmpada"}
-                  </span>
+              {/* Campo de módulo RGBW */}
+              {form.moduloRgbw && (
+                <div className="mb-3 p-3 rounded-md bg-purple-500/10 border border-purple-500/30">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs font-semibold text-purple-300">🟣 Módulo RGBW</span>
+                    <span className="text-[10px] text-muted-foreground">— CCTs desabilitados</span>
+                  </div>
+                  <div className="flex gap-3 items-center">
+                    <div className="flex-1 min-w-0">
+                      <ComponentSelect
+                        tipo="MODULO_LED"
+                        value={form.moduloLedRgbw}
+                        onChange={(v) => setField("moduloLedRgbw", v)}
+                        placeholder="Selecione o módulo RGBW..."
+                        hasError={false}
+                      />
+                    </div>
+                    {form.moduloLedRgbw && (
+                      <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">QTD</span>
+                        <Input
+                          className="input-dark text-sm text-center px-2 w-16"
+                          type="number"
+                          min="0.01"
+                          max="999"
+                          step="0.01"
+                          value={form.qtdModuloLedRgbw ?? 1}
+                          onChange={(e) => {
+                            const raw = e.target.value.replace(',', '.');
+                            const parsed = parseFloat(raw);
+                            setField("qtdModuloLedRgbw", isNaN(parsed) ? 1 : Math.max(0.01, Math.round(parsed * 1000) / 1000));
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              {/* Aviso quando modo Luminária com Lâmpada ativo */}
+              {form.moduloLampada && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-amber-500/10 border border-amber-500/30 mb-3">
+                  <span className="text-xs font-semibold text-amber-300">💡 Luminária com Lâmpada</span>
                   <span className="text-[10px] text-muted-foreground">— campos de CCT desabilitados</span>
                 </div>
               )}
@@ -1851,7 +1895,19 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
             )}
           </div>
 
-          {(form.moduloLed2700 || form.moduloLed3000 || form.moduloLed4000 || form.moduloLed5000) ? (
+          {form.moduloRgbw ? (
+            // Modo RGBW: mostrar apenas badge RGBW
+            <div className="flex flex-wrap gap-3">
+              <div
+                className="temp-badge temp-badge-active"
+                style={{ borderColor: "oklch(0.75 0.15 310)", color: "oklch(0.75 0.15 310)", backgroundColor: "oklch(0.75 0.15 310 / 0.15)" }}
+                title="Modo RGBW ativo"
+              >
+                <span className="w-2 h-2 rounded-full mr-1.5 inline-block" style={{ backgroundColor: "oklch(0.75 0.15 310)" }} />
+                RGBW
+              </div>
+            </div>
+          ) : (form.moduloLed2700 || form.moduloLed3000 || form.moduloLed4000 || form.moduloLed5000) ? (
             // Modo derivado: CCTs determinados pelos módulos preenchidos
             <div className="flex flex-wrap gap-3">
               {TEMPERATURAS.map((temp) => {
