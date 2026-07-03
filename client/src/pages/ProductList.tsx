@@ -349,7 +349,7 @@ export default function ProductList() {
                             <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                               {temps.map((t: string) => (
                                 <span key={t} className="text-[10px] bg-muted/40 text-muted-foreground px-1.5 py-0.5 rounded">
-                                  {t}K
+                                  {t === "RGBW" ? t : `${t}K`}
                                 </span>
                               ))}
                             </div>
@@ -714,7 +714,7 @@ function ProductDetail({ id }: { id: number }) {
         <div className="flex flex-wrap gap-2">
           {temps.map((t: string) => (
             <span key={t} className="text-xs bg-primary/20 text-primary px-3 py-1.5 rounded-lg font-semibold border border-primary/30">
-              {t}K
+              {t === "RGBW" ? t : `${t}K`}
             </span>
           ))}
         </div>
