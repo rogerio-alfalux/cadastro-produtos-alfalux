@@ -186,4 +186,212 @@ router.get("/all", async (_req, res) => {
   }
 });
 
+// ─── Multer para Excel ───────────────────────────────────────────────────────
+const uploadExcel = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 20 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = [
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.ms-excel",
+      "application/octet-stream",
+    ];
+    if (allowed.includes(file.mimetype) || file.originalname.match(/\.xlsx?$/i)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Apenas arquivos .xlsx s\u00e3o aceitos"));
+    }
+  },
+});
+
+// ─── GET /template — baixar planilha modelo de acessórios ─────────────────────
+router.get("/template", (_req, res) => {
+  const XLSX = require("xlsx");
+  const wb = XLSX.utils.book_new();
+
+  // Aba de instruções
+  const instrucoes = [
+    ["IMPORTAÇÃO DE ACESSÓRIOS — PLANILHA MODELO"],
+    [""],
+    ["Preencha a aba ACESSÓRIOS com os dados dos itens a importar."],
+    ["Colunas obrigatórias: PRODUTO"],
+    ["Colunas opcionais: CÓDIGO, SKU, FAMÍLIA, DIMENSÃO, CUSTO, PREÇO VENDA, OBSERVAÇÕES"],
+    [""],
+    ["REGRAS:"],
+    ["\u2022 Se o CÓDIGO já existir no banco, o item será ignorado (não duplica)."],
+    ["\u2022 Se não houver CÓDIGO, o item é sempre inserido."],
+    ["\u2022 CUSTO e PREÇO VENDA devem ser numéricos (ex: 45.90 ou 45,90)."],
+  ];
+  const wsInst = XLSX.utils.aoa_to_sheet(instrucoes);
+  XLSX.utils.book_append_sheet(wb, wsInst, "INSTRUÇÕES");
+
+  // Aba de dados com exemplos
+  const dados = [
+    ["CÓDIGO", "SKU", "PRODUTO", "FAMÍLIA", "DIMENSÃO", "CUSTO", "PREÇO VENDA", "OBSERVAÇÕES"],
+    ["CP00526", "RAB-500-PT", "RABICHO CABO PP 3X 0,50 PRETO 500MM", "CABOS & RABICHOS", "500MM", "8.50", "15.00", ""],
+    ["EQ00081", "HL224110LA-20", "FITA LED 2835 120LEDS/M 24V 10W/M IP20 IRC80 4000K", "FITA LED", "", "12.00", "22.00", "Rolo 5m"],
+  ];
+  const wsData = XLSX.utils.aoa_to_sheet(dados);
+  wsData["!cols"] = [
+    { wch: 12 }, { wch: 18 }, { wch: 50 }, { wch: 20 },
+    { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 30 },
+  ];
+  XLSX.utils.book_append_sheet(wb, wsData, "ACESSÓRIOS");
+
+  const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  res.setHeader("Content-Disposition", `attachment; filename="template-acessorios.xlsx"`);
+  res.send(buf);
+});
+
+// ─── POST /import-excel — importar acessórios em massa ───────────────────────
+router.post("/import-excel", uploadExcel.single("file"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "Nenhum arquivo enviado" });
+    }
+
+    const XLSX = require("xlsx");
+    const wb = XLSX.read(req.file.buffer, { type: "buffer" });
+
+    interface ParsedAccessory {
+      codigo?: string;
+      sku?: string;
+      produto: string;
+      familia?: string;
+      dimensao?: string;
+      custo?: number;
+      precoVenda?: number;
+      observacoes?: string;
+    }
+
+    const allParsed: ParsedAccessory[] = [];
+
+    for (const sheetName of wb.SheetNames) {
+      if (sheetName.toUpperCase().includes("INSTRU")) continue;
+      const ws = wb.Sheets[sheetName];
+      if (!ws) continue;
+
+      const rawData = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" }) as any[][];
+      if (!rawData || rawData.length === 0) continue;
+
+      // Encontrar linha de cabeçalho
+      let headerRowIdx = -1;
+      let colMap: Record<string, number> = {};
+      for (let i = 0; i < Math.min(5, rawData.length); i++) {
+        const row = rawData[i];
+        if (!row) continue;
+        const normalized: Record<string, number> = {};
+        for (let j = 0; j < row.length; j++) {
+          const cell = String(row[j] ?? "").trim().toUpperCase();
+          if (cell) normalized[cell] = j;
+        }
+        const hasProduto = "PRODUTO" in normalized || "DESCRIÇÃO" in normalized || "DESCRICAO" in normalized || "NOME" in normalized;
+        if (hasProduto) {
+          headerRowIdx = i;
+          colMap = normalized;
+          break;
+        }
+      }
+      if (headerRowIdx === -1) continue;
+
+      const getCol = (...names: string[]): number => {
+        for (const n of names) { if (n in colMap) return colMap[n]; }
+        return -1;
+      };
+
+      const produtoCol   = getCol("PRODUTO", "DESCRIÇÃO", "DESCRICAO", "NOME");
+      const codigoCol    = getCol("CÓDIGO", "CODIGO", "COD", "CÓD", "CODE");
+      const skuCol       = getCol("SKU", "REF", "REFERÊNCIA", "REFERENCIA");
+      const familiaCol   = getCol("FAMÍLIA", "FAMILIA", "FAMILY", "GRUPO");
+      const dimensaoCol  = getCol("DIMENSÃO", "DIMENSAO", "DIM", "TAMANHO", "SIZE");
+      const custoCol     = getCol("CUSTO", "COST", "VALOR", "PREÇO CUSTO");
+      const precoVendaCol = getCol("PREÇO VENDA", "PRECO VENDA", "VENDA", "PRICE", "PREÇO");
+      const obsCol       = getCol("OBSERVAÇÕES", "OBSERVACOES", "OBS", "OBSERVATION", "NOTA");
+
+      for (let i = headerRowIdx + 1; i < rawData.length; i++) {
+        const row = rawData[i];
+        if (!row) continue;
+        const produto = produtoCol >= 0 ? String(row[produtoCol] ?? "").trim() : "";
+        if (!produto) continue;
+
+        const parseNum = (col: number): number | undefined => {
+          if (col < 0 || row[col] === undefined || row[col] === null || row[col] === "") return undefined;
+          const raw = String(row[col]).replace(",", ".");
+          const n = parseFloat(raw);
+          return isNaN(n) ? undefined : n;
+        };
+
+        allParsed.push({
+          codigo:     codigoCol >= 0 ? String(row[codigoCol] ?? "").trim() || undefined : undefined,
+          sku:        skuCol >= 0 ? String(row[skuCol] ?? "").trim() || undefined : undefined,
+          produto,
+          familia:    familiaCol >= 0 ? String(row[familiaCol] ?? "").trim() || undefined : undefined,
+          dimensao:   dimensaoCol >= 0 ? String(row[dimensaoCol] ?? "").trim() || undefined : undefined,
+          custo:      parseNum(custoCol),
+          precoVenda: parseNum(precoVendaCol),
+          observacoes: obsCol >= 0 ? String(row[obsCol] ?? "").trim() || undefined : undefined,
+        });
+      }
+    }
+
+    if (allParsed.length === 0) {
+      return res.status(400).json({
+        error: "Nenhum acessório válido encontrado. Verifique se a planilha possui a coluna PRODUTO.",
+      });
+    }
+
+    const db = await getDb();
+    if (!db) throw new Error("Database unavailable");
+
+    let inserted = 0;
+    let skipped = 0;
+    const errors: string[] = [];
+
+    for (const item of allParsed) {
+      try {
+        // Se tem código, verificar duplicata
+        if (item.codigo) {
+          const existing = await db
+            .select({ id: accessories.id, produto: accessories.produto })
+            .from(accessories)
+            .where(eq(accessories.codigo, item.codigo))
+            .limit(1);
+          if (existing.length > 0) {
+            errors.push(`Código "${item.codigo}" já em uso por "${existing[0].produto}" \u2014 ignorado`);
+            skipped++;
+            continue;
+          }
+        }
+
+        await db.insert(accessories).values({
+          codigo:     item.codigo ?? null,
+          sku:        item.sku ?? null,
+          produto:    item.produto,
+          familia:    item.familia ?? null,
+          dimensao:   item.dimensao ?? null,
+          custo:      item.custo !== undefined ? String(item.custo) : null,
+          precoVenda: item.precoVenda !== undefined ? String(item.precoVenda) : null,
+          observacoes: item.observacoes ?? null,
+        });
+        inserted++;
+      } catch (err: any) {
+        errors.push(`Erro ao inserir "${item.produto}": ${err?.message ?? String(err)}`);
+        skipped++;
+      }
+    }
+
+    return res.json({
+      success: true,
+      total: allParsed.length,
+      inserted,
+      skipped,
+      errors: errors.slice(0, 50),
+    });
+  } catch (err) {
+    console.error("[acessorios/import-excel]", err);
+    return res.status(500).json({ error: "Erro ao importar Excel: " + String(err) });
+  }
+});
+
 export default router;
