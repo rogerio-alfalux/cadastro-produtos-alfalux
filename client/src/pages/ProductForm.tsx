@@ -363,6 +363,8 @@ interface FormData {
   produto: string;
   moduloLed: string;
   qtdModuloLed: number;
+  moduloRgbw: boolean;
+  moduloLampada: boolean;
   // Módulo LED por CCT
   moduloLed2700: string;
   moduloLed3000: string;
@@ -472,6 +474,8 @@ const defaultForm: FormData = {
   produto: "",
   moduloLed: "",
   qtdModuloLed: 1,
+  moduloRgbw: false,
+  moduloLampada: false,
   // Módulo LED por CCT
   moduloLed2700: "",
   moduloLed3000: "",
@@ -810,6 +814,8 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         precoVendaDimDaliD1: (p as any).precoVendaDimDaliD1 ? String((p as any).precoVendaDimDaliD1) : "",
         precoVendaDimDaliD1D2: (p as any).precoVendaDimDaliD1D2 ? String((p as any).precoVendaDimDaliD1D2) : "",
         correnteDriver: (p as any).correnteDriver || "",
+        moduloRgbw: !!(p as any).moduloRgbw,
+        moduloLampada: !!(p as any).moduloLampada,
         // Markup do driver por tipo (salvo no banco)
         mkpPadraoDriverOnoff220v:    (p as any).mkpPadraoDriverOnoff220v    ? String((p as any).mkpPadraoDriverOnoff220v)    : "",
         mkpPadraoDriverOnoffBivolt:  (p as any).mkpPadraoDriverOnoffBivolt  ? String((p as any).mkpPadraoDriverOnoffBivolt)  : "",
@@ -1002,6 +1008,8 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
     const payload: any = {
       ...form,
       semDriver: form.semDriver,
+      moduloRgbw: form.moduloRgbw ? 1 : 0,
+      moduloLampada: form.moduloLampada ? 1 : 0,
       temperaturasCor: JSON.stringify(derivedTemps),
       moduloLed2700: form.moduloLed2700 !== "" ? form.moduloLed2700 : null,
       moduloLed3000: form.moduloLed3000 !== "" ? form.moduloLed3000 : null,
@@ -1317,8 +1325,57 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
             <div>
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">MÓDULO LED</span>
-                <span className="text-[10px] text-muted-foreground">Preencha o módulo para cada CCT disponível — CCT sem módulo será desabilitado</span>
+                <div className="flex items-center gap-2">
+                  {/* Badge RGBW */}
+                  <button
+                    type="button"
+                    onClick={() => setForm((prev) => ({
+                      ...prev,
+                      moduloRgbw: !prev.moduloRgbw,
+                      moduloLampada: prev.moduloRgbw ? prev.moduloLampada : false,
+                    }))}
+                    className={cn(
+                      "text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md border transition-all",
+                      form.moduloRgbw
+                        ? "bg-purple-600/20 border-purple-500 text-purple-300"
+                        : "border-border text-muted-foreground hover:border-purple-500/50 hover:text-purple-400"
+                    )}
+                    title="Placa RGBW — desabilita os campos de CCT"
+                  >
+                    RGBW
+                  </button>
+                  {/* Badge LUMINÁRIA COM LÂMPADA */}
+                  <button
+                    type="button"
+                    onClick={() => setForm((prev) => ({
+                      ...prev,
+                      moduloLampada: !prev.moduloLampada,
+                      moduloRgbw: prev.moduloLampada ? prev.moduloRgbw : false,
+                    }))}
+                    className={cn(
+                      "text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md border transition-all whitespace-nowrap",
+                      form.moduloLampada
+                        ? "bg-amber-600/20 border-amber-500 text-amber-300"
+                        : "border-border text-muted-foreground hover:border-amber-500/50 hover:text-amber-400"
+                    )}
+                    title="Luminária com lâmpada — desabilita os campos de CCT"
+                  >
+                    LUM. C/ LÂMPADA
+                  </button>
+                  {!form.moduloRgbw && !form.moduloLampada && (
+                    <span className="text-[10px] text-muted-foreground">Preencha o módulo para cada CCT disponível — CCT sem módulo será desabilitado</span>
+                  )}
+                </div>
               </div>
+              {/* Aviso quando modo especial ativo */}
+              {(form.moduloRgbw || form.moduloLampada) && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted/30 border border-border mb-3">
+                  <span className={cn("text-xs font-semibold", form.moduloRgbw ? "text-purple-300" : "text-amber-300")}>
+                    {form.moduloRgbw ? "🟣 Modo RGBW ativo" : "💡 Luminária com Lâmpada"}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">— campos de CCT desabilitados</span>
+                </div>
+              )}
               <div className="flex flex-col gap-3">
                 {([
                   { cct: "2700", field: "moduloLed2700" as const, qtdField: "qtdModuloLed2700" as const, color: "oklch(0.75 0.15 65)" },
@@ -1326,7 +1383,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                   { cct: "4000", field: "moduloLed4000" as const, qtdField: "qtdModuloLed4000" as const, color: "oklch(0.85 0.05 200)" },
                   { cct: "5000", field: "moduloLed5000" as const, qtdField: "qtdModuloLed5000" as const, color: "oklch(0.88 0.04 220)" },
                 ] as const).map(({ cct, field, qtdField, color }) => (
-                  <div key={cct} className="flex gap-3 items-center">
+                  <div key={cct} className={cn("flex gap-3 items-center", (form.moduloRgbw || form.moduloLampada) && "opacity-40 pointer-events-none")}>
                     <div
                       className="flex-shrink-0 w-14 text-center text-xs font-bold rounded-md px-2 py-1.5 border"
                       style={{ borderColor: color, color, backgroundColor: `${color}15` }}
@@ -1334,15 +1391,19 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                       {cct}K
                     </div>
                     <div className="flex-1 min-w-0">
-                      <ComponentSelect
-                        tipo="MODULO_LED"
-                        value={form[field]}
-                        onChange={(v) => setField(field, v)}
-                        placeholder={`Módulo ${cct}K (deixe vazio para desabilitar)`}
-                        hasError={false}
-                      />
+                      {(form.moduloRgbw || form.moduloLampada) ? (
+                        <Input className="input-dark opacity-50" value="NÃO APLICÁVEL" disabled readOnly />
+                      ) : (
+                        <ComponentSelect
+                          tipo="MODULO_LED"
+                          value={form[field]}
+                          onChange={(v) => setField(field, v)}
+                          placeholder={`Módulo ${cct}K (deixe vazio para desabilitar)`}
+                          hasError={false}
+                        />
+                      )}
                     </div>
-                    {form[field] && (
+                    {form[field] && !(form.moduloRgbw || form.moduloLampada) && (
                       <div className="flex flex-col items-center gap-1 flex-shrink-0">
                         <span className="text-[10px] text-muted-foreground uppercase tracking-wider">QTD</span>
                         <Input

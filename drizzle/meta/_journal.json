@@ -183,6 +183,13 @@
       "when": 1783022388840,
       "tag": "0025_massive_spencer_smythe",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "5",
+      "when": 1783087537757,
+      "tag": "0026_cuddly_thaddeus_ross",
+      "breakpoints": true
     }
   ]
 }

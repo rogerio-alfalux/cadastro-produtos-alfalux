@@ -743,6 +743,10 @@ router.get("/all", async (_req, res) => {
         result.temperaturasCor = derivedTemps;
       }
 
+      // Flags de modo especial de módulo
+      result.moduloRgbw = !!(p as any).moduloRgbw;
+      result.moduloLampada = !!(p as any).moduloLampada;
+
       // Campos de preço por metro linear para categoria PERFIS
       // Retorna null quando o controle não está disponível para o produto
       const isPerfil = cat === "PERFIS";
