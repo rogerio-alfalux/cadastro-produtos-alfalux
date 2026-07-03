@@ -449,3 +449,11 @@
 - [x] Implementar lógica de preenchimento automático no ProductForm com base nas regras de wattagem/tipo
 - [x] Popular produtos existentes no banco com os valores corretos de corrente do driver (798 atualizados, 514 sem corrente)
 - [x] Expor o campo no endpoint público /api/products/all e /api/products/:sku
+
+## Feature v38 — Modo "Luminária com Lâmpada"
+- [x] Badge "LUM. C/ LÂMPADA" (âmbar) na seção Módulo LED — mutuamente exclusivo com RGBW
+- [x] Campo `moduloLampada` (boolean) salvo no banco (schema + migração SQL já aplicada)
+- [x] useEffect: quando moduloLampada=true, força semDriver=true e limpa temperaturasCor
+- [x] Seção Temperatura de Cor desabilitada (opacity-50 + pointer-events-none) com mensagem âmbar "Não aplicável — luminária com lâmpada"
+- [x] Campos CCT (2700K-5000K) ficam com opacity-40 e pointer-events-none quando moduloLampada ativo
+- [x] Endpoint /api/products/all expõe moduloLampada, moduloLedRgbw e qtdModuloLedRgbw

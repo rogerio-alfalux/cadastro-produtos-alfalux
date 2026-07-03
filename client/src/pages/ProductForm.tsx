@@ -863,6 +863,17 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
     }
     }, [existingProduct, isDuplicate]);
 
+  // ── Quando Luminária com Lâmpada ativa: forçar SEM DRIVER e limpar temperaturas ──
+  useEffect(() => {
+    if (form.moduloLampada) {
+      setForm((prev) => ({
+        ...prev,
+        semDriver: true,
+        temperaturasCor: [],
+      }));
+    }
+  }, [form.moduloLampada]);
+
   // ── Auto-inferir corrente do driver quando produto/família/módulo/semDriver mudam ──
   useEffect(() => {
     const corrente = inferirCorrenteDriver({
@@ -1884,11 +1895,13 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         </section>
 
         {/* ─── Seção 4: Temperatura de Cor ─────────────────────────────── */}
-        <section className="alfalux-card p-6">
+        <section className={cn("alfalux-card p-6", form.moduloLampada && "opacity-50 pointer-events-none select-none")}>
           <div className="flex items-center gap-2 mb-5">
             <Thermometer className="w-4 h-4 text-primary" />
             <h2 className="section-header mb-0">TEMPERATURA DE COR</h2>
-            {(form.moduloLed2700 || form.moduloLed3000 || form.moduloLed4000 || form.moduloLed5000) ? (
+            {form.moduloLampada ? (
+              <span className="text-[10px] text-amber-400 ml-auto">Não aplicável — luminária com lâmpada</span>
+            ) : (form.moduloLed2700 || form.moduloLed3000 || form.moduloLed4000 || form.moduloLed5000) ? (
               <span className="text-[10px] text-muted-foreground ml-auto">Derivado automaticamente dos módulos LED</span>
             ) : (
               <span className="text-[10px] text-muted-foreground ml-auto">Marcadas por padrão — desmarque se não aplicável</span>
