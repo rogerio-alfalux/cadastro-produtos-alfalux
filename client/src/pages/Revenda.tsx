@@ -44,6 +44,7 @@ type RevendaItem = {
   descricao: string;
   referencia: string | null;
   fornecedor: string | null;
+  familia: string | null;
   observacoes: string | null;
   fotoUrl: string | null;
   fotoKey: string | null;
@@ -75,6 +76,7 @@ const emptyForm = {
   descricao: "",
   referencia: "",
   fornecedor: "",
+  familia: "",
   observacoes: "",
   custo: "",
   precoVenda: "",
@@ -204,6 +206,7 @@ export default function RevendaPage() {
       descricao: item.descricao,
       referencia: item.referencia ?? "",
       fornecedor: item.fornecedor ?? "",
+      familia: item.familia ?? "",
       observacoes: item.observacoes ?? "",
       custo: item.custo ?? "",
       precoVenda: item.precoVenda ?? "",
@@ -220,6 +223,7 @@ export default function RevendaPage() {
       descricao: form.descricao,
       referencia: form.referencia || null,
       fornecedor: form.fornecedor || null,
+      familia: form.familia || null,
       observacoes: form.observacoes || null,
       custo: form.custo || null,
       precoVenda: form.precoVenda || null,
@@ -494,6 +498,16 @@ export default function RevendaPage() {
                   <option key={f} value={f} />
                 ))}
               </datalist>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold tracking-wider">FAMÍLIA</Label>
+              <Input
+                value={form.familia}
+                onChange={(e) => setForm({ ...form, familia: e.target.value })}
+                placeholder="Ex: FITA LED, TRILHOS E ACESSÓRIOS..."
+                className="text-sm"
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
