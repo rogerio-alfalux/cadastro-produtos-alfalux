@@ -875,15 +875,31 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
   }, [form.moduloLampada]);
 
   // ── Auto-inferir corrente do driver quando produto/família/módulo/semDriver mudam ──
+  // Só sobrescreve se o formulário já foi inicializado (evita apagar valor salvo no banco
+  // durante o carregamento inicial) E se o usuário não preencheu manualmente o campo.
+  const correnteInferidaRef = useRef<string | null>(null);
   useEffect(() => {
+    // Aguarda inicialização do formulário para não sobrescrever valor do banco
+    if ((isEdit || isDuplicate) && !initializedRef.current) return;
     const corrente = inferirCorrenteDriver({
       produto: form.produto,
       familia: form.familia,
       moduloLed: form.moduloLed,
       semDriver: form.semDriver,
     });
-    setForm((prev) => ({ ...prev, correnteDriver: corrente ?? "" }));
-  }, [form.produto, form.familia, form.moduloLed, form.semDriver]);
+    // Só atualiza se o valor atual for igual ao que foi inferido anteriormente
+    // (ou seja, o usuário não editou manualmente)
+    setForm((prev) => {
+      const prevInferido = correnteInferidaRef.current;
+      // Se o valor atual é diferente do último inferido, o usuário editou → não sobrescreve
+      if (prevInferido !== null && prev.correnteDriver !== prevInferido) {
+        correnteInferidaRef.current = corrente ?? "";
+        return prev;
+      }
+      correnteInferidaRef.current = corrente ?? "";
+      return { ...prev, correnteDriver: corrente ?? "" };
+    });
+  }, [form.produto, form.familia, form.moduloLed, form.semDriver, isEdit, isDuplicate]);
 
   const utils = trpc.useUtils();
   const createMutation = trpc.products.create.useMutation({
