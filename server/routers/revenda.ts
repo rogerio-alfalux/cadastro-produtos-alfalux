@@ -146,6 +146,23 @@ export const revendaRouter = router({
       return { success: true };
     }),
 
+  // Próximo código disponível
+  nextCode: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return { codigo: "RV00001" };
+    const rows = await db
+      .select({ codigo: revendaProducts.codigo })
+      .from(revendaProducts)
+      .orderBy(sql`CAST(SUBSTRING(codigo, 3) AS UNSIGNED) DESC`)
+      .limit(1);
+    if (!rows.length) return { codigo: "RV00001" };
+    const last = rows[0].codigo;
+    const match = last.match(/^RV(\d+)$/);
+    if (!match) return { codigo: "RV00001" };
+    const next = parseInt(match[1], 10) + 1;
+    return { codigo: `RV${String(next).padStart(5, "0")}` };
+  }),
+
   // Excluir
   delete: protectedProcedure
     .input(z.object({ id: z.number().int() }))

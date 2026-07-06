@@ -106,6 +106,7 @@ export default function RevendaPage() {
 
   // Queries
   const { data: fornecedores = [] } = trpc.revenda.listFornecedores.useQuery();
+  const { data: nextCodeData } = trpc.revenda.nextCode.useQuery();
 
   const queryInput = useMemo(
     () => ({
@@ -194,7 +195,7 @@ export default function RevendaPage() {
   // Handlers
   function openCreate() {
     setEditItem(null);
-    setForm(emptyForm);
+    setForm({ ...emptyForm, codigo: nextCodeData?.codigo ?? "" });
     setPhotoPreview(null);
     setDialogOpen(true);
   }
