@@ -273,6 +273,7 @@ export const appRouter = router({
           categoria: z.string().optional(),
           instalacao: z.string().optional(),
           familia: z.string().optional(),
+          potencia: z.string().optional(),
           limit: z.number().min(1).max(200).default(50),
           offset: z.number().min(0).default(0),
         })

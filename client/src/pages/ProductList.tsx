@@ -50,6 +50,7 @@ export default function ProductList() {
   const [search, setSearch] = useState("");
   const [filterCategoria, setFilterCategoria] = useState("_all");
   const [filterInstalacao, setFilterInstalacao] = useState("_all");
+  const [filterPotencia, setFilterPotencia] = useState("_all");
   const [page, setPage] = useState(0);
   const [editId, setEditId] = useState<number | null>(null);
   const [viewId, setViewId] = useState<number | null>(null);
@@ -62,6 +63,7 @@ export default function ProductList() {
     search: search || undefined,
     categoria: filterCategoria !== "_all" ? filterCategoria : undefined,
     instalacao: filterInstalacao !== "_all" ? filterInstalacao : undefined,
+    potencia: filterPotencia !== "_all" ? filterPotencia : undefined,
     limit: PAGE_SIZE,
     offset: page * PAGE_SIZE,
   };
@@ -133,10 +135,11 @@ export default function ProductList() {
     setSearch("");
     setFilterCategoria("_all");
     setFilterInstalacao("_all");
+    setFilterPotencia("_all");
     setPage(0);
   };
 
-  const hasFilters = search || filterCategoria !== "_all" || filterInstalacao !== "_all";
+  const hasFilters = search || filterCategoria !== "_all" || filterInstalacao !== "_all" || filterPotencia !== "_all";
 
   return (
     <div className="animate-fade-in">
@@ -236,6 +239,21 @@ export default function ProductList() {
             </SelectContent>
           </Select>
 
+          {/* Potência filter */}
+          <Select value={filterPotencia} onValueChange={(v) => { setFilterPotencia(v); setPage(0); }}>
+            <SelectTrigger className="input-dark w-full sm:w-44">
+              <Zap className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
+              <SelectValue placeholder="POTÊNCIA" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="_all">TODAS POTÊNCIAS</SelectItem>
+              <SelectItem value="18W">18W</SelectItem>
+              <SelectItem value="26W">26W</SelectItem>
+              <SelectItem value="36W-SF">36W — Stripflex</SelectItem>
+              <SelectItem value="36W-SL">36W — Stripline</SelectItem>
+            </SelectContent>
+          </Select>
+
           {/* Clear filters */}
           {hasFilters && (
             <Button
@@ -266,6 +284,11 @@ export default function ProductList() {
             {filterInstalacao !== "_all" && (
               <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-md">
                 {filterInstalacao}
+              </span>
+            )}
+            {filterPotencia !== "_all" && (
+              <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-md">
+                ⚡ {filterPotencia}
               </span>
             )}
             <span className="text-xs text-muted-foreground ml-auto">{total} resultado(s)</span>

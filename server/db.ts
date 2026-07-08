@@ -69,6 +69,7 @@ export async function listProducts(opts?: {
   categoria?: string;
   instalacao?: string;
   familia?: string;
+  potencia?: string;
   limit?: number;
   offset?: number;
 }) {
@@ -90,6 +91,7 @@ export async function listProducts(opts?: {
   if (opts?.categoria) conditions.push(eq(products.categoria, opts.categoria));
   if (opts?.instalacao) conditions.push(eq(products.instalacao, opts.instalacao));
   if (opts?.familia) conditions.push(eq(products.familia, opts.familia));
+  if (opts?.potencia) conditions.push(eq(products.potencia, opts.potencia as "18W" | "26W" | "36W-SF" | "36W-SL"));
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;
 

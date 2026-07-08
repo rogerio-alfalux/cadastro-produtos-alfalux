@@ -1,0 +1,1 @@
+ALTER TABLE `products` ADD `potencia` enum('18W','26W','36W-SF','36W-SL');

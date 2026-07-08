@@ -171,6 +171,9 @@ export const products = mysqlTable("products", {
   // Corrente de programação do driver (ex: "programar em 350mA")
   // Null para produtos com FITA LED ou sem driver
   correnteDriver: varchar("correnteDriver", { length: 100 }),
+  // Potência do produto — exclusivo para perfis modulares (18W, 26W, 36W-SF, 36W-SL)
+  // Null para produtos que não são perfis com variantes de potência
+  potencia: mysqlEnum("potencia", ["18W", "26W", "36W-SF", "36W-SL"]),
   // Metadados
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

@@ -461,3 +461,12 @@
 - [x] Seção Temperatura de Cor desabilitada (opacity-50 + pointer-events-none) com mensagem âmbar "Não aplicável — luminária com lâmpada"
 - [x] Campos CCT (2700K-5000K) ficam com opacity-40 e pointer-events-none quando moduloLampada ativo
 - [x] Endpoint /api/products/all expõe moduloLampada, moduloLedRgbw e qtdModuloLedRgbw
+
+## Feature v40 — Versões de Potência nos Perfis Modulares
+- [x] Campo `potencia` adicionado ao schema e migrado no banco
+- [x] Filtro de potência adicionado na página de produtos (18W, 26W, 36W-SF, 36W-SL)
+- [x] 871 produtos renomeados para 18W
+- [x] 871 produtos 26W criados (corrente 500mA, driver EQ00220/EQ00353, custo +3%)
+- [x] 871 produtos 36W-SF criados (dobro de barras Stripflex, custo +8.5%)
+- [x] 861 produtos 36W-SL criados (Stripline, só barras inteiras, custo +8.5%)
+- [x] Novos produtos NÃO expostos no endpoint público ainda
