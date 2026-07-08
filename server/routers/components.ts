@@ -34,6 +34,63 @@ const TYPE_TO_COLUMN: Record<string, string | string[]> = {
   MODULO_LED: ["moduloLed", "moduloLed2700", "moduloLed3000", "moduloLed4000", "moduloLed5000", "moduloLedRgbw"],
 };
 
+// Map component type → product custo column name(s)
+const TYPE_TO_CUSTO_COLUMN: Record<string, string | string[]> = {
+  DRIVER_ONOFF_220: "custoDriverOnoff220",
+  DRIVER_ONOFF_BIVOLT: "custoDriverOnoffBivolt",
+  DRIVER_DIM_110V: "custoDriverDim110v",
+  DRIVER_DIM_DALI: "custoDriverDimDali",
+  DRIVER_DIM_TRIAC_110V: "custoDriverDimTriac110v",
+  DRIVER_DIM_TRIAC_220V: "custoDriverDimTriac220v",
+};
+
+// Propagate updated custoDriver to all products that reference this component model
+async function propagateCustoToProducts(
+  db: Awaited<ReturnType<typeof getDb>>,
+  tipo: string,
+  modelo: string,
+  novoCusto: number | null
+) {
+  if (!db) return;
+  const driverCol = TYPE_TO_COLUMN[tipo];
+  const custoCol = TYPE_TO_CUSTO_COLUMN[tipo];
+  if (!driverCol || !custoCol || Array.isArray(driverCol) || Array.isArray(custoCol)) return;
+
+  // Update main driver custo column
+  const driverField = products[driverCol as keyof typeof products] as any;
+  const custoField = products[custoCol as keyof typeof products] as any;
+  if (!driverField || !custoField) return;
+
+  await db.update(products)
+    .set({ [custoCol]: novoCusto } as any)
+    .where(eq(driverField, modelo));
+
+  // Also update extras JSON field
+  const extraCol = driverCol + "Extra";
+  const extraField = products[extraCol as keyof typeof products] as any;
+  if (!extraField) return;
+
+  const allWithExtra = await db
+    .select({ id: products.id, extra: extraField })
+    .from(products)
+    .where(sql`${extraField} IS NOT NULL AND ${extraField} != ''`);
+
+  for (const row of allWithExtra) {
+    if (!row.extra) continue;
+    try {
+      const extras = JSON.parse(row.extra as string) as Array<{ modelo: string; qtd: number; custo: any }>;
+      let changed = false;
+      const fixed = extras.map(e => {
+        if (e.modelo === modelo) { changed = true; return { ...e, custo: novoCusto }; }
+        return e;
+      });
+      if (changed) {
+        await db.update(products).set({ [extraCol]: JSON.stringify(fixed) } as any).where(eq(products.id, row.id));
+      }
+    } catch {}
+  }
+}
+
 export const componentsRouter = router({
   // ─── List all components (optionally filtered by type/search) ────────────
   list: publicProcedure
@@ -137,16 +194,33 @@ export const componentsRouter = router({
           });
         }
       }
+      const newCustoDriver = data.custoDriver !== undefined
+        ? ((data.custoDriver && data.custoDriver.trim() !== '') ? data.custoDriver.trim().replace(',', '.') : null)
+        : undefined;
+
       await db.update(components).set({
         modelo: data.modelo?.trim(),
         codigo: data.codigo?.trim() ? data.codigo.trim().toUpperCase() : null,
         observacao: data.observacao?.trim() || null,
         custo: (data.custo && data.custo.trim() !== '') ? data.custo.trim().replace(',', '.') : null,
-        ...(data.custoDriver !== undefined ? { custoDriver: (data.custoDriver && data.custoDriver.trim() !== '') ? data.custoDriver.trim().replace(',', '.') : null } : {}),
+        ...(newCustoDriver !== undefined ? { custoDriver: newCustoDriver } : {}),
         ...(data.mkpPadraoDriver !== undefined ? { mkpPadraoDriver: (data.mkpPadraoDriver && data.mkpPadraoDriver.trim() !== '') ? data.mkpPadraoDriver.trim().replace(',', '.') : null } : {}),
         ...(data.fotoUrl !== undefined ? { fotoUrl: data.fotoUrl || null } : {}),
         ...(data.fotoKey !== undefined ? { fotoKey: data.fotoKey || null } : {}),
       }).where(eq(components.id, id));
+
+      // Propagate new custoDriver to all products that reference this component
+      if (newCustoDriver !== undefined) {
+        // Fetch updated component to get tipo and modelo
+        const updated = await db.select({ tipo: components.tipo, modelo: components.modelo })
+          .from(components).where(eq(components.id, id)).limit(1);
+        if (updated.length > 0) {
+          const { tipo, modelo } = updated[0];
+          const novoCusto = newCustoDriver !== null ? parseFloat(newCustoDriver) : null;
+          await propagateCustoToProducts(db, tipo, modelo ?? '', novoCusto);
+        }
+      }
+
       return { success: true };
     }),
 
