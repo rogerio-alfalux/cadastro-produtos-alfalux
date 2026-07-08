@@ -17,7 +17,7 @@ type ComponentType =
 
 interface ComponentSelectProps {
   tipo: ComponentType;
-  value: string;
+  value: string | null | undefined;
   onChange: (value: string) => void;
   onSelectComponent?: (component: { modelo: string; mkpPadraoDriver: string | null; custoDriver: string | null }) => void;
   onBlur?: () => void;
@@ -40,7 +40,7 @@ export function ComponentSelect({
 }: ComponentSelectProps) {
   // `inputValue` é o que aparece no input enquanto o usuário digita.
   // É inicializado com `value` e sincronizado quando `value` muda externamente.
-  const [inputValue, setInputValue] = useState(value);
+  const [inputValue, setInputValue] = useState(value ?? "");
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -48,7 +48,7 @@ export function ComponentSelect({
 
   // Sincroniza inputValue quando value muda externamente (ex: ao carregar produto)
   useEffect(() => {
-    setInputValue(value);
+    setInputValue(value ?? "");
   }, [value]);
 
   const { data: allComponents = [] } = trpc.components.list.useQuery(

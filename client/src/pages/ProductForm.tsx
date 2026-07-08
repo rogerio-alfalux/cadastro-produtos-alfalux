@@ -202,7 +202,7 @@ const DriverRow = ({
                   type="number"
                   step="0.01"
                   min="0"
-                  value={form[custoField] as string}
+                  value={(form[custoField] as string) ?? ''}
                   onChange={(e) => setField(custoField, e.target.value)}
                   placeholder="Custo"
                   title="Custo unitário deste driver (R$)"
@@ -257,7 +257,7 @@ const DriverExtraRow = ({ tipo, item, onChange, onRemove }: DriverExtraRowProps)
         <Input
           className="input-dark pl-7 text-sm"
           type="number" step="0.01" min="0"
-          value={item.custo}
+          value={item.custo ?? ''}
           onChange={(e) => onChange({ ...item, custo: e.target.value })}
           placeholder="Custo"
           title="Custo unitário (R$)"
@@ -834,7 +834,11 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       // Carregar drivers extras do banco
       const parseExtra = (raw: string | null | undefined): DriverExtra[] => {
         if (!raw) return [];
-        try { return JSON.parse(raw) as DriverExtra[]; } catch { return []; }
+        try {
+          const parsed = JSON.parse(raw) as DriverExtra[];
+          // Normalize null custo to empty string to avoid React controlled input warning
+          return parsed.map(d => ({ ...d, custo: d.custo ?? "", modelo: d.modelo ?? "", qtd: d.qtd ?? 1 }));
+        } catch { return []; }
       };
       setDriversExtra({
         onoff220: parseExtra((p as any).driverOnoff220Extra),
@@ -2131,7 +2135,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                               <Input
                                 className="input-dark pl-8 text-sm h-8"
                                 type="number" step="0.01" min="0"
-                                value={form[custoField] as string}
+                                value={(form[custoField] as string) ?? ''}
                                 onChange={(e) => setField(custoField, e.target.value)}
                                 placeholder="0,00"
                               />
@@ -2144,7 +2148,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                                 <Input
                                   className="input-dark pl-8 text-sm h-8 border-amber-400/30 focus:border-amber-400/60"
                                   type="number" step="0.01" min="0"
-                                  value={form[custoD1D2Field] as string}
+                                  value={(form[custoD1D2Field] as string) ?? ''}
                                   onChange={(e) => setField(custoD1D2Field, e.target.value)}
                                   placeholder="0,00"
                                 />
@@ -2155,7 +2159,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                             <Input
                               className="input-dark text-sm h-8 w-24 text-center"
                               type="number" step="0.1" min="1"
-                              value={form[mkpPField] as string}
+                              value={(form[mkpPField] as string) ?? ''}
                               onChange={(e) => setField(mkpPField, e.target.value)}
                               placeholder="ex: 4"
                             />
@@ -2165,7 +2169,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                               <Input
                                 className="input-dark text-sm h-8 w-24 text-center"
                                 type="number" step="0.1" min="1"
-                                value={form[mkpMField] as string}
+                                value={(form[mkpMField] as string) ?? ''}
                                 onChange={(e) => setField(mkpMField, e.target.value)}
                                 placeholder="ex: 3"
                               />
