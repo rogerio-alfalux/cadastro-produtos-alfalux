@@ -18,16 +18,20 @@ const COMPONENT_TYPES = [
   "MODULO_LED",
 ] as const;
 
-// Map component type → product column name
-const TYPE_TO_COLUMN: Record<string, string> = {
+// Map component type → product column name(s)
+// For types with multiple columns, use an array
+const TYPE_TO_COLUMN: Record<string, string | string[]> = {
   DRIVER_ONOFF_220: "driverOnoff220",
   DRIVER_ONOFF_BIVOLT: "driverOnoffBivolt",
   DRIVER_DIM_110V: "driverDim110v",
   DRIVER_DIM_DALI: "driverDimDali",
+  DRIVER_DIM_TRIAC_110V: "driverDimTriac110v",
+  DRIVER_DIM_TRIAC_220V: "driverDimTriac220v",
   OTICA: "otica",
   HOLDER: "holder",
   DISSIPADOR: "dissipador",
-  MODULO_LED: "moduloLed",
+  // MODULO_LED pode estar em qualquer coluna de CCT ou no campo principal
+  MODULO_LED: ["moduloLed", "moduloLed2700", "moduloLed3000", "moduloLed4000", "moduloLed5000", "moduloLedRgbw"],
 };
 
 export const componentsRouter = router({
@@ -280,11 +284,18 @@ export const componentsRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];
-      const col = TYPE_TO_COLUMN[input.tipo];
-      if (!col) return [];
+      const colDef = TYPE_TO_COLUMN[input.tipo];
+      if (!colDef) return [];
+
+      const cols = Array.isArray(colDef) ? colDef : [colDef];
+      // Build WHERE clause using Drizzle sql template with OR conditions
+      const conditions = cols.map(c => sql`${sql.raw(`\`${c}\``)} = ${input.modelo}`);
+      const whereClause = conditions.reduce((acc, cond, i) =>
+        i === 0 ? cond : sql`${acc} OR ${cond}`
+      );
 
       const rows = await db.execute(
-        sql`SELECT id, produto, sku, familia, categoria FROM products WHERE ${sql.raw(`\`${col}\``)} = ${input.modelo} ORDER BY familia ASC, produto ASC`
+        sql`SELECT id, produto, sku, familia, categoria FROM products WHERE (${whereClause}) ORDER BY familia ASC, produto ASC`
       );
       const data = (rows[0] as unknown as any[]) ?? [];
       return data.map((r: any) => ({
