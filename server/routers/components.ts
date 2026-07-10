@@ -44,51 +44,85 @@ const TYPE_TO_CUSTO_COLUMN: Record<string, string | string[]> = {
   DRIVER_DIM_TRIAC_220V: "custoDriverDimTriac220v",
 };
 
-// Propagate updated custoDriver to all products that reference this component model
+// Propagate component changes (modelo rename and/or custoDriver update) to all products
+async function propagateComponentToProducts(
+  db: Awaited<ReturnType<typeof getDb>>,
+  tipo: string,
+  oldModelo: string,
+  novoModelo: string | undefined,
+  novoCusto: number | null | undefined  // undefined = no change
+) {
+  if (!db) return;
+  const cols = TYPE_TO_COLUMN[tipo];
+  if (!cols) return;
+
+  const colList = Array.isArray(cols) ? cols : [cols];
+
+  for (const col of colList) {
+    const productField = products[col as keyof typeof products] as any;
+    if (!productField) continue;
+
+    const updatePayload: Record<string, any> = {};
+
+    // Rename modelo in product text field
+    if (novoModelo !== undefined && novoModelo !== oldModelo) {
+      updatePayload[col] = novoModelo;
+    }
+
+    // Update custo (drivers only)
+    const custoCol = TYPE_TO_CUSTO_COLUMN[tipo];
+    if (novoCusto !== undefined && custoCol && !Array.isArray(custoCol)) {
+      updatePayload[custoCol as string] = novoCusto;
+    }
+
+    if (Object.keys(updatePayload).length > 0) {
+      await db.update(products)
+        .set(updatePayload as any)
+        .where(eq(productField, oldModelo));
+    }
+
+    // Update extras JSON field (drivers and otica have extras)
+    const extraCol = col + "Extra";
+    const extraField = products[extraCol as keyof typeof products] as any;
+    if (!extraField) continue;
+
+    const allWithExtra = await db
+      .select({ id: products.id, extra: extraField })
+      .from(products)
+      .where(sql`${extraField} IS NOT NULL AND ${extraField} != ''`);
+
+    for (const row of allWithExtra) {
+      if (!row.extra) continue;
+      try {
+        const extras = JSON.parse(row.extra as string) as Array<{ modelo: string; qtd: number; custo: any }>;
+        let changed = false;
+        const fixed = extras.map(e => {
+          if (e.modelo === oldModelo) {
+            changed = true;
+            return {
+              ...e,
+              ...(novoModelo !== undefined && novoModelo !== oldModelo ? { modelo: novoModelo } : {}),
+              ...(novoCusto !== undefined ? { custo: novoCusto } : {}),
+            };
+          }
+          return e;
+        });
+        if (changed) {
+          await db.update(products).set({ [extraCol]: JSON.stringify(fixed) } as any).where(eq(products.id, row.id));
+        }
+      } catch {}
+    }
+  }
+}
+
+// Legacy alias kept for backwards compat
 async function propagateCustoToProducts(
   db: Awaited<ReturnType<typeof getDb>>,
   tipo: string,
   modelo: string,
   novoCusto: number | null
 ) {
-  if (!db) return;
-  const driverCol = TYPE_TO_COLUMN[tipo];
-  const custoCol = TYPE_TO_CUSTO_COLUMN[tipo];
-  if (!driverCol || !custoCol || Array.isArray(driverCol) || Array.isArray(custoCol)) return;
-
-  // Update main driver custo column
-  const driverField = products[driverCol as keyof typeof products] as any;
-  const custoField = products[custoCol as keyof typeof products] as any;
-  if (!driverField || !custoField) return;
-
-  await db.update(products)
-    .set({ [custoCol]: novoCusto } as any)
-    .where(eq(driverField, modelo));
-
-  // Also update extras JSON field
-  const extraCol = driverCol + "Extra";
-  const extraField = products[extraCol as keyof typeof products] as any;
-  if (!extraField) return;
-
-  const allWithExtra = await db
-    .select({ id: products.id, extra: extraField })
-    .from(products)
-    .where(sql`${extraField} IS NOT NULL AND ${extraField} != ''`);
-
-  for (const row of allWithExtra) {
-    if (!row.extra) continue;
-    try {
-      const extras = JSON.parse(row.extra as string) as Array<{ modelo: string; qtd: number; custo: any }>;
-      let changed = false;
-      const fixed = extras.map(e => {
-        if (e.modelo === modelo) { changed = true; return { ...e, custo: novoCusto }; }
-        return e;
-      });
-      if (changed) {
-        await db.update(products).set({ [extraCol]: JSON.stringify(fixed) } as any).where(eq(products.id, row.id));
-      }
-    } catch {}
-  }
+  return propagateComponentToProducts(db, tipo, modelo, undefined, novoCusto);
 }
 
 export const componentsRouter = router({
@@ -198,6 +232,20 @@ export const componentsRouter = router({
         ? ((data.custoDriver && data.custoDriver.trim() !== '') ? data.custoDriver.trim().replace(',', '.') : null)
         : undefined;
 
+      // Fetch ORIGINAL state BEFORE update (needed for propagation)
+      const modeloChanged = data.modelo !== undefined;
+      const custoChanged = newCustoDriver !== undefined;
+      let oldTipo = '';
+      let oldModelo = '';
+      if (modeloChanged || custoChanged) {
+        const before = await db.select({ tipo: components.tipo, modelo: components.modelo })
+          .from(components).where(eq(components.id, id)).limit(1);
+        if (before.length > 0) {
+          oldTipo = before[0].tipo;
+          oldModelo = before[0].modelo ?? '';
+        }
+      }
+
       await db.update(components).set({
         modelo: data.modelo?.trim(),
         codigo: data.codigo?.trim() ? data.codigo.trim().toUpperCase() : null,
@@ -209,16 +257,13 @@ export const componentsRouter = router({
         ...(data.fotoKey !== undefined ? { fotoKey: data.fotoKey || null } : {}),
       }).where(eq(components.id, id));
 
-      // Propagate new custoDriver to all products that reference this component
-      if (newCustoDriver !== undefined) {
-        // Fetch updated component to get tipo and modelo
-        const updated = await db.select({ tipo: components.tipo, modelo: components.modelo })
-          .from(components).where(eq(components.id, id)).limit(1);
-        if (updated.length > 0) {
-          const { tipo, modelo } = updated[0];
-          const novoCusto = newCustoDriver !== null ? parseFloat(newCustoDriver) : null;
-          await propagateCustoToProducts(db, tipo, modelo ?? '', novoCusto);
-        }
+      // Propagate modelo rename and/or custoDriver change to all products
+      if ((modeloChanged || custoChanged) && oldModelo) {
+        const novoModelo = modeloChanged ? (data.modelo?.trim() ?? oldModelo) : oldModelo;
+        const novoCusto = custoChanged
+          ? (newCustoDriver !== null ? parseFloat(newCustoDriver as string) : null)
+          : undefined;
+        await propagateComponentToProducts(db, oldTipo, oldModelo, novoModelo, novoCusto);
       }
 
       return { success: true };
