@@ -12,6 +12,7 @@ import BulkOpsPage from "./pages/BulkOps";
 import RevendaPage from "./pages/Revenda";
 import AccessoriesPage from "@/pages/Accessories";
 import BackupsPage from "@/pages/Backups";
+import BulkReplacePage from "@/pages/BulkReplace";
 
 function CadastrarPage() {
   return <ProductForm />;
@@ -28,6 +29,7 @@ function Router() {
         <Route path="/revenda" component={RevendaPage} />
         <Route path="/acessorios" component={AccessoriesPage} />
         <Route path="/backups" component={BackupsPage} />
+        <Route path="/substituicao-em-massa" component={BulkReplacePage} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

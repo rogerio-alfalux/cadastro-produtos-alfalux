@@ -470,3 +470,13 @@
 - [x] 871 produtos 36W-SF criados (dobro de barras Stripflex, custo +8.5%)
 - [x] 861 produtos 36W-SL criados (Stripline, só barras inteiras, custo +8.5%)
 - [x] Novos produtos NÃO expostos no endpoint público ainda
+
+## Substituição em Massa de Componentes v1
+- [x] Endpoint tRPC `components.previewReplace`: recebe tipo, componenteAtual, componenteNovo, familiaFiltro opcional — retorna lista de produtos afetados com contagem
+- [x] Endpoint tRPC `components.executeReplace`: executa a substituição em todos os produtos afetados (atualiza modelo, custo e extras JSON)
+- [x] Frontend: página "Substituição em Massa" acessível no menu de navegação (/substituicao-em-massa)
+- [x] Seleção do componente atual (ComponentSelect filtrado por tipo)
+- [x] Seleção do componente substituto (ComponentSelect filtrado pelo mesmo tipo)
+- [x] Filtro opcional por família de produto
+- [x] Preview: lista de produtos que serão afetados com nome, SKU e família
+- [x] Confirmação com botão de execução e feedback de quantos produtos foram alterados

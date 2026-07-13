@@ -436,4 +436,129 @@ export const componentsRouter = router({
       .orderBy(asc(products.familia));
     return rows.map((r: { familia: string }) => r.familia).filter(Boolean);
   }),
+
+  // ─── Preview bulk replace: show affected products ────────────────────────
+  previewReplace: publicProcedure
+    .input(
+      z.object({
+        tipo: z.enum(COMPONENT_TYPES),
+        modeloAtual: z.string().min(1),
+        familia: z.string().optional(), // optional family filter
+      })
+    )
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { total: 0, produtos: [] };
+      const colDef = TYPE_TO_COLUMN[input.tipo];
+      if (!colDef) return { total: 0, produtos: [] };
+      const cols = Array.isArray(colDef) ? colDef : [colDef];
+
+      const conditions = cols.map(c => sql`${sql.raw(`\`${c}\``)} = ${input.modeloAtual}`);
+      const whereClause = conditions.reduce((acc, cond, i) =>
+        i === 0 ? cond : sql`${acc} OR ${cond}`
+      );
+
+      const familiaFilter = input.familia?.trim() ? sql` AND familia = ${input.familia.trim()}` : sql``;
+
+      const rows = await db.execute(
+        sql`SELECT id, produto, sku, familia, categoria FROM products WHERE (${whereClause})${familiaFilter} ORDER BY familia ASC, produto ASC`
+      );
+      const data = (rows[0] as unknown as any[]) ?? [];
+      const produtos = data.map((r: any) => ({
+        id: r.id as number,
+        produto: r.produto as string,
+        sku: r.sku as string,
+        familia: r.familia as string,
+        categoria: r.categoria as string,
+      }));
+      return { total: produtos.length, produtos };
+    }),
+
+  // ─── Execute bulk replace ─────────────────────────────────────────────────
+  executeReplace: publicProcedure
+    .input(
+      z.object({
+        tipo: z.enum(COMPONENT_TYPES),
+        modeloAtual: z.string().min(1),
+        modeloNovo: z.string().min(1),
+        familia: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database unavailable");
+
+      // Fetch new component's custoDriver (if it's a driver type)
+      const newComp = await db
+        .select({ custoDriver: components.custoDriver })
+        .from(components)
+        .where(and(eq(components.tipo, input.tipo), eq(components.modelo, input.modeloNovo)))
+        .limit(1);
+      const novoCusto = newComp.length > 0 && newComp[0].custoDriver
+        ? parseFloat(newComp[0].custoDriver as string)
+        : null;
+
+      const colDef = TYPE_TO_COLUMN[input.tipo];
+      if (!colDef) throw new Error("Tipo inválido");
+      const cols = Array.isArray(colDef) ? colDef : [colDef];
+      const custoColDef = TYPE_TO_CUSTO_COLUMN[input.tipo];
+
+      const familiaFilter = input.familia?.trim() ? sql` AND familia = ${input.familia.trim()}` : sql``;
+      let totalUpdated = 0;
+
+      for (const col of cols) {
+        const updateSet: Record<string, any> = { [col]: input.modeloNovo };
+        if (custoColDef && !Array.isArray(custoColDef) && newComp.length > 0) {
+          updateSet[custoColDef as string] = novoCusto;
+        }
+
+        const productField = products[col as keyof typeof products] as any;
+        if (!productField) continue;
+
+        // Build WHERE: col = modeloAtual [AND familia = X]
+        const baseWhere = eq(productField, input.modeloAtual);
+        const whereWithFamilia = input.familia?.trim()
+          ? and(baseWhere, eq(products.familia, input.familia.trim()))
+          : baseWhere;
+
+        const result = await db.update(products)
+          .set(updateSet as any)
+          .where(whereWithFamilia);
+        totalUpdated += (result[0] as any)?.affectedRows ?? 0;
+
+        // Update extras JSON
+        const extraCol = col + "Extra";
+        const extraField = products[extraCol as keyof typeof products] as any;
+        if (!extraField) continue;
+
+        const extraCondition = familiaFilter
+          ? sql`${extraField} IS NOT NULL AND ${extraField} != ''${familiaFilter}`
+          : sql`${extraField} IS NOT NULL AND ${extraField} != ''`;
+
+        const allWithExtra = await db
+          .select({ id: products.id, extra: extraField })
+          .from(products)
+          .where(extraCondition);
+
+        for (const row of allWithExtra) {
+          if (!row.extra) continue;
+          try {
+            const extras = JSON.parse(row.extra as string) as Array<{ modelo: string; qtd: number; custo: any }>;
+            let changed = false;
+            const fixed = extras.map(e => {
+              if (e.modelo === input.modeloAtual) {
+                changed = true;
+                return { ...e, modelo: input.modeloNovo, ...(newComp.length > 0 ? { custo: novoCusto } : {}) };
+              }
+              return e;
+            });
+            if (changed) {
+              await db.update(products).set({ [extraCol]: JSON.stringify(fixed) } as any).where(eq(products.id, row.id));
+            }
+          } catch {}
+        }
+      }
+
+      return { success: true, totalUpdated };
+    }),
 });
