@@ -867,7 +867,25 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
     }
     }, [existingProduct, isDuplicate]);
 
-  // ── Quando Luminária com Lâmpada ativa: forçar SEM DRIVER e limpar temperaturas ──
+  // ── Helper: limpar todos os campos de driver ──
+  const clearAllDriverFields = () => {
+    setForm((prev) => ({
+      ...prev,
+      driverOnoff220: "", qtdDriverOnoff220: 1, driverOnoff220NaoAplicavel: false, custoDriverOnoff220: "",
+      driverOnoffBivolt: "", qtdDriverOnoffBivolt: 1, driverOnoffBivoltNaoAplicavel: false, custoDriverOnoffBivolt: "",
+      driverDim110v: "", qtdDriverDim110v: 1, driverDim110vNaoAplicavel: false, custoDriverDim110v: "",
+      driverDimDali: "", qtdDriverDimDali: 1, driverDimDaliNaoAplicavel: false, custoDriverDimDali: "",
+      driverDimTriac110v: "", qtdDriverDimTriac110v: 1, driverDimTriac110vNaoAplicavel: false, custoDriverDimTriac110v: "",
+      driverDimTriac220v: "", qtdDriverDimTriac220v: 1, driverDimTriac220vNaoAplicavel: false, custoDriverDimTriac220v: "",
+      correnteDriver: "",
+      mkpPadraoDriverOnoff220v: "", mkpPadraoDriverOnoffBivolt: "",
+      mkpPadraoDriverDim110v: "", mkpPadraoDriverDimDali: "",
+      mkpPadraoDriverDimTriac110v: "", mkpPadraoDriverDimTriac220v: "",
+    }));
+    setDriversExtra(defaultDriversExtra);
+  };
+
+  // ── Quando Luminária com Lâmpada ativa: forçar SEM DRIVER, limpar temperaturas e drivers ──
   useEffect(() => {
     if (form.moduloLampada) {
       setForm((prev) => ({
@@ -875,8 +893,19 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         semDriver: true,
         temperaturasCor: [],
       }));
+      clearAllDriverFields();
     }
-  }, [form.moduloLampada]);
+  }, [form.moduloLampada]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Quando SEM DRIVER ativado: limpar todos os campos de driver ──
+  const prevSemDriverRef = useRef(false);
+  useEffect(() => {
+    // Só limpa quando o usuário ATIVA o semDriver (false → true), não no carregamento inicial
+    if (form.semDriver && !prevSemDriverRef.current && initializedRef.current) {
+      clearAllDriverFields();
+    }
+    prevSemDriverRef.current = form.semDriver;
+  }, [form.semDriver]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Auto-inferir corrente do driver quando produto/família/módulo/semDriver mudam ──
   // Só sobrescreve se o formulário já foi inicializado (evita apagar valor salvo no banco
