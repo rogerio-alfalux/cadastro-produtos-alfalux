@@ -480,3 +480,7 @@
 - [x] Filtro opcional por família de produto
 - [x] Preview: lista de produtos que serão afetados com nome, SKU e família
 - [x] Confirmação com botão de execução e feedback de quantos produtos foram alterados
+
+## Correção de Markups — Valores Exatos
+- [x] Corrigir markup HIT para 3,15 / 2,15 (313 produtos)
+- [x] Corrigir markups BLAZE por subfamília: BLAZE E 2,75/2, BLAZE S 2,8/2, BLAZE A 2,8/2, BLAZE P 2,8/2, BLAZE H P 2,9/2, MINI BLAZE P 2,9/2, MINI BLAZE S 2,75/2 (1089 produtos)
