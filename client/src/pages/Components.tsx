@@ -28,7 +28,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, RefreshCw, Search, ChevronDown, ChevronUp, Package, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, CheckSquare2, Camera, X as XIcon, ImageIcon } from "lucide-react";
+import { Plus, Pencil, Trash2, RefreshCw, Search, ChevronDown, ChevronUp, Package, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, CheckSquare2, Camera, X as XIcon, ImageIcon, Copy } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
@@ -438,6 +438,22 @@ export default function Components() {
     setShowForm(true);
   };
 
+  const openDuplicate = (c: ComponentRow) => {
+    setEditTarget(null); // null = novo cadastro
+    setForm({
+      tipo: c.tipo as ComponentType,
+      modelo: `${c.modelo} (cópia)`,
+      codigo: "", // código vazio para evitar conflito
+      observacao: c.observacao ?? "",
+      custo: c.custo ?? "",
+      custoDriver: (c as any).custoDriver ?? "",
+      mkpPadraoDriver: (c as any).mkpPadraoDriver ?? "",
+      fotoUrl: c.fotoUrl ?? "",
+      fotoKey: c.fotoKey ?? "",
+    });
+    setShowForm(true);
+    toast.info("Componente duplicado — ajuste os campos e salve como novo.");
+  };
 
   const handleSave = () => {
     if (!form.tipo || !form.modelo.trim()) {
@@ -765,6 +781,13 @@ export default function Components() {
                             title="Editar"
                           >
                             <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => openDuplicate(c)}
+                            className="p-1.5 rounded text-muted-foreground hover:text-cyan-400 hover:bg-cyan-400/10 transition-colors"
+                            title="Duplicar componente"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => setDeleteTarget(c)}
