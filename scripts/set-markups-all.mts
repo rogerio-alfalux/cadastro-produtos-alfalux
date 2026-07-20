@@ -15,7 +15,7 @@ const markups: Record<string, { padrao: number; minimo: number }> = {
   "EASY LED POINT S": { padrao: 3.00, minimo: 2.00 },
   "EASY PRIME": { padrao: 3.00, minimo: 2.00 },
   "FLOW": { padrao: 3.00, minimo: 2.00 },
-  "HIT": { padrao: 2.00, minimo: 2.00 },
+  "HIT": { padrao: 3.15, minimo: 2.15 },
   "LEAVE": { padrao: 4.00, minimo: 3.00 },
   "LED BAR WW E": { padrao: 3.00, minimo: 2.00 },
   "LED BAR WW S": { padrao: 2.00, minimo: 2.00 },
