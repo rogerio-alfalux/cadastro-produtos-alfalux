@@ -1,8 +1,8 @@
 {
   "build_command": "pnpm run build",
   "capabilities": [
-    "server",
     "db",
+    "server",
     "user"
   ],
   "dev_command": "pnpm run dev",
@@ -14,10 +14,11 @@
   ],
   "git_remote": {
     "repo_url": "s3://vida-prod-gitrepo/webdev-git/310419663032619542/c8ZMg2fnQHfcAMKPDCkQRJ",
-    "access_key_id": "ASIAZV3A2ECZNB7WW4Q3",
-    "secret_access_key": "hgDa/RkNm6+4gvZsAC4qfAsIKdgApvuS+xMMhjzs",
-    "session_token": "IQoJb3JpZ2luX2VjELX//////////wEaCXVzLWVhc3QtMSJHMEUCIQDxGw8n0MlKd+5PJXYnuYWtuPDchaVSTUQC5yYKnsEv9wIgK2eGrI64wbRRPANWM9JjgIRpcBjVJbqM+htHUbnD/Xkq9gMIfRAEGgw2NjUzODYwOTg4NjYiDMpP8FqhcmWerDhaByrTAzLfY87SYujuiqZm5ORz7DLrFnuL2IXhsms0XpZCwznmY0TMu8NPg9tGgm9LjOIyyAP4DZPi6BojRQThiogQxVAR+vkM2WO3s5yAPIu6iiY2MZQ7DycfrvRbnKeM3jgN2o0zGMnkQT9/+1WDsbMCFTOl+vvVxFLNHZYuYyUxiPzIs6lzFkWBv06mriGF4Cx/lbJsbUEvw3jS4ZB/Vu5TyQwt+cw6BFESLCxNfjy/ZZKWgNEKrEsu2uh5uWcNRjDufhhOKS0J+czUoNkZfJH8xxElgHz4+grtvmkShzTNUjhFvTJnHZWuWBEO30rWQq/g8CWs9m1vhib6snz3+YrpAJ73ds7CxzgATA0ra5vcVJ9e4tc73kXX4p3WTdoNwXN6a+6kxHMzjbbWgC9wF9w2aHp4ankMnIpKRlE4g4Pi2lW6E/Y3QJSFjJpVHXEl9DAhLA3baWi1heehZrhG3cu5U0ccPWuU0DrnV6Yei5nfvGq1UVK7kmp0wvE+3u9HLungX98XpSiINlLUEp1+OqnX1RiXZVkOjDHz0Qs4+oFLmAkjpfTY2wOu7NNDmFRKZUI3LkmIjdg/vmvmsleI7TkTKHVJqz543sWrk8mQOxHcCQ9MoPkkMNX5ndAGOp0BxX7Lc2NlzExTBdcvXYG5cABYFsDMa9thxywTiKboY8r6Te50uHRjvSFJsO8N0pqU1a5/6kKKdH3B7/ESsDQQ/lI2li8598vTxsbWW+mx7/QG9XIk/ikBGdQ9Qy3TQNOFvNQ+qRdnN2QnAn4fB06/GvlkhHNvlM2l2mqEjBJnaq3dkYO2lEXlt+Zl9CvBkiVucBvmxtr0Yismv26VRA==",
-    "expiration": "2026-05-16T08:06:45.000Z"
+    "access_key_id": "ASIAZV3A2ECZH2NZ3ORP",
+    "secret_access_key": "WPxva+2aT4eG4551z0mO7vlUvItQBNxu89ZMwgWb",
+    "session_token": "IQoJb3JpZ2luX2VjEKb//////////wEaCXVzLWVhc3QtMSJIMEYCIQCFLlY04Qn+fL8ySgBrXvQm/Y/QxHXDQdvbak/AFh0FeQIhAL/em2KPrQ5Pfb3vwO2AQ1VKcbf6mPyys22HPzHZ1chWKvYDCG8QBBoMNjY1Mzg2MDk4ODY2IgyJfmg6lW1rmZV8C+oq0wMdZmeqsuBK3YdrMIG1FqUeZ62gvrN/yme4GUczAfjOfnc0E/zZgnGQs3kZDbo5IuoXBHm0KZp9bqGxsTuGQalY7VA1qGmKxiCW5DQmmQGnjEiem7a3bUv8AboLrFO/4fxd71tVHuZEMCmTpIEDnj/dC+S3XvakWvme+F+5Z+T/nIkBSnQKpYHysPuUdpvw/ClCYNXPueEB/SBsYGB3lzIwsVWDJsqo7pU8WWABbVb0BLWD1h5LhAJO4MGOg6KrF5bkCbB6NrcZtyIcqOiMMMFOB0eUEDd531pYU0FjHbNx6ivnFjjuQZNUSedCgaiA/FKNTpb6edc7G/NaFTbde1wjGS6VxuJg48h+f6L9e11ZyTlLAc8cZCKAi3CrY9P3QWOTu+/sAF86l/4cNeVv9nPEl1+USNGhagjXDe04d3kKMu13fx89pIap7MZ0aU5VozLoxW7AhI1JhNMBW/dz0V4LYJyZ3pRNvwZ4m+rd/bN7qVEe+13heAEZ1jQdPiRUCe8zWIhHH+4lyuSQnj04UG+v7YeTo+x86mvU4dLVCPiLbDjdQjuduSSa0NpqkXaxXq8f3ucfHu4SbXOgvU3pfWL5u8OwYVvdEu0sfWOuNF+Gv9ojqzDkrezSBjqcAeJbVt3wkPk3qx7oia3lWkHy2hgzUXnD8RT84dByIa08+qapYJUGioZpNz5exurTFRVkTv5gNG87npZouZ/yFpMGEEfaWIJ14cc8GhcajnqL4ZJRTs5blgqJ3QaLLH+aUgZXBm6pJc/wP3ilLUJzyRTpxjSbPukwwWXR4lrBjYkRvjuK9HpDpYJAgC4RjLiTULKHxvO+SSHdlC9RaA==",
+    "expiration": "2026-07-18T18:02:12.000Z",
+    "backend": "GIT_BACKEND_S3"
   },
   "name": "cadastro-produtos-alfalux",
   "path": "/home/ubuntu/cadastro-produtos-alfalux",
