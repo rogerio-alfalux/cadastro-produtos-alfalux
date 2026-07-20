@@ -405,33 +405,41 @@ export default function ProductList() {
                       {/* Drivers */}
                       <td className="px-4 py-3 hidden lg:table-cell">
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-[10px] text-green-400/80 flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-green-400/60 inline-block" />
-                            ON/OFF
-                          </span>
-                          {!product.driverDim110vNaoAplicavel && product.driverDim110v && (
-                            <span className="text-[10px] text-blue-400/80 flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-blue-400/60 inline-block" />
-                              DIM 1-10V
-                            </span>
-                          )}
-                          {!product.driverDimDaliNaoAplicavel && product.driverDimDali && (
-                            <span className="text-[10px] text-purple-400/80 flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-purple-400/60 inline-block" />
-                              DALI
-                            </span>
-                          )}
-                          {!product.driverDimTriac110vNaoAplicavel && product.driverDimTriac110v && (
-                            <span className="text-[10px] text-orange-400/80 flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-orange-400/60 inline-block" />
-                              TRIAC 110V
-                            </span>
-                          )}
-                          {!product.driverDimTriac220vNaoAplicavel && product.driverDimTriac220v && (
-                            <span className="text-[10px] text-amber-400/80 flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400/60 inline-block" />
-                              TRIAC 220V
-                            </span>
+                          {product.semDriver || product.moduloLampada ? (
+                            <span className="text-[10px] text-muted-foreground italic">—</span>
+                          ) : (
+                            <>
+                              {(product.driverOnoff220 && product.driverOnoff220 !== 'NÃO APLICÁVEL') || (product.driverOnoffBivolt && product.driverOnoffBivolt !== 'NÃO APLICÁVEL') ? (
+                                <span className="text-[10px] text-green-400/80 flex items-center gap-1">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-green-400/60 inline-block" />
+                                  ON/OFF
+                                </span>
+                              ) : null}
+                              {!product.driverDim110vNaoAplicavel && product.driverDim110v && product.driverDim110v !== 'NÃO APLICÁVEL' && (
+                                <span className="text-[10px] text-blue-400/80 flex items-center gap-1">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-blue-400/60 inline-block" />
+                                  DIM 1-10V
+                                </span>
+                              )}
+                              {!product.driverDimDaliNaoAplicavel && product.driverDimDali && product.driverDimDali !== 'NÃO APLICÁVEL' && (
+                                <span className="text-[10px] text-purple-400/80 flex items-center gap-1">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-purple-400/60 inline-block" />
+                                  DALI
+                                </span>
+                              )}
+                              {!product.driverDimTriac110vNaoAplicavel && product.driverDimTriac110v && product.driverDimTriac110v !== 'NÃO APLICÁVEL' && (
+                                <span className="text-[10px] text-orange-400/80 flex items-center gap-1">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-orange-400/60 inline-block" />
+                                  TRIAC 110V
+                                </span>
+                              )}
+                              {!product.driverDimTriac220vNaoAplicavel && product.driverDimTriac220v && product.driverDimTriac220v !== 'NÃO APLICÁVEL' && (
+                                <span className="text-[10px] text-amber-400/80 flex items-center gap-1">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400/60 inline-block" />
+                                  TRIAC 220V
+                                </span>
+                              )}
+                            </>
                           )}
                         </div>
                       </td>
