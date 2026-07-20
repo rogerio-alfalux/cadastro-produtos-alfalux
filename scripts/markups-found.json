@@ -1,0 +1,50 @@
+{
+  "BLAZE": {
+    "mkp_padrao": 3.0,
+    "mkp_minimo": 2.0
+  },
+  "EASY LED POINT": {
+    "mkp_padrao": 3.0,
+    "mkp_minimo": null
+  },
+  "EASY PRIME": {
+    "mkp_padrao": 3.0,
+    "mkp_minimo": 2.0
+  },
+  "FLOW": {
+    "mkp_padrao": 3.0,
+    "mkp_minimo": 2.0
+  },
+  "HIT": {
+    "mkp_padrao": 2.0,
+    "mkp_minimo": 1.0
+  },
+  "LEAVE": {
+    "mkp_padrao": 4.0,
+    "mkp_minimo": null
+  },
+  "LED BAR WW E": {
+    "mkp_padrao": 3.0,
+    "mkp_minimo": null
+  },
+  "LED BAR WW S": {
+    "mkp_padrao": 2.0,
+    "mkp_minimo": null
+  },
+  "ORBITAL": {
+    "mkp_padrao": 3.0,
+    "mkp_minimo": null
+  },
+  "SHARP": {
+    "mkp_padrao": 3.0,
+    "mkp_minimo": 2.0
+  },
+  "SKYLINE": {
+    "mkp_padrao": 3.0,
+    "mkp_minimo": 2.0
+  },
+  "SOFT": {
+    "mkp_padrao": 3.0,
+    "mkp_minimo": null
+  }
+}
