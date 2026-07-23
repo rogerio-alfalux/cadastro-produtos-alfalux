@@ -4,7 +4,6 @@ import * as XLSX from "xlsx";
 import { storagePut, storageGetSignedUrl } from "./storage";
 import { bulkInsertProducts, listProducts, getDb } from "./db";
 import { components as componentsTable } from "../drizzle/schema";
-import { inArray } from "drizzle-orm";
 
 const router = express.Router();
 
@@ -489,30 +488,21 @@ router.get("/all", async (_req, res) => {
 
     const { items } = await listProducts({ limit: 10000, offset: 0 });
 
-    // Buscar todos os drivers da tabela components para lookup do campo codigo (EQ)
-    // Cria um Map de modelo (uppercase) -> codigo para uso no makeDriver
+    // Buscar TODOS os componentes da tabela components para lookup do campo codigo (EQ/CP)
+    // Inclui drivers, óticas, holders, dissipadores e módulos LED
     const driverCodigoMap = new Map<string, string | null>();
     try {
       const db = await getDb();
       if (db) {
-        const driverTipos = [
-          "DRIVER_ONOFF_220",
-          "DRIVER_ONOFF_BIVOLT",
-          "DRIVER_DIM_110V",
-          "DRIVER_DIM_DALI",
-          "DRIVER_DIM_TRIAC_110V",
-          "DRIVER_DIM_TRIAC_220V",
-        ] as const;
-        const allDrivers = await db
+        const allComponents = await db
           .select({ modelo: componentsTable.modelo, codigo: componentsTable.codigo })
-          .from(componentsTable)
-          .where(inArray(componentsTable.tipo, driverTipos as any));
-        for (const d of allDrivers) {
-          driverCodigoMap.set(d.modelo.trim().toUpperCase(), d.codigo ?? null);
+          .from(componentsTable);
+        for (const d of allComponents) {
+          if (d.modelo) driverCodigoMap.set(d.modelo.trim().toUpperCase(), d.codigo ?? null);
         }
       }
     } catch (err) {
-      console.warn("[products/all] Falha ao buscar códigos de drivers:", err);
+      console.warn("[products/all] Falha ao buscar códigos de componentes:", err);
       // Não bloqueia o endpoint — makeDriver usará extractEqCode como fallback
     }
 
@@ -716,7 +706,20 @@ router.get("/all", async (_req, res) => {
       result.ledModuleQtd = p.moduloLed ? qtdLed : null;
       result.holderQtd = p.holderNaoAplicavel ? null : qtdHolder;
 
-      // ── Módulo LED por CCT ────────────────────────────────────────────────
+      // ── Códigos EQ/CP de ótica, holder e dissipador ───────────────────────────────────────────
+      const lookupCode = (name: string | null | undefined): string | null => {
+        if (!name) return null;
+        const key = name.trim().toUpperCase();
+        if (key === 'NÃO APLICÁVEL' || key === 'NAO APLICAVEL' || key === 'NÃO ESPECIFICADO') return null;
+        const cached = driverCodigoMap.get(key);
+        return cached !== undefined ? cached : extractEqCode(name);
+      };
+      result.oticaCode = p.oticaNaoAplicavel ? null : lookupCode(p.otica);
+      result.holderCode = p.holderNaoAplicavel ? null : lookupCode(p.holder);
+      result.dissipadorCode = p.dissipadorNaoAplicavel ? null : lookupCode(p.dissipador);
+      result.ledModuleCode = p.moduloLed ? lookupCode(p.moduloLed) : null;
+
+      // ── Módulo LED por CCT ────────────────────────────────────────────────────────────────────────────────────
       const ml2700 = (p as any).moduloLed2700 as string | null;
       const ml3000 = (p as any).moduloLed3000 as string | null;
       const ml4000 = (p as any).moduloLed4000 as string | null;
@@ -731,6 +734,11 @@ router.get("/all", async (_req, res) => {
       result.ledModuleQtd3000 = ml3000 ? (Number((p as any).qtdModuloLed3000) || 1) : null;
       result.ledModuleQtd4000 = ml4000 ? (Number((p as any).qtdModuloLed4000) || 1) : null;
       result.ledModuleQtd5000 = ml5000 ? (Number((p as any).qtdModuloLed5000) || 1) : null;
+      // Códigos EQ/CP dos módulos LED por CCT
+      result.ledModuleCode2700 = ml2700 ? lookupCode(ml2700) : null;
+      result.ledModuleCode3000 = ml3000 ? lookupCode(ml3000) : null;
+      result.ledModuleCode4000 = ml4000 ? lookupCode(ml4000) : null;
+      result.ledModuleCode5000 = ml5000 ? lookupCode(ml5000) : null;
 
       // Derivar temperaturasCor automaticamente dos módulos preenchidos
       // Se o produto usa o novo modelo CCT, sobrescreve o campo temperaturasCor
@@ -747,6 +755,7 @@ router.get("/all", async (_req, res) => {
       result.moduloRgbw = !!(p as any).moduloRgbw;
       result.moduloLampada = !!(p as any).moduloLampada;
       result.moduloLedRgbw = (p as any).moduloLedRgbw || null;
+      result.moduloLedRgbwCode = (p as any).moduloLedRgbw ? lookupCode((p as any).moduloLedRgbw) : null;
       result.qtdModuloLedRgbw = (p as any).qtdModuloLedRgbw ? Number((p as any).qtdModuloLedRgbw) : null;
 
       // Campos de preço por metro linear para categoria PERFIS
