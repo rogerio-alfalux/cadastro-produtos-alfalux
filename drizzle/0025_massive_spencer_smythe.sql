@@ -1,1 +1,0 @@
-ALTER TABLE `products` ADD `driverOnoff220NaoAplicavel` boolean DEFAULT false NOT NULL;

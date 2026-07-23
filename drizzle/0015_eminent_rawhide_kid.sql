@@ -1,1 +1,0 @@
-ALTER TABLE `accessories` ADD `observacoes` text;

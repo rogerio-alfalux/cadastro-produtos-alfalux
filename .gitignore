@@ -112,3 +112,21 @@ temp/
 # Manus version file (auto-generated, not part of source)
 client/public/__manus__/version.json
 .project-config.json
+
+# Temporary analysis scripts
+*.py
+*.mjs
+executar_sqls_luminarias.mjs
+scripts_old/
+
+# Temporary files at root (may be corrupted)
+apply_precos.js
+check_virgo.ts
+test_write_36679
+*.py
+*.mjs
+*.sh
+
+# Drizzle migration SQL files (generated, not needed in git)
+drizzle/*.sql
+drizzle/meta/
