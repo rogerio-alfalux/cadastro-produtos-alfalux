@@ -702,6 +702,10 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
   // Flag to ensure the form is only initialized once from the server data,
   // preventing tRPC re-fetches from overwriting user edits
   const initializedRef = useRef(false);
+  // Ref que rastreia o último valor de correnteDriver inferido automaticamente.
+  // Declarada aqui (antes do useEffect de inicialização) para que possa ser
+  // inicializada com o valor do banco ao carregar um produto existente.
+  const correnteInferidaRef = useRef<string | null>(null);
   const isEdit = !!editId;
   const isDuplicate = !!duplicarDeId;
 
@@ -864,6 +868,11 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         setForm(baseForm);
         if (existingProduct.fotoUrl) setPhotoPreview(existingProduct.fotoUrl);
       }
+      // Inicializar correnteInferidaRef com o valor salvo no banco.
+      // Isso garante que a auto-inferência não sobrescreva um valor editado manualmente
+      // ao reabrir o formulário: a proteção compara o valor atual com o último inferido,
+      // e se forem diferentes, preserva o valor do usuário.
+      correnteInferidaRef.current = (p as any).correnteDriver || "";
     }
     }, [existingProduct, isDuplicate]);
 
@@ -910,7 +919,8 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
   // ── Auto-inferir corrente do driver quando produto/família/módulo/semDriver mudam ──
   // Só sobrescreve se o formulário já foi inicializado (evita apagar valor salvo no banco
   // durante o carregamento inicial) E se o usuário não preencheu manualmente o campo.
-  const correnteInferidaRef = useRef<string | null>(null);
+  // NOTA: correnteInferidaRef é declarado acima (junto com initializedRef) e inicializado
+  // com o valor do banco no useEffect de carregamento do produto existente.
   useEffect(() => {
     // Aguarda inicialização do formulário para não sobrescrever valor do banco
     if ((isEdit || isDuplicate) && !initializedRef.current) return;

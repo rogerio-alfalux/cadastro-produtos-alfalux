@@ -484,3 +484,8 @@
 ## Correção de Markups — Valores Exatos
 - [x] Corrigir markup HIT para 3,15 / 2,15 (313 produtos)
 - [x] Corrigir markups BLAZE por subfamília: BLAZE E 2,75/2, BLAZE S 2,8/2, BLAZE A 2,8/2, BLAZE P 2,8/2, BLAZE H P 2,9/2, MINI BLAZE P 2,9/2, MINI BLAZE S 2,75/2 (1089 produtos)
+
+## Bug Fix v41 — Campo "Corrente do Driver" perde valor ao salvar e reabrir
+- [x] Causa raiz: `correnteInferidaRef.current` era `null` na primeira execução do useEffect de auto-inferência após carregar o produto existente, fazendo a proteção contra sobrescrita falhar
+- [x] Correção: mover declaração de `correnteInferidaRef` para antes do useEffect de inicialização e inicializá-la com o valor do banco (`p.correnteDriver || ""`) ao carregar produto existente
+- [x] Agora a proteção funciona: se o valor inferido for diferente do valor salvo pelo usuário, preserva o valor do usuário
