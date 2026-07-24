@@ -702,10 +702,10 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
   // Flag to ensure the form is only initialized once from the server data,
   // preventing tRPC re-fetches from overwriting user edits
   const initializedRef = useRef(false);
-  // Ref que rastreia o último valor de correnteDriver inferido automaticamente.
-  // Declarada aqui (antes do useEffect de inicialização) para que possa ser
-  // inicializada com o valor do banco ao carregar um produto existente.
-  const correnteInferidaRef = useRef<string | null>(null);
+  // Flag que indica se o usuário editou manualmente o campo correnteDriver.
+  // Quando true, a auto-inferência não sobrescreve o valor do usuário.
+  // É resetada para false ao inicializar o formulário com dados do banco.
+  const correnteEditadaManualmenteRef = useRef(false);
   const isEdit = !!editId;
   const isDuplicate = !!duplicarDeId;
 
@@ -868,11 +868,18 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         setForm(baseForm);
         if (existingProduct.fotoUrl) setPhotoPreview(existingProduct.fotoUrl);
       }
-      // Inicializar correnteInferidaRef com o valor salvo no banco.
-      // Isso garante que a auto-inferência não sobrescreva um valor editado manualmente
-      // ao reabrir o formulário: a proteção compara o valor atual com o último inferido,
-      // e se forem diferentes, preserva o valor do usuário.
-      correnteInferidaRef.current = (p as any).correnteDriver || "";
+      // Ao carregar produto existente, verificar se o valor salvo no banco
+      // é diferente do que seria inferido automaticamente.
+      // Se for diferente, significa que o usuário editou manualmente → preservar.
+      const correnteSalva = (p as any).correnteDriver || "";
+      const correnteQueSeriaInferida = inferirCorrenteDriver({
+        produto: (p as any).produto || "",
+        familia: (p as any).familia || "",
+        moduloLed: (p as any).moduloLed || "",
+        semDriver: Boolean((p as any).semDriver),
+      });
+      // Se o valor salvo é diferente do inferido, o usuário editou manualmente
+      correnteEditadaManualmenteRef.current = correnteSalva !== (correnteQueSeriaInferida ?? "");
     }
     }, [existingProduct, isDuplicate]);
 
@@ -918,30 +925,19 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
 
   // ── Auto-inferir corrente do driver quando produto/família/módulo/semDriver mudam ──
   // Só sobrescreve se o formulário já foi inicializado (evita apagar valor salvo no banco
-  // durante o carregamento inicial) E se o usuário não preencheu manualmente o campo.
-  // NOTA: correnteInferidaRef é declarado acima (junto com initializedRef) e inicializado
-  // com o valor do banco no useEffect de carregamento do produto existente.
+  // durante o carregamento inicial) E se o usuário não editou manualmente o campo.
   useEffect(() => {
     // Aguarda inicialização do formulário para não sobrescrever valor do banco
     if ((isEdit || isDuplicate) && !initializedRef.current) return;
+    // Se o usuário editou manualmente, não sobrescreve
+    if (correnteEditadaManualmenteRef.current) return;
     const corrente = inferirCorrenteDriver({
       produto: form.produto,
       familia: form.familia,
       moduloLed: form.moduloLed,
       semDriver: form.semDriver,
     });
-    // Só atualiza se o valor atual for igual ao que foi inferido anteriormente
-    // (ou seja, o usuário não editou manualmente)
-    setForm((prev) => {
-      const prevInferido = correnteInferidaRef.current;
-      // Se o valor atual é diferente do último inferido, o usuário editou → não sobrescreve
-      if (prevInferido !== null && prev.correnteDriver !== prevInferido) {
-        correnteInferidaRef.current = corrente ?? "";
-        return prev;
-      }
-      correnteInferidaRef.current = corrente ?? "";
-      return { ...prev, correnteDriver: corrente ?? "" };
-    });
+    setForm((prev) => ({ ...prev, correnteDriver: corrente ?? "" }));
   }, [form.produto, form.familia, form.moduloLed, form.semDriver, isEdit, isDuplicate]);
 
   const utils = trpc.useUtils();
@@ -1775,7 +1771,10 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                 </div>
                 <Input
                   value={form.correnteDriver}
-                  onChange={(e) => setForm((prev) => ({ ...prev, correnteDriver: e.target.value }))}
+                  onChange={(e) => {
+                    correnteEditadaManualmenteRef.current = true;
+                    setForm((prev) => ({ ...prev, correnteDriver: e.target.value }));
+                  }}
                   placeholder="ex: programar em 350mA"
                   className="font-mono text-sm text-blue-300 bg-blue-900/20 border-blue-500/30 placeholder:text-muted-foreground/40 focus-visible:ring-blue-500/40"
                 />

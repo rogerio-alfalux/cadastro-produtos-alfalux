@@ -489,3 +489,10 @@
 - [x] Causa raiz: `correnteInferidaRef.current` era `null` na primeira execução do useEffect de auto-inferência após carregar o produto existente, fazendo a proteção contra sobrescrita falhar
 - [x] Correção: mover declaração de `correnteInferidaRef` para antes do useEffect de inicialização e inicializá-la com o valor do banco (`p.correnteDriver || ""`) ao carregar produto existente
 - [x] Agora a proteção funciona: se o valor inferido for diferente do valor salvo pelo usuário, preserva o valor do usuário
+
+## Bug Fix v42 — Campo "Corrente do Driver" preservado ao reabrir formulário
+
+- [x] Substituir lógica de `correnteInferidaRef` por flag `correnteEditadaManualmenteRef`
+- [x] No useEffect de inicialização: comparar valor do banco com valor inferido para detectar edição manual
+- [x] No onChange do campo: setar flag como true quando usuário digitar
+- [x] No useEffect de auto-inferência: retornar imediatamente se flag for true
