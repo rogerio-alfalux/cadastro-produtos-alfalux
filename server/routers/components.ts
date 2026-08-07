@@ -482,6 +482,7 @@ export const componentsRouter = router({
         modeloAtual: z.string().min(1),
         modeloNovo: z.string().min(1),
         familia: z.string().optional(),
+        productIds: z.array(z.number()).optional(), // se fornecido, substitui apenas nesses IDs
       })
     )
     .mutation(async ({ input }) => {
@@ -517,13 +518,17 @@ export const componentsRouter = router({
 
         // Build WHERE: col = modeloAtual [AND familia = X]
         const baseWhere = eq(productField, input.modeloAtual);
-        const whereWithFamilia = input.familia?.trim()
-          ? and(baseWhere, eq(products.familia, input.familia.trim()))
-          : baseWhere;
+        let whereClause: any = baseWhere;
+        if (input.familia?.trim()) {
+          whereClause = and(whereClause, eq(products.familia, input.familia.trim()));
+        }
+        if (input.productIds && input.productIds.length > 0) {
+          whereClause = and(whereClause, inArray(products.id, input.productIds));
+        }
 
         const result = await db.update(products)
           .set(updateSet as any)
-          .where(whereWithFamilia);
+          .where(whereClause);
         totalUpdated += (result[0] as any)?.affectedRows ?? 0;
 
         // Update extras JSON
@@ -538,7 +543,11 @@ export const componentsRouter = router({
         const allWithExtra = await db
           .select({ id: products.id, extra: extraField })
           .from(products)
-          .where(extraCondition);
+          .where(
+            input.productIds && input.productIds.length > 0
+              ? and(extraCondition, inArray(products.id, input.productIds))
+              : extraCondition
+          );
 
         for (const row of allWithExtra) {
           if (!row.extra) continue;

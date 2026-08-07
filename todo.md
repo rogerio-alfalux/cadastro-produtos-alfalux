@@ -502,3 +502,11 @@
 - [x] Causa: `fotoUrl: form.fotoUrl || undefined` enviava `undefined` quando foto era removida (string vazia), fazendo o servidor ignorar o campo no UPDATE
 - [x] Correção: `fotoUrl: form.fotoUrl !== "" ? form.fotoUrl : null` — envia null explicitamente para limpar a foto no banco
 - [x] Schema Zod do update atualizado para aceitar `z.string().nullable().optional()` em fotoUrl e fotoKey
+
+## Feature v44 — Seleção granular de produtos na tela de Substituição
+
+- [x] Após clicar em "Ver produtos afetados", exibir lista de produtos com checkboxes (todos marcados por padrão)
+- [x] Permitir marcar/desmarcar produtos individuais ou usar "Selecionar todos / Desmarcar todos"
+- [x] Botão "Aplicar substituição" só aplica nos produtos selecionados (não em todos)
+- [x] Endpoint `components.executeReplace` atualizado para aceitar lista opcional de IDs específicos (`productIds`)
+- [x] Se `productIds` não for passado, comportamento atual é mantido (substitui em todos)
