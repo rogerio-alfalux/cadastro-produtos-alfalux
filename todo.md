@@ -496,3 +496,9 @@
 - [x] No useEffect de inicialização: comparar valor do banco com valor inferido para detectar edição manual
 - [x] No onChange do campo: setar flag como true quando usuário digitar
 - [x] No useEffect de auto-inferência: retornar imediatamente se flag for true
+
+## Bug Fix v43 — Foto do produto não salva ao remover/alterar
+
+- [x] Causa: `fotoUrl: form.fotoUrl || undefined` enviava `undefined` quando foto era removida (string vazia), fazendo o servidor ignorar o campo no UPDATE
+- [x] Correção: `fotoUrl: form.fotoUrl !== "" ? form.fotoUrl : null` — envia null explicitamente para limpar a foto no banco
+- [x] Schema Zod do update atualizado para aceitar `z.string().nullable().optional()` em fotoUrl e fotoKey
