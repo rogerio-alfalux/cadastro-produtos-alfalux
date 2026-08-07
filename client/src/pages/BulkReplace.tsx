@@ -24,7 +24,7 @@ const TIPO_LABELS: Record<string, string> = {
 
 const TIPOS = Object.keys(TIPO_LABELS) as Array<keyof typeof TIPO_LABELS>;
 
-type Step = "configure" | "preview" | "done";
+type Step = "configure" | "confirm" | "done";
 
 export default function BulkReplace() {
   const [tipo, setTipo] = useState<string>("");
@@ -33,25 +33,24 @@ export default function BulkReplace() {
   const [familia, setFamilia] = useState("");
   const [step, setStep] = useState<Step>("configure");
   const [result, setResult] = useState<{ total: number } | null>(null);
-  // IDs selecionados para substituição (null = todos)
-  const [selectedIds, setSelectedIds] = useState<Set<number> | null>(null);
+  // IDs selecionados para substituição
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   const { data: familias } = trpc.components.families.useQuery();
 
-  // Preview query — only runs when step is "preview"
-  const previewEnabled = step === "preview" && !!tipo && !!modeloAtual;
-  const { data: preview, isLoading: previewLoading } = trpc.components.previewReplace.useQuery(
+  // Busca os produtos afetados assim que tipo + modeloAtual + família estão preenchidos
+  const productListEnabled = !!tipo && !!modeloAtual && !!familia;
+  const { data: productList, isLoading: productListLoading } = trpc.components.previewReplace.useQuery(
     { tipo: tipo as any, modeloAtual, familia: familia || undefined },
-    { enabled: previewEnabled }
+    { enabled: productListEnabled }
   );
 
-  // Inicializar todos os produtos como selecionados quando o preview carrega
+  // Quando a lista de produtos carrega, selecionar todos por padrão
   useEffect(() => {
-    if (preview && preview.produtos) {
-      setSelectedIds(new Set(preview.produtos.map((p) => p.id)));
+    if (productList && productList.produtos) {
+      setSelectedIds(new Set(productList.produtos.map((p) => p.id)));
     }
-  }, [preview]);
-
+  }, [productList]);
 
   const executeMutation = trpc.components.executeReplace.useMutation({
     onSuccess: (data) => {
@@ -64,23 +63,22 @@ export default function BulkReplace() {
     },
   });
 
-  const canPreview = !!tipo && !!modeloAtual && !!modeloNovo && modeloAtual !== modeloNovo;
+  const canConfirm = !!tipo && !!modeloAtual && !!modeloNovo && modeloAtual !== modeloNovo;
+
+  // Se não há família selecionada, a seleção de produtos não se aplica — aplica em todos
+  const applyToAll = !familia;
 
   const allSelected = useMemo(() => {
-    if (!preview || !selectedIds) return false;
-    return preview.produtos.every((p: any) => selectedIds.has(p.id));
-  }, [preview, selectedIds]);
+    if (!productList) return false;
+    return productList.produtos.every((p) => selectedIds.has(p.id));
+  }, [productList, selectedIds]);
 
-  const someSelected = useMemo(() => {
-    if (!preview || !selectedIds) return false;
-    return preview.produtos.some((p: any) => selectedIds.has(p.id));
-  }, [preview, selectedIds]);
-
-  const selectedCount = selectedIds?.size ?? 0;
+  const selectedCount = selectedIds.size;
+  const totalCount = productList?.total ?? 0;
 
   function toggleProduct(id: number) {
     setSelectedIds((prev) => {
-      const next = new Set(prev ?? []);
+      const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
@@ -88,11 +86,11 @@ export default function BulkReplace() {
   }
 
   function toggleAll() {
-    if (!preview) return;
+    if (!productList) return;
     if (allSelected) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(preview.produtos.map((p: any) => p.id)));
+      setSelectedIds(new Set(productList.produtos.map((p) => p.id)));
     }
   }
 
@@ -103,17 +101,19 @@ export default function BulkReplace() {
     setFamilia("");
     setStep("configure");
     setResult(null);
-    setSelectedIds(null);
+    setSelectedIds(new Set());
   }
 
   function handleExecute() {
-    const ids = selectedIds ? Array.from(selectedIds) : undefined;
+    // Se não há família, aplica em todos (sem filtro de IDs)
+    // Se há família, aplica apenas nos IDs selecionados
+    const ids = familia && selectedIds.size > 0 ? Array.from(selectedIds) : undefined;
     executeMutation.mutate({
       tipo: tipo as any,
       modeloAtual,
       modeloNovo,
       familia: familia || undefined,
-      productIds: ids && ids.length > 0 ? ids : undefined,
+      productIds: ids,
     });
   }
 
@@ -126,6 +126,7 @@ export default function BulkReplace() {
         </p>
       </div>
 
+      {/* Resultado final */}
       {step === "done" && result && (
         <Card className="border-green-500/40 bg-green-500/10">
           <CardContent className="pt-6">
@@ -145,12 +146,14 @@ export default function BulkReplace() {
         </Card>
       )}
 
+      {/* Formulário de configuração */}
       {step !== "done" && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">1. Configure a substituição</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
+
             {/* Tipo de componente */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
@@ -162,8 +165,8 @@ export default function BulkReplace() {
                   setTipo(v);
                   setModeloAtual("");
                   setModeloNovo("");
-                  setStep("configure");
-                  setSelectedIds(null);
+                  setFamilia("");
+                  setSelectedIds(new Set());
                 }}
               >
                 <SelectTrigger className="w-full">
@@ -171,9 +174,7 @@ export default function BulkReplace() {
                 </SelectTrigger>
                 <SelectContent>
                   {TIPOS.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {TIPO_LABELS[t]}
-                    </SelectItem>
+                    <SelectItem key={t} value={t}>{TIPO_LABELS[t]}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -188,7 +189,11 @@ export default function BulkReplace() {
                 <ComponentSelect
                   tipo={tipo as any}
                   value={modeloAtual}
-                  onChange={(v: string) => { setModeloAtual(v); setStep("configure"); setSelectedIds(null); }}
+                  onChange={(v: string) => {
+                    setModeloAtual(v);
+                    setFamilia("");
+                    setSelectedIds(new Set());
+                  }}
                   placeholder={`Buscar ${TIPO_LABELS[tipo]}...`}
                 />
               </div>
@@ -203,7 +208,7 @@ export default function BulkReplace() {
                 <ComponentSelect
                   tipo={tipo as any}
                   value={modeloNovo}
-                  onChange={(v: string) => { setModeloNovo(v); setStep("configure"); setSelectedIds(null); }}
+                  onChange={(v: string) => setModeloNovo(v)}
                   placeholder={`Buscar ${TIPO_LABELS[tipo]}...`}
                 />
                 {modeloNovo && modeloNovo === modeloAtual && (
@@ -212,15 +217,21 @@ export default function BulkReplace() {
               </div>
             )}
 
-            {/* Filtro de família (opcional) */}
-            {tipo && modeloAtual && modeloNovo && (
+            {/* Filtro de família */}
+            {tipo && modeloAtual && modeloNovo && modeloAtual !== modeloNovo && (
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                  Filtrar por família <span className="text-xs normal-case font-normal">(opcional — deixe em branco para substituir em todos os produtos)</span>
+                  Filtrar por família{" "}
+                  <span className="text-xs normal-case font-normal">
+                    (opcional — deixe em branco para substituir em todos os produtos)
+                  </span>
                 </label>
                 <Select
                   value={familia || "__all__"}
-                  onValueChange={(v) => { setFamilia(v === "__all__" ? "" : v); setStep("configure"); setSelectedIds(null); }}
+                  onValueChange={(v) => {
+                    setFamilia(v === "__all__" ? "" : v);
+                    setSelectedIds(new Set());
+                  }}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Todas as famílias" />
@@ -235,150 +246,115 @@ export default function BulkReplace() {
               </div>
             )}
 
-            {canPreview && step === "configure" && (
-              <Button
-                className="w-full"
-                onClick={() => setStep("preview")}
-              >
-                Ver produtos afetados →
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Preview com seleção granular */}
-      {step === "preview" && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center justify-between">
-              <span>2. Selecione os produtos para substituir</span>
-              {!previewLoading && preview && (
-                <Badge variant={selectedCount > 0 ? "default" : "secondary"}>
-                  {selectedCount} / {preview.total} selecionado(s)
-                </Badge>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Summary */}
-            <div className="rounded-lg bg-muted/40 p-4 space-y-2 text-sm">
-              <div className="flex gap-2">
-                <span className="text-muted-foreground w-28 shrink-0">Tipo:</span>
-                <span className="font-medium">{TIPO_LABELS[tipo]}</span>
-              </div>
-              <div className="flex gap-2">
-                <span className="text-muted-foreground w-28 shrink-0">Atual:</span>
-                <span className="font-medium text-destructive/80 break-all">{modeloAtual}</span>
-              </div>
-              <div className="flex gap-2">
-                <span className="text-muted-foreground w-28 shrink-0">Novo:</span>
-                <span className="font-medium text-green-400 break-all">{modeloNovo}</span>
-              </div>
-              {familia && (
-                <div className="flex gap-2">
-                  <span className="text-muted-foreground w-28 shrink-0">Família:</span>
-                  <span className="font-medium">{familia}</span>
-                </div>
-              )}
-            </div>
-
-            {previewLoading && (
-              <div className="text-center py-8 text-muted-foreground">Carregando produtos afetados...</div>
-            )}
-
-            {!previewLoading && preview && preview.total === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                Nenhum produto encontrado com esse componente{familia ? ` na família "${familia}"` : ""}.
-              </div>
-            )}
-
-            {!previewLoading && preview && preview.total > 0 && (
-              <>
-                {/* Controles de seleção */}
-                <div className="flex items-center justify-between py-1">
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="select-all"
-                      checked={allSelected}
-                      onCheckedChange={toggleAll}
-                    />
-                    <label htmlFor="select-all" className="text-sm cursor-pointer select-none">
-                      {allSelected ? "Desmarcar todos" : "Selecionar todos"}
-                    </label>
-                  </div>
-                  {selectedCount > 0 && selectedCount < preview.total && (
-                    <span className="text-xs text-muted-foreground">
-                      {preview.total - selectedCount} produto(s) excluído(s) da substituição
-                    </span>
+            {/* Lista de produtos da família com checkboxes */}
+            {familia && tipo && modeloAtual && modeloNovo && modeloAtual !== modeloNovo && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                    Produtos na família {familia}
+                  </label>
+                  {!productListLoading && productList && productList.total > 0 && (
+                    <Badge variant={selectedCount > 0 ? "default" : "secondary"}>
+                      {selectedCount} / {totalCount} selecionado(s)
+                    </Badge>
                   )}
                 </div>
 
-                <div className="max-h-72 overflow-y-auto rounded border border-border">
-                  <table className="w-full text-sm">
-                    <thead className="bg-muted/60 sticky top-0">
-                      <tr>
-                        <th className="text-left px-3 py-2 font-medium text-muted-foreground w-10"></th>
-                        <th className="text-left px-3 py-2 font-medium text-muted-foreground">Produto</th>
-                        <th className="text-left px-3 py-2 font-medium text-muted-foreground">SKU</th>
-                        <th className="text-left px-3 py-2 font-medium text-muted-foreground">Família</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {preview.produtos.map((p: any, i: number) => {
-                        const checked = selectedIds?.has(p.id) ?? false;
+                {productListLoading && (
+                  <div className="text-sm text-muted-foreground py-3 text-center">
+                    Carregando produtos...
+                  </div>
+                )}
+
+                {!productListLoading && productList && productList.total === 0 && (
+                  <div className="text-sm text-muted-foreground py-3 text-center rounded border border-border">
+                    Nenhum produto nessa família usa o componente selecionado.
+                  </div>
+                )}
+
+                {!productListLoading && productList && productList.total > 0 && (
+                  <div className="rounded border border-border overflow-hidden">
+                    {/* Cabeçalho com "selecionar todos" */}
+                    <div className="flex items-center gap-2 px-3 py-2 bg-muted/60 border-b border-border">
+                      <Checkbox
+                        id="select-all"
+                        checked={allSelected}
+                        onCheckedChange={toggleAll}
+                      />
+                      <label htmlFor="select-all" className="text-sm font-medium cursor-pointer select-none">
+                        {allSelected ? "Desmarcar todos" : "Selecionar todos"}
+                      </label>
+                    </div>
+                    {/* Lista de produtos */}
+                    <div className="max-h-56 overflow-y-auto">
+                      {productList.produtos.map((p, i) => {
+                        const checked = selectedIds.has(p.id);
                         return (
-                          <tr
+                          <div
                             key={p.id}
-                            className={`cursor-pointer transition-colors ${checked ? (i % 2 === 0 ? "bg-background" : "bg-muted/20") : "opacity-40 bg-muted/5"}`}
+                            className={`flex items-center gap-3 px-3 py-2 cursor-pointer transition-colors hover:bg-muted/30 ${i % 2 === 0 ? "bg-background" : "bg-muted/10"} ${!checked ? "opacity-50" : ""}`}
                             onClick={() => toggleProduct(p.id)}
                           >
-                            <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
-                              <Checkbox
-                                checked={checked}
-                                onCheckedChange={() => toggleProduct(p.id)}
-                              />
-                            </td>
-                            <td className="px-3 py-2 text-foreground">{p.produto}</td>
-                            <td className="px-3 py-2 text-muted-foreground font-mono text-xs">{p.sku}</td>
-                            <td className="px-3 py-2 text-muted-foreground">{p.familia}</td>
-                          </tr>
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={() => toggleProduct(p.id)}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <span className="text-sm text-foreground truncate block">{p.produto}</span>
+                              <span className="text-xs text-muted-foreground font-mono">{p.sku}</span>
+                            </div>
+                          </div>
                         );
                       })}
-                    </tbody>
-                  </table>
-                </div>
-
-                <Separator />
-
-                <div className="flex gap-3">
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => setStep("configure")}
-                    disabled={executeMutation.isPending}
-                  >
-                    ← Voltar e ajustar
-                  </Button>
-                  <Button
-                    className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                    disabled={executeMutation.isPending || selectedCount === 0}
-                    onClick={handleExecute}
-                  >
-                    {executeMutation.isPending
-                      ? "Substituindo..."
-                      : selectedCount === 0
-                        ? "Nenhum produto selecionado"
-                        : `Confirmar e substituir em ${selectedCount} produto(s)`}
-                  </Button>
-                </div>
-              </>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
 
-            {!previewLoading && preview && preview.total === 0 && (
-              <Button variant="outline" onClick={() => setStep("configure")}>
-                ← Voltar
-              </Button>
+            {/* Botão de confirmar */}
+            {canConfirm && (
+              <div className="pt-1">
+                <Separator className="mb-4" />
+                {/* Resumo da operação */}
+                <div className="rounded-lg bg-muted/40 p-3 space-y-1.5 text-sm mb-4">
+                  <div className="flex gap-2">
+                    <span className="text-muted-foreground w-24 shrink-0">Atual:</span>
+                    <span className="font-medium text-destructive/80 break-all">{modeloAtual}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-muted-foreground w-24 shrink-0">Novo:</span>
+                    <span className="font-medium text-green-400 break-all">{modeloNovo}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-muted-foreground w-24 shrink-0">Escopo:</span>
+                    <span className="font-medium">
+                      {applyToAll
+                        ? "Todos os produtos"
+                        : selectedCount === 0
+                          ? <span className="text-destructive">Nenhum produto selecionado</span>
+                          : selectedCount === totalCount
+                            ? `Todos os ${totalCount} produto(s) da família ${familia}`
+                            : `${selectedCount} de ${totalCount} produto(s) da família ${familia}`}
+                    </span>
+                  </div>
+                </div>
+
+                <Button
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  disabled={executeMutation.isPending || (!applyToAll && selectedCount === 0)}
+                  onClick={handleExecute}
+                >
+                  {executeMutation.isPending
+                    ? "Substituindo..."
+                    : applyToAll
+                      ? "Confirmar e substituir em todos os produtos"
+                      : selectedCount === 0
+                        ? "Selecione ao menos um produto"
+                        : `Confirmar e substituir em ${selectedCount} produto(s)`}
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>
