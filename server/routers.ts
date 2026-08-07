@@ -620,9 +620,15 @@ export const appRouter = router({
 
     // Gerar backup manual (somente admin)
     generate: adminProcedure.mutation(async () => {
-      const result = await runBackup();
-      if (!result.ok) throw new Error(result.error || "Falha ao gerar backup");
-      return { ok: true, backupId: result.backupId };
+      // Inicia o backup em background sem aguardar — evita timeout em produção
+      runBackup().then((result) => {
+        if (!result.ok) {
+          console.error("[Backup] Falha no backup manual:", result.error);
+        }
+      }).catch((err) => {
+        console.error("[Backup] Erro inesperado no backup manual:", err);
+      });
+      return { ok: true, message: "Backup iniciado. A lista será atualizada em alguns segundos." };
     }),
 
     // Obter URL de download de um backup (somente admin)

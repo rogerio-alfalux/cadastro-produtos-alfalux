@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -50,8 +50,20 @@ export default function BackupsPage() {
 
   const generateMutation = trpc.backups.generate.useMutation({
     onSuccess: () => {
-      toast.success("Backup gerado com sucesso!");
-      refetch();
+      toast.info("Backup iniciado! Aguardando conclusão...");
+      // Polling: refetch a cada 3s até o novo backup aparecer (máx 60s)
+      const startCount = backupList?.length ?? 0;
+      const startTime = Date.now();
+      const poll = setInterval(async () => {
+        const result = await refetch();
+        const newCount = result.data?.length ?? 0;
+        if (newCount > startCount || Date.now() - startTime > 60000) {
+          clearInterval(poll);
+          if (newCount > startCount) {
+            toast.success("Backup gerado com sucesso!");
+          }
+        }
+      }, 3000);
     },
     onError: (err) => {
       toast.error(`Erro ao gerar backup: ${err.message}`);
