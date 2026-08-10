@@ -724,7 +724,7 @@ export default function Components() {
                 {expandedGroups.has(tipo) && (
                   <div className="divide-y divide-border/50">
                     {/* Column header */}
-                    <div className="grid gap-3 px-5 py-2 bg-muted/20 text-[10px] text-muted-foreground uppercase tracking-wider font-medium" style={{gridTemplateColumns:'28px 44px 1fr 100px 200px 90px 110px'}}>
+                    <div className="grid gap-2 px-5 py-2 bg-muted/20 text-[10px] text-muted-foreground uppercase tracking-wider font-medium" style={{gridTemplateColumns:'28px 44px 1fr 90px 180px 80px 150px'}}>
                       <div className="flex items-center">
                         <Checkbox
                           checked={items.every((c) => selectedIds.has(c.id))}
@@ -738,14 +738,14 @@ export default function Components() {
                       <div>Código</div>
                       <div>Observação</div>
                       <div className="text-right">Custo</div>
-                      <div />
+                      <div className="text-right">Ativo / Ações</div>
                     </div>
                     {items.map((c) => (
                       <div
                         key={c.id}
                         className={cn(
-                          "grid gap-3 px-5 py-2 items-center hover:bg-muted/10 transition-colors",
-                          "[grid-template-columns:28px_44px_1fr_100px_200px_90px_110px]",
+                          "grid gap-2 px-5 py-2 items-center hover:bg-muted/10 transition-colors",
+                          "[grid-template-columns:28px_44px_1fr_90px_180px_80px_150px]",
                           selectedIds.has(c.id) && "bg-destructive/5",
                           (c as any).ativo === false && "opacity-50"
                         )}
