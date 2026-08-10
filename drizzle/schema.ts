@@ -177,6 +177,8 @@ export const products = mysqlTable("products", {
   // Metadados
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  // Status de ativação — false = produto não transmitido pela API pública
+  ativo: boolean("ativo").default(true).notNull(),
 }, (table) => ({
   // Um produto é único pela combinação de SKU + Nome do Produto (variantes do mesmo SKU têm nomes diferentes)
   skuProdutoUnique: uniqueIndex("uq_products_sku_produto").on(table.sku, table.produto),

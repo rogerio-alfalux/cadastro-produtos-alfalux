@@ -22,7 +22,8 @@ import {
 } from "./db";
 import { runBackup } from "./backupHandler";
 import { backups } from "../drizzle/schema";
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
+import { products as productsTable } from "../drizzle/schema";
 import { storageGetSignedUrl, storageGet } from "./storage";
 
 // ─── Validation schema ────────────────────────────────────────────────────────
@@ -276,6 +277,7 @@ export const appRouter = router({
           potencia: z.string().optional(),
           limit: z.number().min(1).max(200).default(50),
           offset: z.number().min(0).default(0),
+          apenasInativos: z.boolean().optional(),
         })
       )
       .query(async ({ input }) => {
@@ -569,6 +571,18 @@ export const appRouter = router({
         await deleteProduct(input.id);
         return { success: true };
       }),
+
+    toggleAtivo: publicProcedure
+      .input(z.object({ id: z.number(), ativo: z.boolean() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+        await db.update(productsTable)
+          .set({ ativo: input.ativo })
+          .where(eq(productsTable.id, input.id));
+        return { success: true, id: input.id, ativo: input.ativo };
+      }),
+
 
     bulkCreate: publicProcedure
       .input(z.array(bulkProductSchema))

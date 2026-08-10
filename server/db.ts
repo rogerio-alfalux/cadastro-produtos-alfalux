@@ -72,6 +72,8 @@ export async function listProducts(opts?: {
   potencia?: string;
   limit?: number;
   offset?: number;
+  apenasAtivos?: boolean;
+  apenasInativos?: boolean;
 }) {
   const db = await getDb();
   if (!db) return { items: [], total: 0 };
@@ -92,6 +94,8 @@ export async function listProducts(opts?: {
   if (opts?.instalacao) conditions.push(eq(products.instalacao, opts.instalacao));
   if (opts?.familia) conditions.push(eq(products.familia, opts.familia));
   if (opts?.potencia) conditions.push(eq(products.potencia, opts.potencia as "18W" | "26W" | "36W-SF" | "36W-SL"));
+  if (opts?.apenasAtivos) conditions.push(eq(products.ativo, true));
+  if (opts?.apenasInativos) conditions.push(eq(products.ativo, false));
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;
 

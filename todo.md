@@ -510,3 +510,13 @@
 - [x] Botão "Aplicar substituição" só aplica nos produtos selecionados (não em todos)
 - [x] Endpoint `components.executeReplace` atualizado para aceitar lista opcional de IDs específicos (`productIds`)
 - [x] Se `productIds` não for passado, comportamento atual é mantido (substitui em todos)
+
+## Feature v46 — Desativar/Ativar Produto
+
+- [x] Adicionar coluna `ativo` (boolean, default true) no schema drizzle/schema.ts e migrar banco
+- [x] Procedure `products.toggleAtivo` no servidor para alternar o estado instantaneamente
+- [x] API pública /api/products/all filtra apenas produtos com ativo=true
+- [x] Checkbox na coluna Ações da listagem para ativar/desativar com otimistic update
+- [x] Filtro "Somente desativados" na barra de filtros da listagem
+- [x] Produtos desativados exibidos com visual diferenciado (opacidade reduzida) na listagem
+- [x] Ajuste das larguras das colunas para melhor legibilidade

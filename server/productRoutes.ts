@@ -487,6 +487,8 @@ router.get("/all", async (_req, res) => {
     res.setHeader("Cache-Control", "no-cache");
 
     const { items } = await listProducts({ limit: 10000, offset: 0 });
+    // A API pública só transmite produtos ativos (ativo = true)
+    const activeItems = items.filter((p: any) => p.ativo !== false);
 
     // Buscar TODOS os componentes da tabela components para lookup do campo codigo (EQ/CP)
     // Inclui drivers, óticas, holders, dissipadores e módulos LED
@@ -515,8 +517,8 @@ router.get("/all", async (_req, res) => {
     };
 
     const signedUrlMap = new Map<string, string>();
-    const keysToSign = items
-      .map((p) => extractKey(p.fotoUrl))
+    const keysToSign = activeItems
+      .map((p: any) => extractKey(p.fotoUrl))
       .filter((k): k is string => !!k);
     const uniqueKeys = Array.from(new Set(keysToSign));
 
@@ -532,7 +534,7 @@ router.get("/all", async (_req, res) => {
     );
 
     // Mapear para o formato que o Configurador espera
-    const formatted = items.map((p) => {
+    const formatted = activeItems.map((p) => {
       const rawKey = extractKey(p.fotoUrl);
       const resolvedFotoUrl = rawKey ? (signedUrlMap.get(rawKey) ?? null) : null;
       const temps: string[] = [];

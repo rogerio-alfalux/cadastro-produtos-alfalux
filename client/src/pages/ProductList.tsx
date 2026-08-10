@@ -39,6 +39,8 @@ import {
   Zap,
   Copy,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import ProductForm from "./ProductForm";
 
 const CATEGORIAS = ["PERFIS", "DOWNLIGHTS", "PAINÉIS", "SPOTS", "ARANDELAS", "ÁREA EXTERNA", "BALIZADORES", "DECORATIVAS", "CUSTOMIZADOS"];
@@ -51,6 +53,7 @@ export default function ProductList() {
   const [filterCategoria, setFilterCategoria] = useState("_all");
   const [filterInstalacao, setFilterInstalacao] = useState("_all");
   const [filterPotencia, setFilterPotencia] = useState("_all");
+  const [filterAtivo, setFilterAtivo] = useState<"_all" | "inativos">("_all");
   const [page, setPage] = useState(0);
   const [editId, setEditId] = useState<number | null>(null);
   const [viewId, setViewId] = useState<number | null>(null);
@@ -64,6 +67,7 @@ export default function ProductList() {
     categoria: filterCategoria !== "_all" ? filterCategoria : undefined,
     instalacao: filterInstalacao !== "_all" ? filterInstalacao : undefined,
     potencia: filterPotencia !== "_all" ? filterPotencia : undefined,
+    apenasInativos: filterAtivo === "inativos" ? true : undefined,
     limit: PAGE_SIZE,
     offset: page * PAGE_SIZE,
   };
@@ -83,6 +87,30 @@ export default function ProductList() {
       toast.success("Produto removido com sucesso");
     },
     onError: (err) => toast.error("Erro ao remover: " + err.message),
+  });
+
+  const toggleAtivoMutation = trpc.products.toggleAtivo.useMutation({
+    onMutate: async ({ id, ativo }) => {
+      // Optimistic update
+      await utils.products.list.cancel();
+      const prev = utils.products.list.getData(queryInput);
+      utils.products.list.setData(queryInput, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          items: old.items.map((p) => p.id === id ? { ...p, ativo } : p),
+        };
+      });
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) utils.products.list.setData(queryInput, ctx.prev);
+      toast.error("Erro ao alterar status do produto");
+    },
+    onSuccess: (_data, vars) => {
+      utils.products.list.invalidate();
+      toast.success(vars.ativo ? "Produto ativado" : "Produto desativado");
+    },
   });
 
   const items = data?.items ?? [];
@@ -136,10 +164,11 @@ export default function ProductList() {
     setFilterCategoria("_all");
     setFilterInstalacao("_all");
     setFilterPotencia("_all");
+    setFilterAtivo("_all");
     setPage(0);
   };
 
-  const hasFilters = search || filterCategoria !== "_all" || filterInstalacao !== "_all" || filterPotencia !== "_all";
+  const hasFilters = search || filterCategoria !== "_all" || filterInstalacao !== "_all" || filterPotencia !== "_all" || filterAtivo !== "_all";
 
   return (
     <div className="animate-fade-in">
@@ -254,6 +283,17 @@ export default function ProductList() {
             </SelectContent>
           </Select>
 
+          {/* Status filter */}
+          <Select value={filterAtivo} onValueChange={(v) => { setFilterAtivo(v as "_all" | "inativos"); setPage(0); }}>
+            <SelectTrigger className="input-dark w-full sm:w-44">
+              <SelectValue placeholder="STATUS" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="_all">TODOS OS STATUS</SelectItem>
+              <SelectItem value="inativos">SOMENTE DESATIVADOS</SelectItem>
+            </SelectContent>
+          </Select>
+
           {/* Clear filters */}
           {hasFilters && (
             <Button
@@ -289,6 +329,11 @@ export default function ProductList() {
             {filterPotencia !== "_all" && (
               <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-md">
                 ⚡ {filterPotencia}
+              </span>
+            )}
+            {filterAtivo === "inativos" && (
+              <span className="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-md">
+                Desativados
               </span>
             )}
             <span className="text-xs text-muted-foreground ml-auto">{total} resultado(s)</span>
@@ -332,14 +377,14 @@ export default function ProductList() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border/60 bg-muted/20">
-                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider">PRODUTO</th>
-                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider hidden md:table-cell">SKU</th>
-                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider hidden lg:table-cell">FAMÍLIA</th>
-                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider hidden xl:table-cell">INSTALAÇÃO</th>
-                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider hidden xl:table-cell">CATEGORIA</th>
-                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider hidden lg:table-cell">DRIVERS</th>
-                  <th className="text-right px-4 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider hidden lg:table-cell">CUSTO</th>
-                  <th className="text-right px-4 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider">AÇÕES</th>
+                  <th className="text-left px-3 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider" style={{minWidth: 220}}>PRODUTO</th>
+                  <th className="text-left px-3 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider hidden md:table-cell" style={{width: 160}}>SKU</th>
+                  <th className="text-left px-3 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider hidden lg:table-cell" style={{width: 130}}>FAMÍLIA</th>
+                  <th className="text-left px-3 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider hidden xl:table-cell" style={{width: 110}}>INSTALAÇÃO</th>
+                  <th className="text-left px-3 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider hidden xl:table-cell" style={{width: 120}}>CATEGORIA</th>
+                  <th className="text-left px-3 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider hidden lg:table-cell" style={{width: 140}}>DRIVERS</th>
+                  <th className="text-right px-3 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider hidden lg:table-cell" style={{width: 90}}>CUSTO</th>
+                  <th className="text-right px-3 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider" style={{width: 160}}>AÇÕES</th>
                 </tr>
               </thead>
               <tbody>
@@ -348,13 +393,15 @@ export default function ProductList() {
                     try { return JSON.parse(product.temperaturasCor || "[]"); }
                     catch { return []; }
                   })();
+                  const isAtivo = (product as any).ativo !== false;
 
                   return (
                     <tr
                       key={product.id}
                       className={cn(
                         "border-b border-border/30 table-row-hover transition-colors",
-                        idx % 2 === 0 ? "bg-transparent" : "bg-muted/5"
+                        idx % 2 === 0 ? "bg-transparent" : "bg-muted/5",
+                        !isAtivo && "opacity-50"
                       )}
                     >
                       {/* Produto */}
@@ -466,8 +513,33 @@ export default function ProductList() {
                       </td>
 
                       {/* Actions */}
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-end gap-1">
+                      <td className="px-3 py-3">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {/* Checkbox ativo/inativo */}
+                          <TooltipProvider delayDuration={300}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex items-center px-1">
+                                  <Checkbox
+                                    checked={isAtivo}
+                                    onCheckedChange={(checked) => {
+                                      toggleAtivoMutation.mutate({ id: product.id, ativo: !!checked });
+                                    }}
+                                    className={cn(
+                                      "w-4 h-4 transition-colors",
+                                      isAtivo
+                                        ? "border-green-500 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                                        : "border-red-500/60"
+                                    )}
+                                  />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="text-xs">
+                                {isAtivo ? "Ativo — clique para desativar" : "Inativo — clique para ativar"}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+
                           <button
                             onClick={() => setViewId(product.id)}
                             className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
