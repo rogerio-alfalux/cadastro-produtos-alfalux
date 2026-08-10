@@ -520,3 +520,11 @@
 - [x] Filtro "Somente desativados" na barra de filtros da listagem
 - [x] Produtos desativados exibidos com visual diferenciado (opacidade reduzida) na listagem
 - [x] Ajuste das larguras das colunas para melhor legibilidade
+
+## Feature v47 — Desativar/Ativar Componentes e Acessórios
+
+- [x] Adicionar coluna `ativo` (boolean, default true) nas tabelas components e accessories
+- [x] Procedure `components.toggleAtivo` e `accessories.toggleAtivo` no servidor
+- [x] Checkbox na coluna Ações das listagens de Componentes e Acessórios
+- [x] Filtro "Somente desativados" nas listagens de Componentes e Acessórios
+- [x] Componentes/Acessórios desativados com visual diferenciado (opacidade reduzida)

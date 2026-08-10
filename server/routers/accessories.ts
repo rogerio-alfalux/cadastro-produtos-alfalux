@@ -30,13 +30,14 @@ export const accessoriesRouter = router({
         familia: z.string().optional(),
         limit: z.number().int().min(1).max(500).default(50),
         offset: z.number().int().min(0).default(0),
+        apenasInativos: z.boolean().optional(),
       })
     )
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return { items: [], total: 0 };
 
-      const { search, familia, limit, offset } = input;
+      const { search, familia, limit, offset, apenasInativos } = input;
 
       const conditions = [];
 
@@ -53,6 +54,10 @@ export const accessoriesRouter = router({
 
       if (familia) {
         conditions.push(eq(accessories.familia, familia));
+      }
+
+      if (apenasInativos) {
+        conditions.push(eq(accessories.ativo, false));
       }
 
       const where = conditions.length > 0 ? and(...conditions) : undefined;
@@ -157,5 +162,15 @@ export const accessoriesRouter = router({
         .delete(accessories)
         .where(eq(accessories.id, input.id));
       return { success: true };
+    }),
+
+  // ─── Toggle ativo status ───────────────────────────────────────────────────
+  toggleAtivo: publicProcedure
+    .input(z.object({ id: z.number(), ativo: z.boolean() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Banco de dados indisponível");
+      await db.update(accessories).set({ ativo: input.ativo }).where(eq(accessories.id, input.id));
+      return { success: true, id: input.id, ativo: input.ativo };
     }),
 });

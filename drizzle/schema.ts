@@ -226,6 +226,8 @@ export const components = mysqlTable("components", {
   // Metadados
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  // Status de ativação
+  ativo: boolean("ativo").default(true).notNull(),
 });
 export type Component = typeof components.$inferSelect;
 export type InsertComponent = typeof components.$inferInsert;
@@ -277,6 +279,8 @@ export const accessories = mysqlTable("accessories", {
   // Metadados
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  // Status de ativação
+  ativo: boolean("ativo").default(true).notNull(),
 });
 export type Accessory = typeof accessories.$inferSelect;
 export type InsertAccessory = typeof accessories.$inferInsert;

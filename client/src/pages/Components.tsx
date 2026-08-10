@@ -30,6 +30,7 @@ import {
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, RefreshCw, Search, ChevronDown, ChevronUp, Package, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, CheckSquare2, Camera, X as XIcon, ImageIcon, Copy } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 type ComponentType =
@@ -369,10 +370,14 @@ export default function Components() {
   // ─── Filters ─────────────────────────────────────────────────────────────
   const [filterTipo, setFilterTipo] = useState<ComponentType | "ALL">("ALL");
   const [filterSearch, setFilterSearch] = useState("");
+  const [filterAtivo, setFilterAtivo] = useState<"_all" | "inativos">("_all");
 
   // ─── Data ─────────────────────────────────────────────────────────────────
   const { data: allComponents = [], isLoading } = trpc.components.list.useQuery(
-    filterTipo !== "ALL" ? { tipo: filterTipo } : {},
+    {
+      ...(filterTipo !== "ALL" ? { tipo: filterTipo } : {}),
+      ...(filterAtivo === "inativos" ? { apenasInativos: true } : {}),
+    },
     { staleTime: 30_000 }
   );
 
@@ -401,6 +406,14 @@ export default function Components() {
   const deleteMut = trpc.components.delete.useMutation({
     onSuccess: () => { utils.components.list.invalidate(); toast.success("Componente excluído!"); setDeleteTarget(null); },
     onError: (e) => toast.error(e.message),
+  });
+
+  const toggleAtivoMut = trpc.components.toggleAtivo.useMutation({
+    onSuccess: (_data, vars) => {
+      utils.components.list.invalidate();
+      toast.success(vars.ativo ? "Componente ativado" : "Componente desativado");
+    },
+    onError: () => toast.error("Erro ao alterar status"),
   });
 
   // ─── Form dialog ──────────────────────────────────────────────────────────
@@ -667,6 +680,15 @@ export default function Components() {
               ))}
             </SelectContent>
           </Select>
+          <Select value={filterAtivo} onValueChange={(v) => { setFilterAtivo(v as "_all" | "inativos"); }}>
+            <SelectTrigger className="w-48 bg-card border-border">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="_all">Todos os status</SelectItem>
+              <SelectItem value="inativos">Somente desativados</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Component groups */}
@@ -724,7 +746,8 @@ export default function Components() {
                         className={cn(
                           "grid gap-3 px-5 py-2 items-center hover:bg-muted/10 transition-colors",
                           "[grid-template-columns:28px_44px_1fr_100px_200px_90px_110px]",
-                          selectedIds.has(c.id) && "bg-destructive/5"
+                          selectedIds.has(c.id) && "bg-destructive/5",
+                          (c as any).ativo === false && "opacity-50"
                         )}
                       >
                         <div className="flex items-center">
@@ -789,6 +812,29 @@ export default function Components() {
                           >
                             <Copy className="w-3.5 h-3.5" />
                           </button>
+                          <TooltipProvider delayDuration={300}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex items-center px-0.5">
+                                  <Checkbox
+                                    checked={(c as any).ativo !== false}
+                                    onCheckedChange={(checked) => {
+                                      toggleAtivoMut.mutate({ id: c.id, ativo: !!checked });
+                                    }}
+                                    className={cn(
+                                      "w-3.5 h-3.5 transition-colors",
+                                      (c as any).ativo !== false
+                                        ? "border-green-500 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                                        : "border-red-500/60"
+                                    )}
+                                  />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="text-xs">
+                                {(c as any).ativo !== false ? "Ativo — clique para desativar" : "Inativo — clique para ativar"}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                           <button
                             onClick={() => setDeleteTarget(c)}
                             className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"

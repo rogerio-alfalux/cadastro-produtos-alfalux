@@ -41,6 +41,8 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const PAGE_SIZE = 50;
 
@@ -58,6 +60,7 @@ type AccessoryItem = {
   observacoes: string | null;
   createdAt: Date;
   updatedAt: Date;
+  ativo?: boolean;
 };
 
 const emptyForm = {
@@ -80,6 +83,7 @@ export default function AccessoriesPage() {
   const [search, setSearch] = useState("");
   const [familiaFilter, setFamiliaFilter] = useState<string>("__all__");
   const [page, setPage] = useState(0);
+  const [filterAtivo, setFilterAtivo] = useState<"_all" | "inativos">("_all");
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<AccessoryItem | null>(null);
@@ -104,8 +108,9 @@ export default function AccessoriesPage() {
       familia: familiaFilter === "__all__" ? undefined : familiaFilter,
       limit: PAGE_SIZE,
       offset: page * PAGE_SIZE,
+      apenasInativos: filterAtivo === "inativos" ? true : undefined,
     }),
-    [search, familiaFilter, page]
+    [search, familiaFilter, page, filterAtivo]
   );
 
   const { data, isLoading } = trpc.accessories.list.useQuery(queryInput);
@@ -143,6 +148,14 @@ export default function AccessoriesPage() {
       setDeleteConfirm(null);
     },
     onError: (err) => toast.error(err.message),
+  });
+
+  const toggleAtivoMutation = trpc.accessories.toggleAtivo.useMutation({
+    onSuccess: (_data, vars) => {
+      utils.accessories.list.invalidate();
+      toast.success(vars.ativo ? "Acessório ativado" : "Acessório desativado");
+    },
+    onError: () => toast.error("Erro ao alterar status"),
   });
 
   // Photo upload handler
@@ -313,6 +326,15 @@ export default function AccessoriesPage() {
             ))}
           </SelectContent>
         </Select>
+        <Select value={filterAtivo} onValueChange={(v) => { setFilterAtivo(v as "_all" | "inativos"); setPage(0); }}>
+          <SelectTrigger className="w-full sm:w-48 text-sm">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="_all">Todos os status</SelectItem>
+            <SelectItem value="inativos">Somente desativados</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* ─── Tabela ─────────────────────────────────────────────────────────── */}
@@ -353,11 +375,14 @@ export default function AccessoriesPage() {
                   </td>
                 </tr>
               ) : (
-                items.map((item) => (
-                  <tr
-                    key={item.id}
-                    className="border-b border-border/30 hover:bg-muted/20 transition-colors"
-                  >
+              items.map((item) => (
+                <tr
+                  key={item.id}
+                  className={cn(
+                    "border-b border-border/30 hover:bg-muted/20 transition-colors",
+                    item.ativo === false && "opacity-50"
+                  )}
+                >
                     <td className="px-3 py-2">
                       {item.fotoUrl ? (
                         <img
@@ -401,6 +426,29 @@ export default function AccessoriesPage() {
                     {isLoggedIn && (
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
+                          <TooltipProvider delayDuration={300}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex items-center px-0.5">
+                                  <Checkbox
+                                    checked={item.ativo !== false}
+                                    onCheckedChange={(checked) => {
+                                      toggleAtivoMutation.mutate({ id: item.id, ativo: !!checked });
+                                    }}
+                                    className={cn(
+                                      "w-3.5 h-3.5 transition-colors",
+                                      item.ativo !== false
+                                        ? "border-green-500 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                                        : "border-red-500/60"
+                                    )}
+                                  />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="text-xs">
+                                {item.ativo !== false ? "Ativo — clique para desativar" : "Inativo — clique para ativar"}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                           <Button
                             variant="ghost"
                             size="sm"

@@ -132,6 +132,7 @@ export const componentsRouter = router({
       z.object({
         tipo: z.enum(COMPONENT_TYPES).optional(),
         search: z.string().optional(),
+        apenasInativos: z.boolean().optional(),
       }).optional()
     )
     .query(async ({ input }) => {
@@ -140,6 +141,7 @@ export const componentsRouter = router({
       const conditions = [];
       if (input?.tipo) conditions.push(eq(components.tipo, input.tipo));
       if (input?.search?.trim()) conditions.push(like(components.modelo, `%${input.search.trim()}%`));
+      if (input?.apenasInativos) conditions.push(eq(components.ativo, false));
       const rows =
         conditions.length > 0
           ? await db.select().from(components).where(and(...conditions)).orderBy(asc(components.tipo), asc(components.modelo))
@@ -314,6 +316,16 @@ export const componentsRouter = router({
       if (!db) throw new Error("Database unavailable");
       await db.delete(components).where(inArray(components.id, input.ids));
       return { deleted: input.ids.length };
+    }),
+
+  // ─── Toggle ativo status ───────────────────────────────────────────────────
+  toggleAtivo: publicProcedure
+    .input(z.object({ id: z.number(), ativo: z.boolean() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database unavailable");
+      await db.update(components).set({ ativo: input.ativo }).where(eq(components.id, input.id));
+      return { success: true, id: input.id, ativo: input.ativo };
     }),
 
   // ─── Count products using a component value (for confirmation dialog) ────
