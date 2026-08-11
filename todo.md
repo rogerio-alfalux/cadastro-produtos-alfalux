@@ -543,3 +543,15 @@
 - [x] Remover do formulário as seções e campos de preço/custo específicos de D1 + D2
 - [x] Marcar `possuiOpcaoD1D2 = true` em todos os Perfis das famílias HIT, EASY H PLUS e BLAZE H
 - [x] Validar a resposta da API para os perfis atualizados
+
+## Feature v49 — Composição D1+D2 para Perfis
+
+- [x] Schema: adicionar coluna JSON `composicaoD1D2` na tabela products (armazena módulo LED dobrado + drivers específicos)
+- [x] Migração SQL aplicada
+- [x] ProductForm: seção "Componentes D1+D2" visível quando possuiOpcaoD1D2=true
+- [x] Módulo LED D1+D2: mesmo modelo da versão D1, quantidade automática = 2x qtdModuloLed
+- [x] Drivers D1+D2: cadastro manual (modelo + quantidade + custo) — não é necessariamente o dobro
+- [x] Backend: persistir composicaoD1D2 no create/update de produtos
+- [x] API pública: expor composicaoD1D2 na resposta de /api/products/all
+- [x] Aplicar composição D1+D2 automaticamente nos 702 produtos HIT, EASY H PLUS e BLAZE H (dobrar barras, recalcular drivers)
+- [x] Testes e validação

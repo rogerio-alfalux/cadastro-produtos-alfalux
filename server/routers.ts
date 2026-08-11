@@ -151,6 +151,7 @@ const productSchema = z.object({
   custoCorpoDimTriac110vD1D2: z.string().nullish(),
   custoCorpoDimTriac220vD1D2: z.string().nullish(),
   correnteDriver: z.string().nullish(),
+  composicaoD1D2: z.string().nullish(),
 }).superRefine((data, ctx) => {
   // Validar Ótica: obrigatório se não for NaoAplicavel
   if (!data.oticaNaoAplicavel && (!data.otica || data.otica.trim() === "")) {
@@ -248,6 +249,7 @@ const bulkProductSchema = z.object({
   precoVendaDimDaliD1:       z.string().optional(),
   precoVendaDimDaliD1D2:     z.string().optional(),
   configuracaoPlanos:         z.enum(["D1", "D2", "D1+D2"]).optional(),
+  composicaoD1D2: z.string().nullable().optional(),
 });
 
 // ─── Router ───────────────────────────────────────────────────────────────────
@@ -354,6 +356,7 @@ export const appRouter = router({
           driverDimTriac110vExtra: input.driverDimTriac110vExtra || null,
           driverDimTriac220vExtra: input.driverDimTriac220vExtra || null,
           oticaExtra: input.oticaExtra || null,
+          composicaoD1D2: input.composicaoD1D2 || null,
           fotoUrl: input.fotoUrl || null,
           fotoKey: input.fotoKey || null,
           precoVendaOnoff220: input.precoVendaOnoff220 || null,
@@ -517,6 +520,7 @@ export const appRouter = router({
         if (d.driverDimTriac110vExtra !== undefined) update.driverDimTriac110vExtra = d.driverDimTriac110vExtra || null;
         if (d.driverDimTriac220vExtra !== undefined) update.driverDimTriac220vExtra = d.driverDimTriac220vExtra || null;
         if (d.oticaExtra !== undefined) update.oticaExtra = d.oticaExtra || null;
+        if (d.composicaoD1D2 !== undefined) update.composicaoD1D2 = d.composicaoD1D2 || null;
         if (d.precoVendaOnoff220 !== undefined) update.precoVendaOnoff220 = d.precoVendaOnoff220 || null;
         if (d.precoVendaOnoffBivolt !== undefined) update.precoVendaOnoffBivolt = d.precoVendaOnoffBivolt || null;
         if (d.precoVendaDim110v !== undefined) update.precoVendaDim110v = d.precoVendaDim110v || null;

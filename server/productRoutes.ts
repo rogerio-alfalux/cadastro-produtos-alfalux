@@ -789,6 +789,19 @@ router.get("/all", async (_req, res) => {
       result.configuracaoPlanos = isPerfil ? configuracaoPlanos : null;
       result.possuiOpcaoD1D2 = isPerfil ? !!(p as any).possuiOpcaoD1D2 : false;
 
+      // Composição D1+D2 (módulo LED dobrado + drivers específicos)
+      if (isPerfil && (p as any).composicaoD1D2) {
+        try {
+          const raw = (p as any).composicaoD1D2;
+          const comp = typeof raw === "string" ? JSON.parse(raw) : raw;
+          result.composicaoD1D2 = comp;
+        } catch {
+          result.composicaoD1D2 = null;
+        }
+      } else {
+        result.composicaoD1D2 = null;
+      }
+
       // Preços D1/D1+D2 — exclusivo para PERFIS com dois planos de iluminação
       const toNum = (v: any) => (v != null ? Number(v) : null);
       result.precoOnOff220D1      = isPerfil ? toNum((p as any).precoVendaOnoff220D1)      : null;

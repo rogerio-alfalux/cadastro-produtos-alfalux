@@ -696,6 +696,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
   const [driversExtra, setDriversExtra] = useState<DriversExtraState>(defaultDriversExtra);
   const [oticasExtra, setOticasExtra] = useState<OticaExtra[]>([]);
   const [showSemDriverDialog, setShowSemDriverDialog] = useState(false);
+  const [d1d2Drivers, setD1d2Drivers] = useState<ComposicaoD1D2Driver[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   // Keep a ref that always points to the latest form state so validate()
   // never reads a stale closure value
@@ -861,6 +862,16 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         try { return JSON.parse(raw) as OticaExtra[]; } catch { return []; }
       };
       setOticasExtra(parseOticaExtra((p as any).oticaExtra));
+
+      // Carregar composição D1+D2 se existir
+      const parseComposicaoD1D2 = (raw: any): ComposicaoD1D2Driver[] => {
+        if (!raw) return [];
+        try {
+          const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+          return Array.isArray(parsed?.drivers) ? parsed.drivers : [];
+        } catch { return []; }
+      };
+      setD1d2Drivers(parseComposicaoD1D2((p as any).composicaoD1D2));
 
       if (isDuplicate) {
         // When duplicating: keep SKU (same SKU can have multiple variants), clear only PRODUTO
@@ -1206,6 +1217,18 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
     // Serializar óticas extras como JSON
     const validOticasExtra = oticasExtra.filter((o) => o.modelo.trim());
     payload.oticaExtra = validOticasExtra.length > 0 ? JSON.stringify(validOticasExtra) : undefined;
+
+    // Serializar composição D1+D2 como JSON
+    if (form.possuiOpcaoD1D2) {
+      const validD1D2Drivers = d1d2Drivers.filter((d) => d.modelo.trim());
+      const composicao = {
+        qtdModuloLed: (form.qtdModuloLed || 1) * 2,
+        drivers: validD1D2Drivers,
+      };
+      payload.composicaoD1D2 = JSON.stringify(composicao);
+    } else {
+      payload.composicaoD1D2 = null;
+    }
 
     if (isEdit && editId) {
       updateMutation.mutate({ id: editId, data: payload });
@@ -1980,6 +2003,102 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         </section>
 
         {/* ─── Seção 4: Temperatura de Cor ─────────────────────────────── */}
+        {/* ─── Seção D1+D2: Componentes da versão D1+D2 ──────────────── */}
+        {form.possuiOpcaoD1D2 && (
+          <section className="alfalux-card p-6 border-l-4 border-amber-500">
+            <div className="flex items-center gap-2 mb-5">
+              <Cpu className="w-4 h-4 text-amber-400" />
+              <h2 className="section-header mb-0 text-amber-400">COMPONENTES D1 + D2</h2>
+              <span className="text-[10px] text-muted-foreground ml-auto">Composição quando o perfil usa iluminação direta + indireta</span>
+            </div>
+
+            {/* Módulo LED D1+D2 — quantidade automática */}
+            <div className="mb-5 p-4 rounded-lg bg-amber-500/5 border border-amber-500/20">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-semibold text-amber-400 uppercase tracking-wide">Módulo LED D1+D2</span>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Mesmo modelo da versão D1. Quantidade automaticamente dobrada.
+                  </p>
+                </div>
+                <div className="text-right">
+                  <span className="text-sm text-muted-foreground">Quantidade:</span>
+                  <span className="ml-2 text-lg font-bold text-amber-400">{(form.qtdModuloLed || 1) * 2}</span>
+                  <span className="text-xs text-muted-foreground ml-1">barras</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Drivers D1+D2 — cadastro manual */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-semibold text-amber-400 uppercase tracking-wide">Drivers D1+D2</span>
+                <span className="text-[10px] text-muted-foreground">Cadastre os drivers para a versão D1+D2 (podem ser diferentes da versão D1)</span>
+              </div>
+
+              <div className="space-y-3">
+                {d1d2Drivers.map((drv, idx) => (
+                  <div key={idx} className="flex items-center gap-3 p-3 rounded-lg bg-muted/20 border border-border/40">
+                    <select
+                      value={drv.tipo}
+                      onChange={(e) => setD1d2Drivers((prev) => prev.map((d, i) => i === idx ? { ...d, tipo: e.target.value } : d))}
+                      className="input-dark text-xs h-8 w-40"
+                    >
+                      {DRIVER_TIPOS_D1D2.map((t) => (
+                        <option key={t.value} value={t.value}>{t.label}</option>
+                      ))}
+                    </select>
+                    <div className="flex-1">
+                      <ComponentSelect
+                        tipo={drv.tipo as any}
+                        value={drv.modelo}
+                        onChange={(v) => setD1d2Drivers((prev) => prev.map((d, i) => i === idx ? { ...d, modelo: v } : d))}
+                        placeholder="Selecione o driver..."
+                      />
+                    </div>
+                    <div className="w-16">
+                      <Input
+                        className="input-dark text-sm h-8 text-center"
+                        type="number" min="1"
+                        value={drv.qtd}
+                        onChange={(e) => setD1d2Drivers((prev) => prev.map((d, i) => i === idx ? { ...d, qtd: parseInt(e.target.value) || 1 } : d))}
+                        title="Quantidade"
+                      />
+                    </div>
+                    <div className="relative w-28">
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">R$</span>
+                      <Input
+                        className="input-dark pl-7 text-sm h-8"
+                        type="number" step="0.01" min="0"
+                        value={drv.custo}
+                        onChange={(e) => setD1d2Drivers((prev) => prev.map((d, i) => i === idx ? { ...d, custo: e.target.value } : d))}
+                        placeholder="0,00"
+                        title="Custo unitário"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setD1d2Drivers((prev) => prev.filter((_, i) => i !== idx))}
+                      className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      title="Remover driver"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setD1d2Drivers((prev) => [...prev, emptyD1D2Driver()])}
+                className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 transition-colors mt-3"
+              >
+                <PlusCircle className="w-3.5 h-3.5" /> Adicionar driver D1+D2
+              </button>
+            </div>
+          </section>
+        )}
+
         <section className={cn("alfalux-card p-6", form.moduloLampada && "opacity-50 pointer-events-none select-none")}>
           <div className="flex items-center gap-2 mb-5">
             <Thermometer className="w-4 h-4 text-primary" />
@@ -2398,3 +2517,23 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
     </div>
   );
 }
+
+// ─── Composição D1+D2 types ────────────────────────────────────────────────
+
+interface ComposicaoD1D2Driver {
+  tipo: string; // ex: "DRIVER_ONOFF_220", "DRIVER_ONOFF_BIVOLT", etc.
+  modelo: string;
+  qtd: number;
+  custo: string;
+}
+
+const DRIVER_TIPOS_D1D2 = [
+  { value: "DRIVER_ONOFF_220", label: "ON/OFF 220V" },
+  { value: "DRIVER_ONOFF_BIVOLT", label: "ON/OFF Bivolt" },
+  { value: "DRIVER_DIM_110V", label: "DIM 1-10V" },
+  { value: "DRIVER_DIM_DALI", label: "DIM DALI" },
+  { value: "DRIVER_DIM_TRIAC_110V", label: "DIM TRIAC 110V" },
+  { value: "DRIVER_DIM_TRIAC_220V", label: "DIM TRIAC 220V" },
+];
+
+const emptyD1D2Driver = (): ComposicaoD1D2Driver => ({ tipo: "DRIVER_ONOFF_220", modelo: "", qtd: 1, custo: "" });

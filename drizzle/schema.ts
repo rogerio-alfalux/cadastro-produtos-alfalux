@@ -2,6 +2,7 @@ import {
   boolean,
   decimal,
   int,
+  json,
   mysqlEnum,
   mysqlTable,
   text,
@@ -181,6 +182,9 @@ export const products = mysqlTable("products", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   // Status de ativação — false = produto não transmitido pela API pública
   ativo: boolean("ativo").default(true).notNull(),
+  // Composição de componentes para versão D1+D2 (apenas PERFIS com possuiOpcaoD1D2=true)
+  // JSON: { qtdModuloLed: number, drivers: [{tipo, modelo, qtd, custo}] }
+  composicaoD1D2: json("composicaoD1D2"),
 }, (table) => ({
   // Um produto é único pela combinação de SKU + Nome do Produto (variantes do mesmo SKU têm nomes diferentes)
   skuProdutoUnique: uniqueIndex("uq_products_sku_produto").on(table.sku, table.produto),
