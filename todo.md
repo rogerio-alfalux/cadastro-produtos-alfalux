@@ -536,3 +536,10 @@
 - [x] Persistir o indicador ao criar e editar produtos
 - [x] Expor `possuiOpcaoD1D2` na API pública de produtos
 - [x] Validar cadastro, edição e resposta da API para produto de Perfil
+
+## Ajuste v48.1 — Simplificação da Opção D1 + D2
+
+- [x] Mover a caixa de seleção D1 + D2 para uma área visível na edição de Perfis
+- [x] Remover do formulário as seções e campos de preço/custo específicos de D1 + D2
+- [x] Marcar `possuiOpcaoD1D2 = true` em todos os Perfis das famílias HIT, EASY H PLUS e BLAZE H
+- [x] Validar a resposta da API para os perfis atualizados

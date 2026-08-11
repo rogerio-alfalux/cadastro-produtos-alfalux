@@ -1388,6 +1388,23 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                 hasError={!!(touched.produto && errors.produto)}
               />
             </FieldWrapper>
+
+            {form.categoria?.toUpperCase() === "PERFIS" && (
+              <div className="md:col-span-2 lg:col-span-3 xl:col-span-4 flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+                <Checkbox
+                  id="possuiOpcaoD1D2"
+                  checked={form.possuiOpcaoD1D2}
+                  onCheckedChange={(checked) => setField("possuiOpcaoD1D2", checked === true)}
+                  className="mt-0.5 border-amber-400 data-[state=checked]:bg-amber-500 data-[state=checked]:text-black"
+                />
+                <label htmlFor="possuiOpcaoD1D2" className="cursor-pointer">
+                  <span className="block text-sm font-semibold text-foreground">Este perfil possui opção D1 + D2</span>
+                  <span className="block mt-1 text-xs text-muted-foreground">
+                    Informe ao Configurador que este perfil também pode usar D1 + D2, com quantidades de barras e drivers definidas pela regra do Configurador.
+                  </span>
+                </label>
+              </div>
+            )}
           </div>
         </section>
 
@@ -2126,20 +2143,18 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
 
           {/* Tabela de custo + markup por tipo de driver */}
           {(() => {
-            const temOpcaoD1D2 = form.categoria?.toUpperCase() === "PERFIS" && form.possuiOpcaoD1D2;
             const drivers: Array<{
               label: string;
               custoField: keyof FormData;
-              custoD1D2Field?: keyof FormData;
               mkpPField: keyof FormData;
               mkpMField: keyof FormData;
             }> = [
-              { label: "ON/OFF 220Vac",    custoField: "custoCorpoOnoff220v",    custoD1D2Field: "custoCorpoOnoff220vD1D2",    mkpPField: "mkpPadraoOnoff220v",    mkpMField: "mkpMinimoOnoff220v" },
-              { label: "ON/OFF Bivolt",    custoField: "custoCorpoOnoffBivolt",  custoD1D2Field: "custoCorpoOnoffBivoltD1D2",  mkpPField: "mkpPadraoOnoffBivolt",  mkpMField: "mkpMinimoOnoffBivolt" },
-              { label: "Dim 1-10V 220Vac", custoField: "custoCorpoDim110v",      custoD1D2Field: "custoCorpoDim110vD1D2",      mkpPField: "mkpPadraoDim110v",      mkpMField: "mkpMinimoDim110v" },
-              { label: "Dim DALI",         custoField: "custoCorpoDimDali",       custoD1D2Field: "custoCorpoDimDaliD1D2",       mkpPField: "mkpPadraoDimDali",       mkpMField: "mkpMinimoDimDali" },
-              { label: "Dim Triac 110Vac", custoField: "custoCorpoDimTriac110v",  custoD1D2Field: "custoCorpoDimTriac110vD1D2",  mkpPField: "mkpPadraoDimTriac110v",  mkpMField: "mkpMinimoDimTriac110v" },
-              { label: "Dim Triac 220Vac", custoField: "custoCorpoDimTriac220v",  custoD1D2Field: "custoCorpoDimTriac220vD1D2",  mkpPField: "mkpPadraoDimTriac220v",  mkpMField: "mkpMinimoDimTriac220v" },
+              { label: "ON/OFF 220Vac",    custoField: "custoCorpoOnoff220v",    mkpPField: "mkpPadraoOnoff220v",    mkpMField: "mkpMinimoOnoff220v" },
+              { label: "ON/OFF Bivolt",    custoField: "custoCorpoOnoffBivolt",  mkpPField: "mkpPadraoOnoffBivolt",  mkpMField: "mkpMinimoOnoffBivolt" },
+              { label: "Dim 1-10V 220Vac", custoField: "custoCorpoDim110v",      mkpPField: "mkpPadraoDim110v",      mkpMField: "mkpMinimoDim110v" },
+              { label: "Dim DALI",         custoField: "custoCorpoDimDali",       mkpPField: "mkpPadraoDimDali",       mkpMField: "mkpMinimoDimDali" },
+              { label: "Dim Triac 110Vac", custoField: "custoCorpoDimTriac110v",  mkpPField: "mkpPadraoDimTriac110v",  mkpMField: "mkpMinimoDimTriac110v" },
+              { label: "Dim Triac 220Vac", custoField: "custoCorpoDimTriac220v",  mkpPField: "mkpPadraoDimTriac220v",  mkpMField: "mkpMinimoDimTriac220v" },
             ];
             return (
               <div className="overflow-x-auto">
@@ -2147,19 +2162,14 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                   <thead>
                     <tr className="border-b border-border">
                       <th className="text-left text-[10px] text-muted-foreground uppercase tracking-wider pb-2 pr-4 font-medium">Tipo de Driver</th>
-                      <th className="text-center text-[10px] text-muted-foreground uppercase tracking-wider pb-2 px-2 font-medium">
-                        {temOpcaoD1D2 ? "Custo D1 — Ilum. Direta (R$)" : "Custo do Corpo (R$)"}
-                      </th>
-                      {temOpcaoD1D2 && (
-                        <th className="text-center text-[10px] text-amber-400/80 uppercase tracking-wider pb-2 px-2 font-medium">Custo D1+D2 — Dir.+Indir. (R$)</th>
-                      )}
+                      <th className="text-center text-[10px] text-muted-foreground uppercase tracking-wider pb-2 px-2 font-medium">Custo do Corpo (R$)</th>
                       <th className="text-center text-[10px] text-muted-foreground uppercase tracking-wider pb-2 px-2 font-medium">Markup Padrão</th>
                       <th className="text-center text-[10px] text-muted-foreground uppercase tracking-wider pb-2 px-2 font-medium">Markup Mínimo</th>
                       <th className="text-center text-[10px] text-muted-foreground uppercase tracking-wider pb-2 pl-2 font-medium">Preço de Lista (calc.)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/40">
-                    {drivers.map(({ label, custoField, custoD1D2Field, mkpPField, mkpMField }) => {
+                    {drivers.map(({ label, custoField, mkpPField, mkpMField }) => {
                       const custo = parseFloat(form[custoField] as string) || 0;
                       const mkpP = parseFloat(form[mkpPField] as string) || 0;
                       const precoLista = custo > 0 && mkpP > 0 ? (custo * mkpP).toFixed(2) : "—";
@@ -2180,20 +2190,6 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                               />
                             </div>
                           </td>
-                          {temOpcaoD1D2 && custoD1D2Field && (
-                            <td className="py-2.5 px-2">
-                              <div className="relative w-32">
-                                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-amber-400/60 text-xs font-medium pointer-events-none">R$</span>
-                                <Input
-                                  className="input-dark pl-8 text-sm h-8 border-amber-400/30 focus:border-amber-400/60"
-                                  type="number" step="0.01" min="0"
-                                  value={(form[custoD1D2Field] as string) ?? ''}
-                                  onChange={(e) => setField(custoD1D2Field, e.target.value)}
-                                  placeholder="0,00"
-                                />
-                              </div>
-                            </td>
-                          )}
                           <td className="py-2.5 px-2">
                             <Input
                               className="input-dark text-sm h-8 w-24 text-center"
@@ -2253,57 +2249,6 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
               <span className="ml-1 text-emerald-400 font-medium">Perfis: preço por metro linear.</span>
             )}
           </p>
-
-          {/* Configuração de planos — apenas para PERFIS */}
-          {form.categoria?.toUpperCase() === "PERFIS" && (
-            <div className="mb-5 p-4 rounded-lg bg-amber-500/10 border border-amber-500/30">
-              <div className="flex items-start gap-3 mb-4 rounded-md border border-amber-500/25 bg-background/30 p-3">
-                <Checkbox
-                  id="possuiOpcaoD1D2"
-                  checked={form.possuiOpcaoD1D2}
-                  onCheckedChange={(checked) => setField("possuiOpcaoD1D2", checked === true)}
-                  className="mt-0.5 border-amber-400 data-[state=checked]:bg-amber-500 data-[state=checked]:text-black"
-                />
-                <label htmlFor="possuiOpcaoD1D2" className="cursor-pointer">
-                  <span className="block text-sm font-semibold text-foreground">Este perfil possui versão opcional D1 + D2</span>
-                  <span className="block mt-1 text-xs text-muted-foreground">
-                    Envia essa disponibilidade ao Configurador. Quando selecionada, a versão D1 + D2 pode usar outra quantidade de barras e drivers.
-                  </span>
-                </label>
-              </div>
-              <label className="block text-xs font-semibold text-amber-400 uppercase tracking-wide mb-2">
-                Configuração de Planos de Iluminação
-              </label>
-              <p className="text-xs text-muted-foreground mb-3">
-                Define como o perfil distribui a iluminação. Usado para selecionar o preço correto automaticamente.
-              </p>
-              <div className="flex gap-2 flex-wrap">
-                {(["D1", "D2", "D1+D2"] as const).map((opt) => (
-                  <button
-                    key={opt}
-                    type="button"
-                    onClick={() => setField("configuracaoPlanos", form.configuracaoPlanos === opt ? "" : opt)}
-                    className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-all ${
-                      form.configuracaoPlanos === opt
-                        ? "bg-amber-500 border-amber-500 text-black"
-                        : "bg-transparent border-border text-muted-foreground hover:border-amber-400 hover:text-amber-400"
-                    }`}
-                  >
-                    {opt === "D1" ? "D1 — Iluminação para baixo" :
-                     opt === "D2" ? "D2 — Iluminação para cima" :
-                     "D1+D2 — Dois planos (cima e baixo)"}
-                  </button>
-                ))}
-              </div>
-              {form.configuracaoPlanos && (
-                <p className="text-xs text-amber-400/80 mt-2">
-                  {form.configuracaoPlanos === "D1+D2"
-                    ? "Os campos de preço D1+D2 abaixo serão usados pelo configurador."
-                    : "Os campos de preço padrão abaixo serão usados pelo configurador."}
-                </p>
-              )}
-            </div>
-          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* ON/OFF 220V — sempre presente, sem flag NaoAplicavel */}
@@ -2374,60 +2319,6 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                   />
                 </div>
               </FieldWrapper>
-            )}
-
-            {/* Preços D1/D1+D2 — apenas para PERFIS */}
-            {form.categoria?.toUpperCase() === "PERFIS" && form.possuiOpcaoD1D2 && (
-              <>
-                <div className="col-span-full mt-2">
-                  <div className="border-t border-border/40 pt-4 mb-3">
-                    <span className="text-xs font-semibold text-amber-400 uppercase tracking-wide">Configuração D1+D2 (dois planos de iluminação)</span>
-                    <p className="text-xs text-muted-foreground mt-1">Preencha quando o perfil puder ser instalado com dois conjuntos de barras (D1 para baixo + D2 para cima).</p>
-                  </div>
-                </div>
-                <FieldWrapper label="ON/OFF 220Vac D1+D2 (R$)" touched={touched} errors={errors}>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
-                    <Input className="input-dark pl-9" type="number" step="0.01" min="0"
-                      value={form.precoVendaOnoff220D1D2}
-                      onChange={(e) => setField("precoVendaOnoff220D1D2", e.target.value)}
-                      placeholder="0,00" />
-                  </div>
-                </FieldWrapper>
-                {!form.driverOnoffBivoltNaoAplicavel && (
-                  <FieldWrapper label="ON/OFF BIVOLT D1+D2 (R$)" touched={touched} errors={errors}>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
-                      <Input className="input-dark pl-9" type="number" step="0.01" min="0"
-                        value={form.precoVendaOnoffBivoltD1D2}
-                        onChange={(e) => setField("precoVendaOnoffBivoltD1D2", e.target.value)}
-                        placeholder="0,00" />
-                    </div>
-                  </FieldWrapper>
-                )}
-                {!form.driverDim110vNaoAplicavel && (
-                  <FieldWrapper label="DIM 1-10V D1+D2 (R$)" touched={touched} errors={errors}>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
-                      <Input className="input-dark pl-9" type="number" step="0.01" min="0"
-                        value={form.precoVendaDim110vD1D2}
-                        onChange={(e) => setField("precoVendaDim110vD1D2", e.target.value)}
-                        placeholder="0,00" />
-                    </div>
-                  </FieldWrapper>
-                )}
-                {!form.driverDimDaliNaoAplicavel && (
-                  <FieldWrapper label="DIM DALI D1+D2 (R$)" touched={touched} errors={errors}>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
-                      <Input className="input-dark pl-9" type="number" step="0.01" min="0"
-                        value={form.precoVendaDimDaliD1D2}
-                        onChange={(e) => setField("precoVendaDimDaliD1D2", e.target.value)}
-                        placeholder="0,00" />
-                    </div>
-                  </FieldWrapper>
-                )}
-              </>
             )}
 
             {/* Fallback: todos os drivers são NÃO APLICÁVEL */}
