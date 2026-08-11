@@ -114,6 +114,7 @@ const productSchema = z.object({
   precoVendaDimDaliD1:       z.string().nullish(),
   precoVendaDimDaliD1D2:     z.string().nullish(),
   configuracaoPlanos:         z.enum(["D1", "D2", "D1+D2"]).nullish(),
+  possuiOpcaoD1D2: z.boolean().default(false),
   // Custo do corpo por tipo de driver (sem driver) + markups
   custoCorpoOnoff220v: z.string().nullish(),
   mkpPadraoOnoff220v: z.string().nullish(),
@@ -368,6 +369,7 @@ export const appRouter = router({
           precoVendaDimDaliD1:       input.precoVendaDimDaliD1       || null,
           precoVendaDimDaliD1D2:     input.precoVendaDimDaliD1D2     || null,
           configuracaoPlanos:         input.configuracaoPlanos          ?? null,
+          possuiOpcaoD1D2: input.possuiOpcaoD1D2 ?? false,
           custoCorpoOnoff220v: input.custoCorpoOnoff220v || null,
           mkpPadraoOnoff220v: input.mkpPadraoOnoff220v || null,
           mkpMinimoOnoff220v: input.mkpMinimoOnoff220v || null,
@@ -527,7 +529,8 @@ export const appRouter = router({
         if (d.precoVendaDim110vD1D2 !== undefined)     update.precoVendaDim110vD1D2     = d.precoVendaDim110vD1D2     || null;
         if (d.precoVendaDimDaliD1 !== undefined)       update.precoVendaDimDaliD1       = d.precoVendaDimDaliD1       || null;
         if (d.precoVendaDimDaliD1D2 !== undefined)     update.precoVendaDimDaliD1D2     = d.precoVendaDimDaliD1D2     || null;
-                if (d.configuracaoPlanos !== undefined)          update.configuracaoPlanos        = d.configuracaoPlanos         ?? null;
+        if (d.configuracaoPlanos !== undefined) update.configuracaoPlanos = d.configuracaoPlanos ?? null;
+        if (d.possuiOpcaoD1D2 !== undefined) update.possuiOpcaoD1D2 = d.possuiOpcaoD1D2;
         if (d.custoCorpoOnoff220v !== undefined) update.custoCorpoOnoff220v = d.custoCorpoOnoff220v || null;
         if (d.mkpPadraoOnoff220v !== undefined) update.mkpPadraoOnoff220v = d.mkpPadraoOnoff220v || null;
         // mkpMinimo — apenas admin pode alterar

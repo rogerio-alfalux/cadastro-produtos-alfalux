@@ -132,6 +132,8 @@ export const products = mysqlTable("products", {
   // Configuração de planos de iluminação (exclusivo para PERFIS)
   // D1 = iluminação para baixo, D2 = iluminação para cima, D1+D2 = dois planos
   configuracaoPlanos: mysqlEnum("configuracaoPlanos", ["D1", "D2", "D1+D2"]),
+  // Indica que o perfil possui uma versão opcional D1 + D2 além da configuração base
+  possuiOpcaoD1D2: boolean("possuiOpcaoD1D2").default(false).notNull(),
 
   // Custo do corpo da luminária por tipo de driver (sem driver)
   custoCorpoOnoff220v: decimal("custoCorpoOnoff220v", { precision: 10, scale: 4 }),

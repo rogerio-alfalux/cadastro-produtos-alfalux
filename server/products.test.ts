@@ -165,6 +165,30 @@ describe("products.create", () => {
     expect(callArgs?.sku).toBe("TEST-001");
     expect(callArgs?.produto).toBe("PRODUTO TESTE");
   });
+
+  it("persists the D1+D2 option flag for profile products", async () => {
+    const { createProduct } = await import("./db");
+    const caller = appRouter.createCaller(createCtx());
+    await caller.products.create({
+      categoria: "PERFIS",
+      instalacao: "SOBREPOR",
+      familia: "PERFIL TESTE",
+      sku: "PERFIL-D1D2",
+      produto: "PERFIL COM OPÇÃO D1+D2",
+      moduloLed: "MÓDULO TESTE",
+      otica: "NÃO APLICÁVEL",
+      oticaNaoAplicavel: true,
+      holder: "NÃO APLICÁVEL",
+      holderNaoAplicavel: true,
+      dissipador: "NÃO APLICÁVEL",
+      dissipadorNaoAplicavel: true,
+      driverOnoff220: "DRIVER 220V",
+      driverOnoffBivolt: "DRIVER BIVOLT",
+      possuiOpcaoD1D2: true,
+    });
+    const callArgs = (createProduct as any).mock.calls.at(-1)?.[0];
+    expect(callArgs?.possuiOpcaoD1D2).toBe(true);
+  });
 });
 
 describe("products.update", () => {
@@ -175,6 +199,17 @@ describe("products.update", () => {
       data: { produto: "PRODUTO ATUALIZADO" },
     });
     expect(result.success).toBe(true);
+  });
+
+  it("updates the D1+D2 option flag", async () => {
+    const { updateProduct } = await import("./db");
+    const caller = appRouter.createCaller(createCtx());
+    await caller.products.update({
+      id: 1,
+      data: { possuiOpcaoD1D2: true },
+    });
+    const callArgs = (updateProduct as any).mock.calls.at(-1)?.[1];
+    expect(callArgs?.possuiOpcaoD1D2).toBe(true);
   });
 });
 
@@ -360,15 +395,14 @@ describe("products.create - driver NaoAplicavel validation", () => {
     temperaturasCor: '["2700","3000","4000","5000"]',
   };
 
-  it("rejects create when driverOnoffBivolt is empty and NaoAplicavel is false", async () => {
+  it("allows create when driverOnoffBivolt is empty because Bivolt is optional", async () => {
     const caller = appRouter.createCaller(createCtx());
-    await expect(
-      caller.products.create({
-        ...baseProduct,
-        driverOnoffBivolt: "",
-        driverOnoffBivoltNaoAplicavel: false,
-      })
-    ).rejects.toThrow();
+    const result = await caller.products.create({
+      ...baseProduct,
+      driverOnoffBivolt: "",
+      driverOnoffBivoltNaoAplicavel: false,
+    });
+    expect(result.success).toBe(true);
   });
 
   it("allows create when driverOnoffBivolt is empty but NaoAplicavel is true", async () => {

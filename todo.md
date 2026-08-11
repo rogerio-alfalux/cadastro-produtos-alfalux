@@ -528,3 +528,11 @@
 - [x] Checkbox na coluna Ações das listagens de Componentes e Acessórios
 - [x] Filtro "Somente desativados" nas listagens de Componentes e Acessórios
 - [x] Componentes/Acessórios desativados com visual diferenciado (opacidade reduzida)
+
+## Feature v48 — Opção D1 + D2 para Perfis
+
+- [x] Adicionar indicador booleano de opção D1 + D2 ao cadastro de produtos
+- [x] Exibir caixa de seleção no formulário apenas para produtos da categoria Perfis
+- [x] Persistir o indicador ao criar e editar produtos
+- [x] Expor `possuiOpcaoD1D2` na API pública de produtos
+- [x] Validar cadastro, edição e resposta da API para produto de Perfil

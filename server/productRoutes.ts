@@ -787,6 +787,7 @@ router.get("/all", async (_req, res) => {
       // Configuração de planos
       const configuracaoPlanos = (p as any).configuracaoPlanos ?? null;
       result.configuracaoPlanos = isPerfil ? configuracaoPlanos : null;
+      result.possuiOpcaoD1D2 = isPerfil ? !!(p as any).possuiOpcaoD1D2 : false;
 
       // Preços D1/D1+D2 — exclusivo para PERFIS com dois planos de iluminação
       const toNum = (v: any) => (v != null ? Number(v) : null);

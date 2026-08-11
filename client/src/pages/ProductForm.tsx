@@ -455,6 +455,7 @@ interface FormData {
   precoVendaDimDali: string;
   // Configuração de planos (exclusivo para PERFIS)
   configuracaoPlanos: "D1" | "D2" | "D1+D2" | "";
+  possuiOpcaoD1D2: boolean;
   // Corrente de programação do driver (ex: "programar em 350mA")
   correnteDriver: string;
   // Preço D1/D1+D2 (perfis com dois planos)
@@ -566,6 +567,7 @@ const defaultForm: FormData = {
   precoVendaDim110v: "",
   precoVendaDimDali: "",
   configuracaoPlanos: "",
+  possuiOpcaoD1D2: false,
   correnteDriver: "",
   precoVendaOnoff220D1: "",
   precoVendaOnoff220D1D2: "",
@@ -813,6 +815,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         precoVendaDim110v: p.precoVendaDim110v ? String(p.precoVendaDim110v) : "",
         precoVendaDimDali: p.precoVendaDimDali ? String(p.precoVendaDimDali) : "",
         configuracaoPlanos: (p as any).configuracaoPlanos || "",
+        possuiOpcaoD1D2: !!(p as any).possuiOpcaoD1D2,
         precoVendaOnoff220D1: (p as any).precoVendaOnoff220D1 ? String((p as any).precoVendaOnoff220D1) : "",
         precoVendaOnoff220D1D2: (p as any).precoVendaOnoff220D1D2 ? String((p as any).precoVendaOnoff220D1D2) : "",
         precoVendaOnoffBivoltD1: (p as any).precoVendaOnoffBivoltD1 ? String((p as any).precoVendaOnoffBivoltD1) : "",
@@ -1135,6 +1138,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       precoVendaDim110v: form.precoVendaDim110v || undefined,
       precoVendaDimDali: form.precoVendaDimDali || undefined,
       configuracaoPlanos: (form.configuracaoPlanos as "D1" | "D2" | "D1+D2" | undefined) || undefined,
+      possuiOpcaoD1D2: form.categoria?.toUpperCase() === "PERFIS" && form.possuiOpcaoD1D2,
       precoVendaOnoff220D1:      form.precoVendaOnoff220D1      || undefined,
       precoVendaOnoff220D1D2:    form.precoVendaOnoff220D1D2    || undefined,
       precoVendaOnoffBivoltD1:   form.precoVendaOnoffBivoltD1   || undefined,
@@ -2122,10 +2126,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
 
           {/* Tabela de custo + markup por tipo de driver */}
           {(() => {
-            const familiaUpper = form.familia?.toUpperCase() ?? "";
-            // Apenas estas famílias de perfis têm opção de luz indireta (D1+D2)
-            const familiasComD1D2 = ["BLAZE H", "EASY H PLUS", "BAGEO", "HIT"];
-            const isPerfil = form.categoria?.toUpperCase() === "PERFIS" && familiasComD1D2.includes(familiaUpper);
+            const temOpcaoD1D2 = form.categoria?.toUpperCase() === "PERFIS" && form.possuiOpcaoD1D2;
             const drivers: Array<{
               label: string;
               custoField: keyof FormData;
@@ -2147,9 +2148,9 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                     <tr className="border-b border-border">
                       <th className="text-left text-[10px] text-muted-foreground uppercase tracking-wider pb-2 pr-4 font-medium">Tipo de Driver</th>
                       <th className="text-center text-[10px] text-muted-foreground uppercase tracking-wider pb-2 px-2 font-medium">
-                        {isPerfil ? "Custo D1 — Ilum. Direta (R$)" : "Custo do Corpo (R$)"}
+                        {temOpcaoD1D2 ? "Custo D1 — Ilum. Direta (R$)" : "Custo do Corpo (R$)"}
                       </th>
-                      {isPerfil && (
+                      {temOpcaoD1D2 && (
                         <th className="text-center text-[10px] text-amber-400/80 uppercase tracking-wider pb-2 px-2 font-medium">Custo D1+D2 — Dir.+Indir. (R$)</th>
                       )}
                       <th className="text-center text-[10px] text-muted-foreground uppercase tracking-wider pb-2 px-2 font-medium">Markup Padrão</th>
@@ -2179,7 +2180,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                               />
                             </div>
                           </td>
-                          {isPerfil && custoD1D2Field && (
+                          {temOpcaoD1D2 && custoD1D2Field && (
                             <td className="py-2.5 px-2">
                               <div className="relative w-32">
                                 <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-amber-400/60 text-xs font-medium pointer-events-none">R$</span>
@@ -2256,6 +2257,20 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
           {/* Configuração de planos — apenas para PERFIS */}
           {form.categoria?.toUpperCase() === "PERFIS" && (
             <div className="mb-5 p-4 rounded-lg bg-amber-500/10 border border-amber-500/30">
+              <div className="flex items-start gap-3 mb-4 rounded-md border border-amber-500/25 bg-background/30 p-3">
+                <Checkbox
+                  id="possuiOpcaoD1D2"
+                  checked={form.possuiOpcaoD1D2}
+                  onCheckedChange={(checked) => setField("possuiOpcaoD1D2", checked === true)}
+                  className="mt-0.5 border-amber-400 data-[state=checked]:bg-amber-500 data-[state=checked]:text-black"
+                />
+                <label htmlFor="possuiOpcaoD1D2" className="cursor-pointer">
+                  <span className="block text-sm font-semibold text-foreground">Este perfil possui versão opcional D1 + D2</span>
+                  <span className="block mt-1 text-xs text-muted-foreground">
+                    Envia essa disponibilidade ao Configurador. Quando selecionada, a versão D1 + D2 pode usar outra quantidade de barras e drivers.
+                  </span>
+                </label>
+              </div>
               <label className="block text-xs font-semibold text-amber-400 uppercase tracking-wide mb-2">
                 Configuração de Planos de Iluminação
               </label>
@@ -2362,7 +2377,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
             )}
 
             {/* Preços D1/D1+D2 — apenas para PERFIS */}
-            {form.categoria?.toUpperCase() === "PERFIS" && (
+            {form.categoria?.toUpperCase() === "PERFIS" && form.possuiOpcaoD1D2 && (
               <>
                 <div className="col-span-full mt-2">
                   <div className="border-t border-border/40 pt-4 mb-3">
