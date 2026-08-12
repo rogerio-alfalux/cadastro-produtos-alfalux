@@ -555,3 +555,9 @@
 - [x] API pública: expor composicaoD1D2 na resposta de /api/products/all
 - [x] Aplicar composição D1+D2 automaticamente nos 702 produtos HIT, EASY H PLUS e BLAZE H (dobrar barras, recalcular drivers)
 - [x] Testes e validação
+
+## Ajuste v49.1 — Custos dos Drivers D1+D2
+
+- [x] Preencher os custos dos drivers já cadastrados na composição D1+D2 a partir do cadastro de Componentes
+- [x] Garantir que o formulário exiba os custos existentes ao editar os Perfis com D1+D2
+- [x] Validar os custos na API pública para todos os Perfis com opção D1+D2

@@ -185,9 +185,22 @@ describe("products.create", () => {
       driverOnoff220: "DRIVER 220V",
       driverOnoffBivolt: "DRIVER BIVOLT",
       possuiOpcaoD1D2: true,
+      composicaoD1D2: JSON.stringify({
+        qtdModuloLed: 2,
+        drivers: [{
+          tipo: "DRIVER_ONOFF_220",
+          modelo: "DRIVER 44W",
+          qtd: 1,
+          custo: "18.0000",
+        }],
+      }),
     });
     const callArgs = (createProduct as any).mock.calls.at(-1)?.[0];
     expect(callArgs?.possuiOpcaoD1D2).toBe(true);
+    expect(JSON.parse(callArgs?.composicaoD1D2)).toMatchObject({
+      qtdModuloLed: 2,
+      drivers: [{ modelo: "DRIVER 44W", custo: "18.0000" }],
+    });
   });
 });
 
@@ -206,10 +219,19 @@ describe("products.update", () => {
     const caller = appRouter.createCaller(createCtx());
     await caller.products.update({
       id: 1,
-      data: { possuiOpcaoD1D2: true },
+      data: {
+        possuiOpcaoD1D2: true,
+        composicaoD1D2: JSON.stringify({
+          qtdModuloLed: 2,
+          drivers: [{ tipo: "DRIVER_ONOFF_220", modelo: "DRIVER 44W", qtd: 1, custo: "18.0000" }],
+        }),
+      },
     });
     const callArgs = (updateProduct as any).mock.calls.at(-1)?.[1];
     expect(callArgs?.possuiOpcaoD1D2).toBe(true);
+    expect(JSON.parse(callArgs?.composicaoD1D2)).toMatchObject({
+      drivers: [{ modelo: "DRIVER 44W", custo: "18.0000" }],
+    });
   });
 });
 
