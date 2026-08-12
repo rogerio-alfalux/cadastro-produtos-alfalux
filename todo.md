@@ -569,3 +569,11 @@
 - [x] Preencher os custos dos drivers já cadastrados na composição D1+D2 a partir do cadastro de Componentes
 - [x] Garantir que o formulário exiba os custos existentes ao editar os Perfis com D1+D2
 - [x] Validar os custos na API pública para todos os Perfis com opção D1+D2
+
+## Ajuste v49.3 — Dimensionamento de Drivers D1+D2
+
+- [x] Auditar o caso LLP-4450.2ML.48F e as regras D1 de dimensionamento por barras
+- [x] Gerar prévia de correções e criar a configuração D1+D2 faltante para pendentes e arandelas EASY H PLUS, BLAZE H, HIT e SHARP
+- [x] Corrigir somente os drivers D1+D2 confirmados, preservando os demais componentes
+- [x] Validar exemplos, resposta da API e custos dos drivers corrigidos
+- [x] Aplicar a regra confirmada: driver 65W/60W atende até 8 barras D1+D2; acima desse limite, distribuir a quantidade de drivers por grupos de até 8 barras
