@@ -4,6 +4,7 @@ import * as XLSX from "xlsx";
 import { storagePut, storageGetSignedUrl } from "./storage";
 import { bulkInsertProducts, listProducts, getDb } from "./db";
 import { components as componentsTable } from "../drizzle/schema";
+import { parsePublicDriverExtras } from "./driverExtras";
 
 const router = express.Router();
 
@@ -613,6 +614,13 @@ router.get("/all", async (_req, res) => {
         return { model: trimmed, code };
       };
 
+      const driver220Extras = parsePublicDriverExtras((p as any).driverOnoff220Extra, makeDriver);
+      const driverBivoltExtras = parsePublicDriverExtras((p as any).driverOnoffBivoltExtra, makeDriver);
+      const driverDim110vExtras = parsePublicDriverExtras((p as any).driverDim110vExtra, makeDriver);
+      const driverDimDaliExtras = parsePublicDriverExtras((p as any).driverDimDaliExtra, makeDriver);
+      const driverDimTriac110vExtras = parsePublicDriverExtras((p as any).driverDimTriac110vExtra, makeDriver);
+      const driverDimTriac220vExtras = parsePublicDriverExtras((p as any).driverDimTriac220vExtra, makeDriver);
+
       const cat = (p.categoria || "").toUpperCase();
       const includeOticaExtras = CATS_OTICA_EXTRA.has(cat);
 
@@ -644,6 +652,20 @@ router.get("/all", async (_req, res) => {
         driverDimTriac220v: ((p as any).driverDimTriac220vNaoAplicavel || !isValidDriver((p as any).driverDimTriac220v))
           ? null
           : makeDriver((p as any).driverDimTriac220v),
+        driver220Extras,
+        driverBivoltExtras,
+        driverDim110vExtras,
+        driverDimDaliExtras,
+        driverDimTriac110vExtras,
+        driverDimTriac220vExtras,
+        driversExtras: {
+          onoff220: driver220Extras,
+          onoffBivolt: driverBivoltExtras,
+          dim110v: driverDim110vExtras,
+          dimDali: driverDimDaliExtras,
+          dimTriac110v: driverDimTriac110vExtras,
+          dimTriac220v: driverDimTriac220vExtras,
+        },
         custoLuminaria: p.custoLuminaria ? Number(p.custoLuminaria) : null,
         custoDriver220: (p as any).custoDriverOnoff220 ? Number((p as any).custoDriverOnoff220) : null,
         custoDriverBivolt: (p as any).custoDriverOnoffBivolt ? Number((p as any).custoDriverOnoffBivolt) : null,

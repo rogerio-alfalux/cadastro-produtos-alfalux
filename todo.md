@@ -280,7 +280,7 @@
 - [x] ProductForm: botão "+ Adicionar driver" por tipo, recolhido por padrão
 - [x] Cada driver extra tem: ComponentSelect, campo Qtd e campo Custo
 - [x] Botão de remover driver extra (X)
-- [ ] Endpoint /api/products/all: incluir drivers extras na resposta para o Configurador (pendente)
+- [x] Endpoint /api/products/all: incluir drivers extras na resposta para o Configurador (campos por tipo e alias agrupado `driversExtras`, com modelo, código EQ, quantidade e custo)
 
 ## Feature v31 — Múltiplas óticas (primária + secundárias)
 - [ ] Schema Drizzle: adicionar coluna oticaExtra (JSON array [{modelo, qtd}])
