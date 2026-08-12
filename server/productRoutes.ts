@@ -528,7 +528,9 @@ router.get("/all", async (_req, res) => {
           const publicUrl = await storageGetSignedUrl(key);
           signedUrlMap.set(key, publicUrl);
         } catch {
-          // Se falhar, mantém null — não bloqueia o endpoint
+          // O endpoint /manus-storage continua resolvendo a chave por redirect;
+          // manter esse fallback evita perder a foto na API quando o presign falha.
+          signedUrlMap.set(key, `/manus-storage/${key}`);
         }
       })
     );

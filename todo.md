@@ -155,8 +155,10 @@
 - [x] Prévia antes de confirmar: mostrar quantos produtos serão afetados antes de aplicar
 
 ## Bug Fix v13 — Foto trocada ALE-3462 / ORBIT S
-- [ ] Investigar e corrigir confusão de fotoUrl entre ALE-3462 e ORBIT S Ø800mm
-- [ ] Verificar se outros produtos Painéis têm fotos trocadas
+- [x] Auditar fotoUrl entre ALS-3462 e ORBIT S Ø800mm: registros distintos, imagens visualmente condizentes e API retornando as chaves corretas; nenhuma correção de mapeamento necessária
+- [ ] Auditar individualmente as 52 combinações família/foto de PAINÉIS e registrar o resultado por item em `references/auditoria-fotos-paineis-detalhada.md`
+- [x] Conciliar inventário ↔ API: 48 pares ativos com foto correspondentes, 4 pares inativos fora da API e 2 exceções ALS-2142 aprovadas sem foto
+- [x] Manter sem foto, por decisão do usuário, os produtos ALS-2142 18W RTG e ALS-2142 36W RTG
 
 ## Bug Fix v14 — Confusão de produtos no Configurador após update de componentes
 - [ ] Identificar o que mudou no endpoint /api/products/all após o update de componentes
