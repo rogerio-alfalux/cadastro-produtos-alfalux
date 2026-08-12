@@ -696,7 +696,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
   const [driversExtra, setDriversExtra] = useState<DriversExtraState>(defaultDriversExtra);
   const [oticasExtra, setOticasExtra] = useState<OticaExtra[]>([]);
   const [showSemDriverDialog, setShowSemDriverDialog] = useState(false);
-  const [d1d2Drivers, setD1d2Drivers] = useState<ComposicaoD1D2Driver[]>([]);
+  const [d1d2Drivers, setD1d2Drivers] = useState<D1D2DriversState>(emptyD1D2DriversState());
   const fileInputRef = useRef<HTMLInputElement>(null);
   // Keep a ref that always points to the latest form state so validate()
   // never reads a stale closure value
@@ -864,12 +864,23 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       setOticasExtra(parseOticaExtra((p as any).oticaExtra));
 
       // Carregar composição D1+D2 se existir
-      const parseComposicaoD1D2 = (raw: any): ComposicaoD1D2Driver[] => {
-        if (!raw) return [];
+      const parseComposicaoD1D2 = (raw: any): D1D2DriversState => {
+        const empty = emptyD1D2DriversState();
+        if (!raw) return empty;
         try {
           const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
-          return Array.isArray(parsed?.drivers) ? parsed.drivers : [];
-        } catch { return []; }
+          if (Array.isArray(parsed?.drivers)) {
+            for (const d of parsed.drivers) {
+              if (d.tipo === "DRIVER_ONOFF_220") empty.onoff220 = { modelo: d.modelo || "", qtd: d.qtd || 1, custo: d.custo || "" };
+              else if (d.tipo === "DRIVER_ONOFF_BIVOLT") empty.onoffBivolt = { modelo: d.modelo || "", qtd: d.qtd || 1, custo: d.custo || "" };
+              else if (d.tipo === "DRIVER_DIM_110V") empty.dim110v = { modelo: d.modelo || "", qtd: d.qtd || 1, custo: d.custo || "" };
+              else if (d.tipo === "DRIVER_DIM_DALI") empty.dimDali = { modelo: d.modelo || "", qtd: d.qtd || 1, custo: d.custo || "" };
+              else if (d.tipo === "DRIVER_DIM_TRIAC_110V") empty.dimTriac110v = { modelo: d.modelo || "", qtd: d.qtd || 1, custo: d.custo || "" };
+              else if (d.tipo === "DRIVER_DIM_TRIAC_220V") empty.dimTriac220v = { modelo: d.modelo || "", qtd: d.qtd || 1, custo: d.custo || "" };
+            }
+          }
+          return empty;
+        } catch { return empty; }
       };
       setD1d2Drivers(parseComposicaoD1D2((p as any).composicaoD1D2));
 
@@ -1220,7 +1231,13 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
 
     // Serializar composição D1+D2 como JSON
     if (form.possuiOpcaoD1D2) {
-      const validD1D2Drivers = d1d2Drivers.filter((d) => d.modelo.trim());
+      const validD1D2Drivers: ComposicaoD1D2Driver[] = [];
+      if (d1d2Drivers.onoff220.modelo.trim()) validD1D2Drivers.push({ tipo: "DRIVER_ONOFF_220", ...d1d2Drivers.onoff220 });
+      if (d1d2Drivers.onoffBivolt.modelo.trim()) validD1D2Drivers.push({ tipo: "DRIVER_ONOFF_BIVOLT", ...d1d2Drivers.onoffBivolt });
+      if (d1d2Drivers.dim110v.modelo.trim()) validD1D2Drivers.push({ tipo: "DRIVER_DIM_110V", ...d1d2Drivers.dim110v });
+      if (d1d2Drivers.dimDali.modelo.trim()) validD1D2Drivers.push({ tipo: "DRIVER_DIM_DALI", ...d1d2Drivers.dimDali });
+      if (d1d2Drivers.dimTriac110v.modelo.trim()) validD1D2Drivers.push({ tipo: "DRIVER_DIM_TRIAC_110V", ...d1d2Drivers.dimTriac110v });
+      if (d1d2Drivers.dimTriac220v.modelo.trim()) validD1D2Drivers.push({ tipo: "DRIVER_DIM_TRIAC_220V", ...d1d2Drivers.dimTriac220v });
       const composicao = {
         qtdModuloLed: (form.qtdModuloLed || 1) * 2,
         drivers: validD1D2Drivers,
@@ -2033,68 +2050,53 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
             <div>
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-semibold text-amber-400 uppercase tracking-wide">Drivers D1+D2</span>
-                <span className="text-[10px] text-muted-foreground">Cadastre os drivers para a versão D1+D2 (podem ser diferentes da versão D1)</span>
+                <span className="text-[10px] text-muted-foreground">Mesma estrutura da versão D1 — custo puxado automaticamente do componente</span>
               </div>
 
-              <div className="space-y-3">
-                {d1d2Drivers.map((drv, idx) => (
-                  <div key={idx} className="flex items-center gap-3 p-3 rounded-lg bg-muted/20 border border-border/40">
-                    <select
-                      value={drv.tipo}
-                      onChange={(e) => setD1d2Drivers((prev) => prev.map((d, i) => i === idx ? { ...d, tipo: e.target.value } : d))}
-                      className="input-dark text-xs h-8 w-40"
-                    >
-                      {DRIVER_TIPOS_D1D2.map((t) => (
-                        <option key={t.value} value={t.value}>{t.label}</option>
-                      ))}
-                    </select>
-                    <div className="flex-1">
-                      <ComponentSelect
-                        tipo={drv.tipo as any}
-                        value={drv.modelo}
-                        onChange={(v) => setD1d2Drivers((prev) => prev.map((d, i) => i === idx ? { ...d, modelo: v } : d))}
-                        placeholder="Selecione o driver..."
-                      />
-                    </div>
-                    <div className="w-16">
-                      <Input
-                        className="input-dark text-sm h-8 text-center"
-                        type="number" min="1"
-                        value={drv.qtd}
-                        onChange={(e) => setD1d2Drivers((prev) => prev.map((d, i) => i === idx ? { ...d, qtd: parseInt(e.target.value) || 1 } : d))}
-                        title="Quantidade"
-                      />
-                    </div>
-                    <div className="relative w-28">
-                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">R$</span>
-                      <Input
-                        className="input-dark pl-7 text-sm h-8"
-                        type="number" step="0.01" min="0"
-                        value={drv.custo}
-                        onChange={(e) => setD1d2Drivers((prev) => prev.map((d, i) => i === idx ? { ...d, custo: e.target.value } : d))}
-                        placeholder="0,00"
-                        title="Custo unitário"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setD1d2Drivers((prev) => prev.filter((_, i) => i !== idx))}
-                      className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                      title="Remover driver"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
+              <div className="space-y-4">
+                {/* ON/OFF 220V D1+D2 */}
+                <D1D2DriverField
+                  label="ON/OFF 220V"
+                  tipo="DRIVER_ONOFF_220"
+                  value={d1d2Drivers.onoff220}
+                  onChange={(v) => setD1d2Drivers((prev) => ({ ...prev, onoff220: v }))}
+                />
+                {/* ON/OFF Bivolt D1+D2 */}
+                <D1D2DriverField
+                  label="ON/OFF Bivolt"
+                  tipo="DRIVER_ONOFF_BIVOLT"
+                  value={d1d2Drivers.onoffBivolt}
+                  onChange={(v) => setD1d2Drivers((prev) => ({ ...prev, onoffBivolt: v }))}
+                />
+                {/* DIM 1-10V D1+D2 */}
+                <D1D2DriverField
+                  label="DIM 1-10V"
+                  tipo="DRIVER_DIM_110V"
+                  value={d1d2Drivers.dim110v}
+                  onChange={(v) => setD1d2Drivers((prev) => ({ ...prev, dim110v: v }))}
+                />
+                {/* DIM DALI D1+D2 */}
+                <D1D2DriverField
+                  label="DIM DALI"
+                  tipo="DRIVER_DIM_DALI"
+                  value={d1d2Drivers.dimDali}
+                  onChange={(v) => setD1d2Drivers((prev) => ({ ...prev, dimDali: v }))}
+                />
+                {/* DIM TRIAC 110V D1+D2 */}
+                <D1D2DriverField
+                  label="DIM TRIAC 110V"
+                  tipo="DRIVER_DIM_TRIAC_110V"
+                  value={d1d2Drivers.dimTriac110v}
+                  onChange={(v) => setD1d2Drivers((prev) => ({ ...prev, dimTriac110v: v }))}
+                />
+                {/* DIM TRIAC 220V D1+D2 */}
+                <D1D2DriverField
+                  label="DIM TRIAC 220V"
+                  tipo="DRIVER_DIM_TRIAC_220V"
+                  value={d1d2Drivers.dimTriac220v}
+                  onChange={(v) => setD1d2Drivers((prev) => ({ ...prev, dimTriac220v: v }))}
+                />
               </div>
-
-              <button
-                type="button"
-                onClick={() => setD1d2Drivers((prev) => [...prev, emptyD1D2Driver()])}
-                className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 transition-colors mt-3"
-              >
-                <PlusCircle className="w-3.5 h-3.5" /> Adicionar driver D1+D2
-              </button>
             </div>
           </section>
         )}
@@ -2521,19 +2523,76 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
 // ─── Composição D1+D2 types ────────────────────────────────────────────────
 
 interface ComposicaoD1D2Driver {
-  tipo: string; // ex: "DRIVER_ONOFF_220", "DRIVER_ONOFF_BIVOLT", etc.
+  tipo: string;
   modelo: string;
   qtd: number;
   custo: string;
 }
 
-const DRIVER_TIPOS_D1D2 = [
-  { value: "DRIVER_ONOFF_220", label: "ON/OFF 220V" },
-  { value: "DRIVER_ONOFF_BIVOLT", label: "ON/OFF Bivolt" },
-  { value: "DRIVER_DIM_110V", label: "DIM 1-10V" },
-  { value: "DRIVER_DIM_DALI", label: "DIM DALI" },
-  { value: "DRIVER_DIM_TRIAC_110V", label: "DIM TRIAC 110V" },
-  { value: "DRIVER_DIM_TRIAC_220V", label: "DIM TRIAC 220V" },
-];
+interface D1D2DriversState {
+  onoff220: { modelo: string; qtd: number; custo: string };
+  onoffBivolt: { modelo: string; qtd: number; custo: string };
+  dim110v: { modelo: string; qtd: number; custo: string };
+  dimDali: { modelo: string; qtd: number; custo: string };
+  dimTriac110v: { modelo: string; qtd: number; custo: string };
+  dimTriac220v: { modelo: string; qtd: number; custo: string };
+}
 
-const emptyD1D2Driver = (): ComposicaoD1D2Driver => ({ tipo: "DRIVER_ONOFF_220", modelo: "", qtd: 1, custo: "" });
+const emptyD1D2DriversState = (): D1D2DriversState => ({
+  onoff220: { modelo: "", qtd: 1, custo: "" },
+  onoffBivolt: { modelo: "", qtd: 1, custo: "" },
+  dim110v: { modelo: "", qtd: 1, custo: "" },
+  dimDali: { modelo: "", qtd: 1, custo: "" },
+  dimTriac110v: { modelo: "", qtd: 1, custo: "" },
+  dimTriac220v: { modelo: "", qtd: 1, custo: "" },
+});
+
+type D1D2ComponentType = "DRIVER_ONOFF_220" | "DRIVER_ONOFF_BIVOLT" | "DRIVER_DIM_110V" | "DRIVER_DIM_DALI" | "DRIVER_DIM_TRIAC_110V" | "DRIVER_DIM_TRIAC_220V";
+
+function D1D2DriverField({ label, tipo, value, onChange }: {
+  label: string;
+  tipo: D1D2ComponentType;
+  value: { modelo: string; qtd: number; custo: string };
+  onChange: (v: { modelo: string; qtd: number; custo: string }) => void;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="field-label text-amber-400/80">{label} (D1+D2)</Label>
+      <div className="flex gap-2 items-start">
+        <div className="flex-1">
+          <ComponentSelect
+            tipo={tipo}
+            value={value.modelo}
+            onChange={(v) => onChange({ ...value, modelo: v })}
+            onSelectComponent={(comp) => {
+              if (comp.custoDriver) {
+                onChange({ ...value, modelo: comp.modelo, custo: comp.custoDriver });
+              }
+            }}
+            placeholder={`Driver ${label}...`}
+          />
+        </div>
+        <div className="w-16">
+          <Input
+            className="input-dark text-sm h-9 text-center"
+            type="number" min={1}
+            value={value.qtd}
+            onChange={(e) => onChange({ ...value, qtd: parseInt(e.target.value) || 1 })}
+            title="Quantidade"
+          />
+        </div>
+        <div className="relative w-28">
+          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">R$</span>
+          <Input
+            className="input-dark pl-7 text-sm h-9"
+            type="number" step="0.01" min={0}
+            value={value.custo}
+            onChange={(e) => onChange({ ...value, custo: e.target.value })}
+            placeholder="0,00"
+            title="Custo unitário (preenchido automaticamente)"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
