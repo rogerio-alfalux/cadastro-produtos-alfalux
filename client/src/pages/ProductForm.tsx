@@ -353,7 +353,7 @@ const OticaExtraRow = ({ index, item, onChange, onRemove }: OticaExtraRowProps) 
 
 const CATEGORIAS = ["PERFIS", "DOWNLIGHTS", "PAINÉIS", "SPOTS", "ARANDELAS", "ÁREA EXTERNA", "BALIZADORES", "DECORATIVAS", "CUSTOMIZADOS"];
 const INSTALACOES = ["EMBUTIR", "SOBREPOR", "PENDENTE", "ARANDELA", "NO FRAME"];
-const TEMPERATURAS = ["2700", "3000", "4000", "5000"];
+const TEMPERATURAS = ["2700", "3000", "3500", "4000", "5000"];
 
 interface FormData {
   categoria: string;
@@ -370,10 +370,12 @@ interface FormData {
   // Módulo LED por CCT
   moduloLed2700: string;
   moduloLed3000: string;
+  moduloLed3500: string;
   moduloLed4000: string;
   moduloLed5000: string;
   qtdModuloLed2700: number;
   qtdModuloLed3000: number;
+  qtdModuloLed3500: number;
   qtdModuloLed4000: number;
   qtdModuloLed5000: number;
   otica: string;
@@ -484,10 +486,12 @@ const defaultForm: FormData = {
   // Módulo LED por CCT
   moduloLed2700: "",
   moduloLed3000: "",
+  moduloLed3500: "",
   moduloLed4000: "",
   moduloLed5000: "",
   qtdModuloLed2700: 1,
   qtdModuloLed3000: 1,
+  qtdModuloLed3500: 1,
   qtdModuloLed4000: 1,
   qtdModuloLed5000: 1,
   otica: "",
@@ -524,7 +528,7 @@ const defaultForm: FormData = {
   qtdDriverDimTriac220v: 1,
   driverDimTriac220vNaoAplicavel: false,
   custoDriverDimTriac220v: "",
-  temperaturasCor: ["2700", "3000", "4000", "5000"],
+  temperaturasCor: ["2700", "3000", "3500", "4000", "5000"],
   fotoUrl: "",
   fotoKey: "",
   custoLuminaria: "",
@@ -724,7 +728,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       initializedRef.current = true;
       const temps = (() => {
         try { return JSON.parse(existingProduct.temperaturasCor || "[]"); }
-        catch { return ["2700", "3000", "4000", "5000"]; }
+        catch { return ["2700", "3000", "3500", "4000", "5000"]; }
       })();
       const p = existingProduct as any;
       const baseForm = {
@@ -738,10 +742,12 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         // Módulo LED por CCT
         moduloLed2700: p.moduloLed2700 || "",
         moduloLed3000: p.moduloLed3000 || "",
+        moduloLed3500: p.moduloLed3500 || "",
         moduloLed4000: p.moduloLed4000 || "",
         moduloLed5000: p.moduloLed5000 || "",
         qtdModuloLed2700: (p.qtdModuloLed2700 != null ? Number(p.qtdModuloLed2700) : 1),
         qtdModuloLed3000: (p.qtdModuloLed3000 != null ? Number(p.qtdModuloLed3000) : 1),
+        qtdModuloLed3500: (p.qtdModuloLed3500 != null ? Number(p.qtdModuloLed3500) : 1),
         qtdModuloLed4000: (p.qtdModuloLed4000 != null ? Number(p.qtdModuloLed4000) : 1),
         qtdModuloLed5000: (p.qtdModuloLed5000 != null ? Number(p.qtdModuloLed5000) : 1),
         // Se o campo está vazio no banco (sem valor e sem flag naoAplicavel), trata como naoAplicavel=true
@@ -1091,11 +1097,12 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
     }
 
     // Derivar temperaturasCor automaticamente dos módulos CCT preenchidos
-    const hasCctModules = !!(form.moduloLed2700 || form.moduloLed3000 || form.moduloLed4000 || form.moduloLed5000);
+    const hasCctModules = !!(form.moduloLed2700 || form.moduloLed3000 || form.moduloLed3500 || form.moduloLed4000 || form.moduloLed5000);
     const derivedTemps = hasCctModules
       ? [
           ...(form.moduloLed2700 ? ["2700"] : []),
           ...(form.moduloLed3000 ? ["3000"] : []),
+          ...(form.moduloLed3500 ? ["3500"] : []),
           ...(form.moduloLed4000 ? ["4000"] : []),
           ...(form.moduloLed5000 ? ["5000"] : []),
         ]
@@ -1112,10 +1119,12 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       temperaturasCor: form.moduloRgbw ? JSON.stringify(["RGBW"]) : JSON.stringify(derivedTemps),
       moduloLed2700: form.moduloLed2700 !== "" ? form.moduloLed2700 : null,
       moduloLed3000: form.moduloLed3000 !== "" ? form.moduloLed3000 : null,
+      moduloLed3500: form.moduloLed3500 !== "" ? form.moduloLed3500 : null,
       moduloLed4000: form.moduloLed4000 !== "" ? form.moduloLed4000 : null,
       moduloLed5000: form.moduloLed5000 !== "" ? form.moduloLed5000 : null,
       qtdModuloLed2700: form.moduloLed2700 ? form.qtdModuloLed2700 : undefined,
       qtdModuloLed3000: form.moduloLed3000 ? form.qtdModuloLed3000 : undefined,
+      qtdModuloLed3500: form.moduloLed3500 ? form.qtdModuloLed3500 : undefined,
       qtdModuloLed4000: form.moduloLed4000 ? form.qtdModuloLed4000 : undefined,
       qtdModuloLed5000: form.moduloLed5000 ? form.qtdModuloLed5000 : undefined,
       custoLuminaria: form.custoLuminaria || undefined,
@@ -1551,6 +1560,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                 {([
                   { cct: "2700", field: "moduloLed2700" as const, qtdField: "qtdModuloLed2700" as const, color: "oklch(0.75 0.15 65)" },
                   { cct: "3000", field: "moduloLed3000" as const, qtdField: "qtdModuloLed3000" as const, color: "oklch(0.80 0.12 75)" },
+                  { cct: "3500", field: "moduloLed3500" as const, qtdField: "qtdModuloLed3500" as const, color: "oklch(0.82 0.10 85)" },
                   { cct: "4000", field: "moduloLed4000" as const, qtdField: "qtdModuloLed4000" as const, color: "oklch(0.85 0.05 200)" },
                   { cct: "5000", field: "moduloLed5000" as const, qtdField: "qtdModuloLed5000" as const, color: "oklch(0.88 0.04 220)" },
                 ] as const).map(({ cct, field, qtdField, color }) => (
@@ -2107,7 +2117,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
             <h2 className="section-header mb-0">TEMPERATURA DE COR</h2>
             {form.moduloLampada ? (
               <span className="text-[10px] text-amber-400 ml-auto">Não aplicável — luminária com lâmpada</span>
-            ) : (form.moduloLed2700 || form.moduloLed3000 || form.moduloLed4000 || form.moduloLed5000) ? (
+            ) : (form.moduloLed2700 || form.moduloLed3000 || form.moduloLed3500 || form.moduloLed4000 || form.moduloLed5000) ? (
               <span className="text-[10px] text-muted-foreground ml-auto">Derivado automaticamente dos módulos LED</span>
             ) : (
               <span className="text-[10px] text-muted-foreground ml-auto">Marcadas por padrão — desmarque se não aplicável</span>
@@ -2126,17 +2136,19 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                 RGBW
               </div>
             </div>
-          ) : (form.moduloLed2700 || form.moduloLed3000 || form.moduloLed4000 || form.moduloLed5000) ? (
+          ) : (form.moduloLed2700 || form.moduloLed3000 || form.moduloLed3500 || form.moduloLed4000 || form.moduloLed5000) ? (
             // Modo derivado: CCTs determinados pelos módulos preenchidos
             <div className="flex flex-wrap gap-3">
               {TEMPERATURAS.map((temp) => {
                 const fieldMap: Record<string, keyof FormData> = {
                   "2700": "moduloLed2700", "3000": "moduloLed3000",
+                  "3500": "moduloLed3500",
                   "4000": "moduloLed4000", "5000": "moduloLed5000",
                 };
                 const active = !!(form[fieldMap[temp]]);
                 const colors: Record<string, string> = {
                   "2700": "oklch(0.75 0.15 65)", "3000": "oklch(0.80 0.12 75)",
+                  "3500": "oklch(0.82 0.10 85)",
                   "4000": "oklch(0.85 0.05 200)", "5000": "oklch(0.88 0.04 220)",
                 };
                 return (
@@ -2159,8 +2171,9 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                 {TEMPERATURAS.map((temp) => {
                   const active = form.temperaturasCor.includes(temp);
                   const colors: Record<string, string> = {
-                    "2700": "oklch(0.75 0.15 65)", "3000": "oklch(0.80 0.12 75)",
-                    "4000": "oklch(0.85 0.05 200)", "5000": "oklch(0.88 0.04 220)",
+                  "2700": "oklch(0.75 0.15 65)", "3000": "oklch(0.80 0.12 75)",
+                  "3500": "oklch(0.82 0.10 85)",
+                  "4000": "oklch(0.85 0.05 200)", "5000": "oklch(0.88 0.04 220)",
                   };
                   return (
                     <button

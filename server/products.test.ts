@@ -202,6 +202,32 @@ describe("products.create", () => {
       drivers: [{ modelo: "DRIVER 44W", custo: "18.0000" }],
     });
   });
+
+  it("persists the 3500K LED module and its quantity", async () => {
+    const { createProduct } = await import("./db");
+    const caller = appRouter.createCaller(createCtx());
+    await caller.products.create({
+      categoria: "DOWNLIGHTS",
+      instalacao: "EMBUTIR",
+      familia: "LUNA",
+      sku: "TEST-3500K",
+      produto: "PRODUTO COM 3500K",
+      moduloLed: "MÓDULO PRINCIPAL",
+      moduloLed3500: "módulo led 3500k",
+      qtdModuloLed3500: 2.5,
+      otica: "NÃO APLICÁVEL",
+      oticaNaoAplicavel: true,
+      holder: "NÃO APLICÁVEL",
+      holderNaoAplicavel: true,
+      dissipador: "NÃO APLICÁVEL",
+      dissipadorNaoAplicavel: true,
+      driverOnoff220: "DRIVER 220V",
+      driverOnoffBivolt: "DRIVER BIVOLT",
+    });
+    const callArgs = (createProduct as any).mock.calls.at(-1)?.[0];
+    expect(callArgs?.moduloLed3500).toBe("MÓDULO LED 3500K");
+    expect(callArgs?.qtdModuloLed3500).toBe("2.5");
+  });
 });
 
 describe("products.update", () => {
@@ -232,6 +258,18 @@ describe("products.update", () => {
     expect(JSON.parse(callArgs?.composicaoD1D2)).toMatchObject({
       drivers: [{ modelo: "DRIVER 44W", custo: "18.0000" }],
     });
+  });
+
+  it("updates the 3500K LED module and quantity", async () => {
+    const { updateProduct } = await import("./db");
+    const caller = appRouter.createCaller(createCtx());
+    await caller.products.update({
+      id: 1,
+      data: { moduloLed3500: "módulo revisão 3500k", qtdModuloLed3500: 3 },
+    });
+    const callArgs = (updateProduct as any).mock.calls.at(-1)?.[1];
+    expect(callArgs?.moduloLed3500).toBe("MÓDULO REVISÃO 3500K");
+    expect(callArgs?.qtdModuloLed3500).toBe("3");
   });
 });
 

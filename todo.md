@@ -577,3 +577,23 @@
 - [x] Corrigir somente os drivers D1+D2 confirmados, preservando os demais componentes
 - [x] Validar exemplos, resposta da API e custos dos drivers corrigidos
 - [x] Aplicar a regra confirmada: driver 65W/60W atende até 8 barras D1+D2; acima desse limite, distribuir a quantidade de drivers por grupos de até 8 barras
+
+## Exportação v50 — Custo e Markups ON/OFF 220Vac
+
+- [x] Extrair todos os produtos com custo, markup padrão e markup mínimo ON/OFF 220Vac
+- [x] Calcular preços de venda pelos markups padrão e mínimo, mantendo produtos sem custo na lista
+- [x] Gerar e validar planilha Excel para entrega
+
+## Ajuste v50.1 — Estética da Planilha de Markups
+
+- [x] Aplicar faixas coloridas alternadas e destaque visual aos status e campos financeiros
+- [x] Melhorar cabeçalhos, filtros, congelamento e legibilidade da planilha
+- [x] Validar e reenviar a versão visual aprimorada
+
+## Feature v51 — Módulo LED 3500K
+
+- [x] Adicionar campo de módulo LED 3500K ao banco de produtos
+- [x] Adicionar seleção e quantidade de módulo LED 3500K no formulário
+- [x] Persistir 3500K em criação, edição, importação e exportação de produtos
+- [x] Expor o módulo LED 3500K com código EQ/CP na API pública
+- [x] Validar o fluxo completo de cadastro e API

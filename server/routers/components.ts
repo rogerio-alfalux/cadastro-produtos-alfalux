@@ -31,7 +31,7 @@ const TYPE_TO_COLUMN: Record<string, string | string[]> = {
   HOLDER: "holder",
   DISSIPADOR: "dissipador",
   // MODULO_LED pode estar em qualquer coluna de CCT ou no campo principal
-  MODULO_LED: ["moduloLed", "moduloLed2700", "moduloLed3000", "moduloLed4000", "moduloLed5000", "moduloLedRgbw"],
+  MODULO_LED: ["moduloLed", "moduloLed2700", "moduloLed3000", "moduloLed3500", "moduloLed4000", "moduloLed5000", "moduloLedRgbw"],
 };
 
 // Map component type → product custo column name(s)

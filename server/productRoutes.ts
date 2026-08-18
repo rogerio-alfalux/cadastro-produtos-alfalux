@@ -67,6 +67,16 @@ router.get("/export-excel", async (_req, res) => {
       FAMÍLIA: p.familia,
       PRODUTO: p.produto,
       "MÓDULO LED": p.moduloLed,
+      "MÓDULO LED 2700K": (p as any).moduloLed2700 || "",
+      "QTD MÓDULO LED 2700K": (p as any).qtdModuloLed2700 || "",
+      "MÓDULO LED 3000K": (p as any).moduloLed3000 || "",
+      "QTD MÓDULO LED 3000K": (p as any).qtdModuloLed3000 || "",
+      "MÓDULO LED 3500K": (p as any).moduloLed3500 || "",
+      "QTD MÓDULO LED 3500K": (p as any).qtdModuloLed3500 || "",
+      "MÓDULO LED 4000K": (p as any).moduloLed4000 || "",
+      "QTD MÓDULO LED 4000K": (p as any).qtdModuloLed4000 || "",
+      "MÓDULO LED 5000K": (p as any).moduloLed5000 || "",
+      "QTD MÓDULO LED 5000K": (p as any).qtdModuloLed5000 || "",
       ÓTICA: p.oticaNaoAplicavel ? "NÃO APLICÁVEL" : p.otica,
       HOLDER: p.holderNaoAplicavel ? "NÃO APLICÁVEL" : p.holder,
       DISSIPADOR: p.dissipadorNaoAplicavel ? "NÃO APLICÁVEL" : p.dissipador,
@@ -219,7 +229,7 @@ function parseFormatoDriverLookup(ws: any, sheetName: string): any[] {
       driverDim110vNaoAplicavel: !driverDim110,
       driverDimDali: driverDali || null,
       driverDimDaliNaoAplicavel: !driverDali,
-      temperaturasCor: '["2700","3000","4000","5000"]',
+      temperaturasCor: '["2700","3000","3500","4000","5000"]',
       fotoUrl: null,
       fotoKey: null,
       custoLuminaria: null,
@@ -261,6 +271,9 @@ function parseFormatoPadrao(ws: any, sheetName: string): any[] {
     const oticaRaw = String(row["ÓTICA"] || row["OTICA"] || row["Ótica"] || "").trim().toUpperCase();
     const holderRaw = String(row["HOLDER"] || row["holder"] || "").trim().toUpperCase();
     const dissipadorRaw = String(row["DISSIPADOR"] || row["dissipador"] || "").trim().toUpperCase();
+    const moduloLed3500 = String(row["MÓDULO LED 3500K"] || row["MODULO LED 3500K"] || "").trim().toUpperCase();
+    const qtdModuloLed3500Raw = String(row["QTD MÓDULO LED 3500K"] || row["QTD MODULO LED 3500K"] || "").trim().replace(',', '.');
+    const qtdModuloLed3500 = qtdModuloLed3500Raw ? Number(qtdModuloLed3500Raw) : undefined;
 
     products.push({
       categoria: String(row["CATEGORIA"] || sheetName || "").trim().toUpperCase(),
@@ -269,6 +282,8 @@ function parseFormatoPadrao(ws: any, sheetName: string): any[] {
       sku: sku.toUpperCase(),
       produto: produto.toUpperCase(),
       moduloLed: String(row["MÓDULO LED"] || row["MODULO LED"] || "").trim().toUpperCase(),
+      moduloLed3500: moduloLed3500 || null,
+      qtdModuloLed3500: Number.isFinite(qtdModuloLed3500) && qtdModuloLed3500! > 0 ? qtdModuloLed3500 : undefined,
       otica: oticaRaw || "NÃO APLICÁVEL",
       oticaNaoAplicavel: oticaRaw === "NÃO APLICÁVEL" || oticaRaw === "NAO APLICAVEL",
       holder: holderRaw || "NÃO APLICÁVEL",
@@ -282,7 +297,7 @@ function parseFormatoPadrao(ws: any, sheetName: string): any[] {
       driverDim110vNaoAplicavel: true,
       driverDimDali: String(row["DIM DALI"] || "").trim().toUpperCase() || null,
       driverDimDaliNaoAplicavel: true,
-      temperaturasCor: '["2700","3000","4000","5000"]',
+      temperaturasCor: '["2700","3000","3500","4000","5000"]',
       fotoUrl: null,
       fotoKey: null,
       custoLuminaria: String(row["CUSTO LUMINÁRIA (R$)"] || "").trim() || null,
@@ -370,7 +385,7 @@ function parseFormatoConfigurador(ws: any): any[] {
       driverDim110vNaoAplicavel: true,
       driverDimDali: null,
       driverDimDaliNaoAplicavel: true,
-      temperaturasCor: '["2700","3000","4000","5000"]',
+      temperaturasCor: '["2700","3000","3500","4000","5000"]',
       fotoUrl: null,
       fotoKey: null,
       custoLuminaria: null,
@@ -545,7 +560,7 @@ router.get("/all", async (_req, res) => {
         const parsed = JSON.parse(p.temperaturasCor || "[]");
         if (Array.isArray(parsed)) temps.push(...parsed);
       } catch {
-        temps.push("2700", "3000", "4000", "5000");
+        temps.push("2700", "3000", "3500", "4000", "5000");
       }
 
       // ── Quantidades dos componentes ──────────────────────────────────────
@@ -748,21 +763,25 @@ router.get("/all", async (_req, res) => {
       // ── Módulo LED por CCT ────────────────────────────────────────────────────────────────────────────────────
       const ml2700 = (p as any).moduloLed2700 as string | null;
       const ml3000 = (p as any).moduloLed3000 as string | null;
+      const ml3500 = (p as any).moduloLed3500 as string | null;
       const ml4000 = (p as any).moduloLed4000 as string | null;
       const ml5000 = (p as any).moduloLed5000 as string | null;
-      const hasCctModules = !!(ml2700 || ml3000 || ml4000 || ml5000);
+      const hasCctModules = !!(ml2700 || ml3000 || ml3500 || ml4000 || ml5000);
 
       result.ledModule2700 = ml2700 ? withQty(ml2700, Number((p as any).qtdModuloLed2700) || 1) : null;
       result.ledModule3000 = ml3000 ? withQty(ml3000, Number((p as any).qtdModuloLed3000) || 1) : null;
+      result.ledModule3500 = ml3500 ? withQty(ml3500, Number((p as any).qtdModuloLed3500) || 1) : null;
       result.ledModule4000 = ml4000 ? withQty(ml4000, Number((p as any).qtdModuloLed4000) || 1) : null;
       result.ledModule5000 = ml5000 ? withQty(ml5000, Number((p as any).qtdModuloLed5000) || 1) : null;
       result.ledModuleQtd2700 = ml2700 ? (Number((p as any).qtdModuloLed2700) || 1) : null;
       result.ledModuleQtd3000 = ml3000 ? (Number((p as any).qtdModuloLed3000) || 1) : null;
+      result.ledModuleQtd3500 = ml3500 ? (Number((p as any).qtdModuloLed3500) || 1) : null;
       result.ledModuleQtd4000 = ml4000 ? (Number((p as any).qtdModuloLed4000) || 1) : null;
       result.ledModuleQtd5000 = ml5000 ? (Number((p as any).qtdModuloLed5000) || 1) : null;
       // Códigos EQ/CP dos módulos LED por CCT
       result.ledModuleCode2700 = ml2700 ? lookupCode(ml2700) : null;
       result.ledModuleCode3000 = ml3000 ? lookupCode(ml3000) : null;
+      result.ledModuleCode3500 = ml3500 ? lookupCode(ml3500) : null;
       result.ledModuleCode4000 = ml4000 ? lookupCode(ml4000) : null;
       result.ledModuleCode5000 = ml5000 ? lookupCode(ml5000) : null;
 
@@ -772,6 +791,7 @@ router.get("/all", async (_req, res) => {
         const derivedTemps: string[] = [];
         if (ml2700) derivedTemps.push("2700");
         if (ml3000) derivedTemps.push("3000");
+        if (ml3500) derivedTemps.push("3500");
         if (ml4000) derivedTemps.push("4000");
         if (ml5000) derivedTemps.push("5000");
         result.temperaturasCor = derivedTemps;

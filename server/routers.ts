@@ -43,10 +43,12 @@ const productSchema = z.object({
   // Módulo LED por CCT
   moduloLed2700: z.string().nullish(),
   moduloLed3000: z.string().nullish(),
+  moduloLed3500: z.string().nullish(),
   moduloLed4000: z.string().nullish(),
   moduloLed5000: z.string().nullish(),
   qtdModuloLed2700: z.number().min(0.01).nullish(),
   qtdModuloLed3000: z.number().min(0.01).nullish(),
+  qtdModuloLed3500: z.number().min(0.01).nullish(),
   qtdModuloLed4000: z.number().min(0.01).nullish(),
   qtdModuloLed5000: z.number().min(0.01).nullish(),
   // Ótica: obrigatório a menos que NaoAplicavel=true
@@ -80,7 +82,7 @@ const productSchema = z.object({
   driverDimTriac220v: z.string().nullish(),
   qtdDriverDimTriac220v: z.number().int().min(1).default(1),
   driverDimTriac220vNaoAplicavel: z.boolean().default(false),
-  temperaturasCor: z.string().default('["2700","3000","4000","5000"]'),
+  temperaturasCor: z.string().default('["2700","3000","3500","4000","5000"]'),
   fotoUrl: z.string().nullish(),
   fotoKey: z.string().nullish(),
   custoLuminaria: z.string().nullish(),
@@ -183,10 +185,12 @@ const bulkProductSchema = z.object({
   // Módulo LED por CCT
   moduloLed2700: z.string().optional(),
   moduloLed3000: z.string().optional(),
+  moduloLed3500: z.string().optional(),
   moduloLed4000: z.string().optional(),
   moduloLed5000: z.string().optional(),
   qtdModuloLed2700: z.number().min(0.01).optional(),
   qtdModuloLed3000: z.number().min(0.01).optional(),
+  qtdModuloLed3500: z.number().min(0.01).optional(),
   qtdModuloLed4000: z.number().min(0.01).optional(),
   qtdModuloLed5000: z.number().min(0.01).optional(),
   otica: z.string().default(""),
@@ -217,7 +221,7 @@ const bulkProductSchema = z.object({
   driverDimTriac220v: z.string().optional(),
   qtdDriverDimTriac220v: z.number().int().min(1).default(1),
   driverDimTriac220vNaoAplicavel: z.boolean().default(false),
-  temperaturasCor: z.string().default('["2700","3000","4000","5000"]'),
+  temperaturasCor: z.string().default('["2700","3000","3500","4000","5000"]'),
   fotoUrl: z.string().nullable().optional(),
   fotoKey: z.string().nullable().optional(),
   custoLuminaria: z.string().optional(),
@@ -311,10 +315,12 @@ export const appRouter = router({
           qtdModuloLedRgbw: input.qtdModuloLedRgbw ? String(input.qtdModuloLedRgbw) : null,
           moduloLed2700: input.moduloLed2700?.toUpperCase() || null,
           moduloLed3000: input.moduloLed3000?.toUpperCase() || null,
+          moduloLed3500: input.moduloLed3500?.toUpperCase() || null,
           moduloLed4000: input.moduloLed4000?.toUpperCase() || null,
           moduloLed5000: input.moduloLed5000?.toUpperCase() || null,
           qtdModuloLed2700: input.qtdModuloLed2700 ? String(input.qtdModuloLed2700) : null,
           qtdModuloLed3000: input.qtdModuloLed3000 ? String(input.qtdModuloLed3000) : null,
+          qtdModuloLed3500: input.qtdModuloLed3500 ? String(input.qtdModuloLed3500) : null,
           qtdModuloLed4000: input.qtdModuloLed4000 ? String(input.qtdModuloLed4000) : null,
           qtdModuloLed5000: input.qtdModuloLed5000 ? String(input.qtdModuloLed5000) : null,
           otica: input.oticaNaoAplicavel ? "NÃO APLICÁVEL" : input.otica.toUpperCase(),
@@ -341,7 +347,7 @@ export const appRouter = router({
           driverDimTriac220v: input.driverDimTriac220v?.toUpperCase() || null,
           driverDimTriac220vNaoAplicavel: !input.driverDimTriac220v || input.driverDimTriac220vNaoAplicavel === true,
           qtdDriverDimTriac220v: input.qtdDriverDimTriac220v ?? 1,
-          temperaturasCor: input.temperaturasCor || '["2700","3000","4000","5000"]',
+          temperaturasCor: input.temperaturasCor || '["2700","3000","3500","4000","5000"]',
           custoLuminaria: input.custoLuminaria || null,
           custoDriverOnoff220: input.custoDriverOnoff220 || null,
           custoDriverOnoffBivolt: input.custoDriverOnoffBivolt || null,
@@ -448,10 +454,12 @@ export const appRouter = router({
         if (d.qtdModuloLedRgbw !== undefined) update.qtdModuloLedRgbw = d.qtdModuloLedRgbw ? String(d.qtdModuloLedRgbw) : null;
         if (d.moduloLed2700 !== undefined) update.moduloLed2700 = d.moduloLed2700?.toUpperCase() || null;
         if (d.moduloLed3000 !== undefined) update.moduloLed3000 = d.moduloLed3000?.toUpperCase() || null;
+        if (d.moduloLed3500 !== undefined) update.moduloLed3500 = d.moduloLed3500?.toUpperCase() || null;
         if (d.moduloLed4000 !== undefined) update.moduloLed4000 = d.moduloLed4000?.toUpperCase() || null;
         if (d.moduloLed5000 !== undefined) update.moduloLed5000 = d.moduloLed5000?.toUpperCase() || null;
         if (d.qtdModuloLed2700 !== undefined) update.qtdModuloLed2700 = d.qtdModuloLed2700 ? String(d.qtdModuloLed2700) : null;
         if (d.qtdModuloLed3000 !== undefined) update.qtdModuloLed3000 = d.qtdModuloLed3000 ? String(d.qtdModuloLed3000) : null;
+        if (d.qtdModuloLed3500 !== undefined) update.qtdModuloLed3500 = d.qtdModuloLed3500 ? String(d.qtdModuloLed3500) : null;
         if (d.qtdModuloLed4000 !== undefined) update.qtdModuloLed4000 = d.qtdModuloLed4000 ? String(d.qtdModuloLed4000) : null;
         if (d.qtdModuloLed5000 !== undefined) update.qtdModuloLed5000 = d.qtdModuloLed5000 ? String(d.qtdModuloLed5000) : null;
         if (d.otica !== undefined) update.otica = d.oticaNaoAplicavel ? "NÃO APLICÁVEL" : d.otica.toUpperCase();
@@ -604,6 +612,16 @@ export const appRouter = router({
           moduloLampada: p.moduloLampada ?? 0,
           moduloLedRgbw: p.moduloLedRgbw?.toUpperCase() || null,
           qtdModuloLedRgbw: p.qtdModuloLedRgbw ? String(p.qtdModuloLedRgbw) : null,
+          moduloLed2700: p.moduloLed2700?.toUpperCase() || null,
+          moduloLed3000: p.moduloLed3000?.toUpperCase() || null,
+          moduloLed3500: p.moduloLed3500?.toUpperCase() || null,
+          moduloLed4000: p.moduloLed4000?.toUpperCase() || null,
+          moduloLed5000: p.moduloLed5000?.toUpperCase() || null,
+          qtdModuloLed2700: p.qtdModuloLed2700 ? String(p.qtdModuloLed2700) : null,
+          qtdModuloLed3000: p.qtdModuloLed3000 ? String(p.qtdModuloLed3000) : null,
+          qtdModuloLed3500: p.qtdModuloLed3500 ? String(p.qtdModuloLed3500) : null,
+          qtdModuloLed4000: p.qtdModuloLed4000 ? String(p.qtdModuloLed4000) : null,
+          qtdModuloLed5000: p.qtdModuloLed5000 ? String(p.qtdModuloLed5000) : null,
           otica: p.oticaNaoAplicavel || p.otica.toUpperCase() === "NÃO APLICÁVEL" ? "NÃO APLICÁVEL" : p.otica.toUpperCase(),
           holder: p.holderNaoAplicavel || p.holder.toUpperCase() === "NÃO APLICÁVEL" ? "NÃO APLICÁVEL" : p.holder.toUpperCase(),
           dissipador: p.dissipadorNaoAplicavel || p.dissipador.toUpperCase() === "NÃO APLICÁVEL" ? "NÃO APLICÁVEL" : p.dissipador.toUpperCase(),
@@ -611,7 +629,7 @@ export const appRouter = router({
           driverOnoffBivolt: p.driverOnoffBivolt.toUpperCase(),
           driverDim110v: p.driverDim110v?.toUpperCase() || null,
           driverDimDali: p.driverDimDali?.toUpperCase() || null,
-          temperaturasCor: p.temperaturasCor || '["2700","3000","4000","5000"]',
+          temperaturasCor: p.temperaturasCor || '["2700","3000","3500","4000","5000"]',
           custoLuminaria: p.custoLuminaria || null,
           custoDriverOnoff220: p.custoDriverOnoff220 || null,
           custoDriverOnoffBivolt: p.custoDriverOnoffBivolt || null,

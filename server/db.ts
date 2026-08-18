@@ -122,6 +122,7 @@ async function enrichWithModuloLedEq(db: ReturnType<typeof drizzle>, product: ty
     product.moduloLed,
     product.moduloLed2700,
     product.moduloLed3000,
+    product.moduloLed3500,
     product.moduloLed4000,
     product.moduloLed5000,
   ].filter((n): n is string => !!n);
@@ -147,6 +148,7 @@ async function enrichWithModuloLedEq(db: ReturnType<typeof drizzle>, product: ty
     eqModuloLed:     product.moduloLed     ? (eqMap.get(product.moduloLed)     ?? null) : null,
     eqModuloLed2700: product.moduloLed2700 ? (eqMap.get(product.moduloLed2700) ?? null) : null,
     eqModuloLed3000: product.moduloLed3000 ? (eqMap.get(product.moduloLed3000) ?? null) : null,
+    eqModuloLed3500: product.moduloLed3500 ? (eqMap.get(product.moduloLed3500) ?? null) : null,
     eqModuloLed4000: product.moduloLed4000 ? (eqMap.get(product.moduloLed4000) ?? null) : null,
     eqModuloLed5000: product.moduloLed5000 ? (eqMap.get(product.moduloLed5000) ?? null) : null,
   };
@@ -165,10 +167,11 @@ export async function enrichManyWithModuloLedEq(
     if (p.moduloLed)     allNames.add(p.moduloLed);
     if (p.moduloLed2700) allNames.add(p.moduloLed2700);
     if (p.moduloLed3000) allNames.add(p.moduloLed3000);
+    if (p.moduloLed3500) allNames.add(p.moduloLed3500);
     if (p.moduloLed4000) allNames.add(p.moduloLed4000);
     if (p.moduloLed5000) allNames.add(p.moduloLed5000);
   }
-  if (allNames.size === 0) return items.map((p) => ({ ...p, eqModuloLed: null, eqModuloLed2700: null, eqModuloLed3000: null, eqModuloLed4000: null, eqModuloLed5000: null }));
+  if (allNames.size === 0) return items.map((p) => ({ ...p, eqModuloLed: null, eqModuloLed2700: null, eqModuloLed3000: null, eqModuloLed3500: null, eqModuloLed4000: null, eqModuloLed5000: null }));
 
   const uniqueNames = Array.from(allNames);
   const comps = await db
@@ -188,6 +191,7 @@ export async function enrichManyWithModuloLedEq(
     eqModuloLed:     p.moduloLed     ? (eqMap.get(p.moduloLed)     ?? null) : null,
     eqModuloLed2700: p.moduloLed2700 ? (eqMap.get(p.moduloLed2700) ?? null) : null,
     eqModuloLed3000: p.moduloLed3000 ? (eqMap.get(p.moduloLed3000) ?? null) : null,
+    eqModuloLed3500: p.moduloLed3500 ? (eqMap.get(p.moduloLed3500) ?? null) : null,
     eqModuloLed4000: p.moduloLed4000 ? (eqMap.get(p.moduloLed4000) ?? null) : null,
     eqModuloLed5000: p.moduloLed5000 ? (eqMap.get(p.moduloLed5000) ?? null) : null,
   }));
@@ -251,7 +255,7 @@ export async function bulkInsertProducts(items: InsertProduct[]): Promise<{ inse
         p.driverOnoff220 ?? "", p.driverOnoffBivolt ?? "", p.driverOnoffBivoltNaoAplicavel ?? false,
         p.driverDim110v ?? null, p.driverDim110vNaoAplicavel ?? false,
         p.driverDimDali ?? null, p.driverDimDaliNaoAplicavel ?? false,
-        p.temperaturasCor ?? '["2700","3000","4000","5000"]',
+        p.temperaturasCor ?? '["2700","3000","3500","4000","5000"]',
         p.fotoUrl ?? null, p.fotoKey ?? null,
         p.custoLuminaria ?? null, p.custoDriverOnoff220 ?? null
       );
