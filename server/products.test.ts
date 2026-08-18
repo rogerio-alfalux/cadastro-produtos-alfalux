@@ -97,15 +97,24 @@ describe("products.list", () => {
   });
 
   it("accepts search and filter params", async () => {
+    const { listProducts } = await import("./db");
     const caller = appRouter.createCaller(createCtx());
     const result = await caller.products.list({
       search: "LUNA",
       categoria: "DOWNLIGHTS",
       instalacao: "EMBUTIR",
+      familia: "LUNA",
+      potencia: "18W",
       limit: 10,
       offset: 0,
     });
     expect(result).toBeDefined();
+    expect(listProducts).toHaveBeenLastCalledWith(expect.objectContaining({
+      categoria: "DOWNLIGHTS",
+      instalacao: "EMBUTIR",
+      familia: "LUNA",
+      potencia: "18W",
+    }));
   });
 });
 

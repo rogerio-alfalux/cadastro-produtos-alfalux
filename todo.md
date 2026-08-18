@@ -283,14 +283,14 @@
 - [x] Endpoint /api/products/all: incluir drivers extras na resposta para o Configurador (campos por tipo e alias agrupado `driversExtras`, com modelo, código EQ, quantidade e custo)
 
 ## Feature v31 — Múltiplas óticas (primária + secundárias)
-- [ ] Schema Drizzle: adicionar coluna oticaExtra (JSON array [{modelo, qtd}])
-- [ ] Migração SQL aplicada
-- [ ] Router tRPC: adicionar oticaExtra ao productSchema
-- [ ] ProductForm: botão "+ Adicionar ótica" abaixo da ótica primária
-- [ ] Cada ótica extra tem: ComponentSelect e campo Qtd
-- [ ] Botão de remover ótica extra (lixeira)
-- [ ] Migração de dados: separar valores compostos "LENTE X + NxLOUVER Y" em primária + extras
-- [ ] API continua retornando dados corretamente
+- [x] Schema Drizzle: coluna oticaExtra (JSON array [{modelo, qtd}]) disponível
+- [x] Migração SQL aplicada
+- [x] Router tRPC: oticaExtra aceito no productSchema e persistido em criação/edição
+- [x] ProductForm: botão "+ Adicionar ótica" abaixo da ótica primária
+- [x] Cada ótica extra tem: ComponentSelect e campo Qtd
+- [x] Botão de remover ótica extra (lixeira)
+- [x] Migração de dados: 56 produtos com óticas secundárias estruturadas
+- [x] API retorna ótica primária, secundária e campo legado consolidado corretamente
 
 ## Feature v30 — Categoria REVENDA
 - [x] Criar tabela `revenda_products` no banco (id, codigo, descricao, referencia, fornecedor, observacoes, fotoUrl, fotoKey, custo, precoVenda, createdAt, updatedAt)
@@ -597,3 +597,12 @@
 - [x] Persistir 3500K em criação, edição, importação e exportação de produtos
 - [x] Expor o módulo LED 3500K com código EQ/CP na API pública
 - [x] Validar o fluxo completo de cadastro e API
+
+## Melhoria v52 — Filtros de Família e Potência
+
+- [x] Adicionar filtro de Família com as famílias disponíveis na listagem de Produtos
+- [x] Aplicar o filtro de Família na consulta de produtos
+- [x] Exibir o filtro de Potência somente quando a categoria selecionada for PERFIS
+- [x] Limpar o filtro de Potência automaticamente ao trocar de PERFIS para outra categoria
+- [x] Reorganizar a barra de filtros com proporções e quebra responsiva harmoniosas
+- [x] Validar filtros combinados e a aparência em larguras diferentes

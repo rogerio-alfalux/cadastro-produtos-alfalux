@@ -52,6 +52,7 @@ export default function ProductList() {
   const [search, setSearch] = useState("");
   const [filterCategoria, setFilterCategoria] = useState("_all");
   const [filterInstalacao, setFilterInstalacao] = useState("_all");
+  const [filterFamilia, setFilterFamilia] = useState("_all");
   const [filterPotencia, setFilterPotencia] = useState("_all");
   const [filterAtivo, setFilterAtivo] = useState<"_all" | "inativos">("_all");
   const [page, setPage] = useState(0);
@@ -66,6 +67,7 @@ export default function ProductList() {
     search: search || undefined,
     categoria: filterCategoria !== "_all" ? filterCategoria : undefined,
     instalacao: filterInstalacao !== "_all" ? filterInstalacao : undefined,
+    familia: filterFamilia !== "_all" ? filterFamilia : undefined,
     potencia: filterPotencia !== "_all" ? filterPotencia : undefined,
     apenasInativos: filterAtivo === "inativos" ? true : undefined,
     limit: PAGE_SIZE,
@@ -77,6 +79,7 @@ export default function ProductList() {
   } as any);
 
   const { data: countData } = trpc.products.count.useQuery();
+  const { data: familias = [] } = trpc.components.families.useQuery();
 
   const utils = trpc.useUtils();
   const deleteMutation = trpc.products.delete.useMutation({
@@ -163,12 +166,14 @@ export default function ProductList() {
     setSearch("");
     setFilterCategoria("_all");
     setFilterInstalacao("_all");
+    setFilterFamilia("_all");
     setFilterPotencia("_all");
     setFilterAtivo("_all");
     setPage(0);
   };
 
-  const hasFilters = search || filterCategoria !== "_all" || filterInstalacao !== "_all" || filterPotencia !== "_all" || filterAtivo !== "_all";
+  const showPotenciaFilter = filterCategoria === "PERFIS";
+  const hasFilters = search || filterCategoria !== "_all" || filterInstalacao !== "_all" || filterFamilia !== "_all" || filterPotencia !== "_all" || filterAtivo !== "_all";
 
   return (
     <div className="animate-fade-in">
@@ -233,9 +238,14 @@ export default function ProductList() {
 
       {/* ─── Filters ─────────────────────────────────────────────────── */}
       <div className="alfalux-card p-4 mb-6">
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className={cn(
+          "grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3",
+          showPotenciaFilter
+            ? "lg:grid-cols-[minmax(0,1.25fr)_repeat(5,minmax(0,1fr))]"
+            : "lg:grid-cols-[minmax(0,1.35fr)_repeat(4,minmax(0,1fr))]"
+        )}>
           {/* Search */}
-          <div className="relative flex-1">
+          <div className="relative min-w-0 lg:col-span-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               className="input-dark pl-9"
@@ -246,8 +256,12 @@ export default function ProductList() {
           </div>
 
           {/* Categoria filter */}
-          <Select value={filterCategoria} onValueChange={(v) => { setFilterCategoria(v); setPage(0); }}>
-            <SelectTrigger className="input-dark w-full sm:w-44">
+          <Select value={filterCategoria} onValueChange={(v) => {
+            setFilterCategoria(v);
+            if (v !== "PERFIS") setFilterPotencia("_all");
+            setPage(0);
+          }}>
+            <SelectTrigger className="input-dark w-full min-w-0 text-xs">
               <Filter className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
               <SelectValue placeholder="CATEGORIA" />
             </SelectTrigger>
@@ -259,7 +273,7 @@ export default function ProductList() {
 
           {/* Instalação filter */}
           <Select value={filterInstalacao} onValueChange={(v) => { setFilterInstalacao(v); setPage(0); }}>
-            <SelectTrigger className="input-dark w-full sm:w-44">
+            <SelectTrigger className="input-dark w-full min-w-0 text-xs">
               <SelectValue placeholder="INSTALAÇÃO" />
             </SelectTrigger>
             <SelectContent>
@@ -268,24 +282,37 @@ export default function ProductList() {
             </SelectContent>
           </Select>
 
-          {/* Potência filter */}
-          <Select value={filterPotencia} onValueChange={(v) => { setFilterPotencia(v); setPage(0); }}>
-            <SelectTrigger className="input-dark w-full sm:w-44">
-              <Zap className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
-              <SelectValue placeholder="POTÊNCIA" />
+          {/* Família filter */}
+          <Select value={filterFamilia} onValueChange={(v) => { setFilterFamilia(v); setPage(0); }}>
+            <SelectTrigger className="input-dark w-full min-w-0 text-xs">
+              <SelectValue placeholder="FAMÍLIA" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="_all">TODAS POTÊNCIAS</SelectItem>
-              <SelectItem value="18W">18W</SelectItem>
-              <SelectItem value="26W">26W</SelectItem>
-              <SelectItem value="36W-SF">36W — Stripflex</SelectItem>
-              <SelectItem value="36W-SL">36W — Stripline</SelectItem>
+              <SelectItem value="_all">TODAS FAMÍLIAS</SelectItem>
+              {familias.map((familia) => <SelectItem key={familia} value={familia}>{familia}</SelectItem>)}
             </SelectContent>
           </Select>
 
+          {/* Potência filter */}
+          {showPotenciaFilter && (
+            <Select value={filterPotencia} onValueChange={(v) => { setFilterPotencia(v); setPage(0); }}>
+              <SelectTrigger className="input-dark w-full min-w-0 text-xs">
+                <Zap className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
+                <SelectValue placeholder="POTÊNCIA" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_all">TODAS POTÊNCIAS</SelectItem>
+                <SelectItem value="18W">18W</SelectItem>
+                <SelectItem value="26W">26W</SelectItem>
+                <SelectItem value="36W-SF">36W — Stripflex</SelectItem>
+                <SelectItem value="36W-SL">36W — Stripline</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+
           {/* Status filter */}
           <Select value={filterAtivo} onValueChange={(v) => { setFilterAtivo(v as "_all" | "inativos"); setPage(0); }}>
-            <SelectTrigger className="input-dark w-full sm:w-44">
+            <SelectTrigger className="input-dark w-full min-w-0 text-xs">
               <SelectValue placeholder="STATUS" />
             </SelectTrigger>
             <SelectContent>
@@ -294,18 +321,6 @@ export default function ProductList() {
             </SelectContent>
           </Select>
 
-          {/* Clear filters */}
-          {hasFilters && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearFilters}
-              className="text-muted-foreground hover:text-foreground text-xs"
-            >
-              <X className="w-3.5 h-3.5 mr-1" />
-              LIMPAR
-            </Button>
-          )}
         </div>
 
         {hasFilters && (
@@ -326,6 +341,11 @@ export default function ProductList() {
                 {filterInstalacao}
               </span>
             )}
+            {filterFamilia !== "_all" && (
+              <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-md">
+                Família: {filterFamilia}
+              </span>
+            )}
             {filterPotencia !== "_all" && (
               <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-md">
                 ⚡ {filterPotencia}
@@ -336,7 +356,18 @@ export default function ProductList() {
                 Desativados
               </span>
             )}
-            <span className="text-xs text-muted-foreground ml-auto">{total} resultado(s)</span>
+            <div className="ml-auto flex items-center gap-3">
+              <span className="text-xs text-muted-foreground">{total} resultado(s)</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-3.5 h-3.5 mr-1" />
+                LIMPAR
+              </Button>
+            </div>
           </div>
         )}
       </div>
