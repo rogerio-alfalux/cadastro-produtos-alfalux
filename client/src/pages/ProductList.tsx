@@ -46,6 +46,39 @@ import ProductForm from "./ProductForm";
 const CATEGORIAS = ["PERFIS", "DOWNLIGHTS", "PAINÉIS", "SPOTS", "ARANDELAS", "ÁREA EXTERNA", "BALIZADORES", "DECORATIVAS", "CUSTOMIZADOS"];
 const INSTALACOES = ["EMBUTIR", "SOBREPOR", "PENDENTE", "ARANDELA", "NO FRAME"];
 const PAGE_SIZE = 20;
+const CCT_MODULE_FIELDS = {
+  "2700": "moduloLed2700",
+  "3000": "moduloLed3000",
+  "3500": "moduloLed3500",
+  "4000": "moduloLed4000",
+  "5000": "moduloLed5000",
+} as const;
+
+function hasModuleValue(value: unknown) {
+  return typeof value === "string" && value.trim() !== "" && value.trim().toUpperCase() !== "NÃO APLICÁVEL";
+}
+
+function getAvailableCcts(product: unknown): string[] {
+  const item = product as Record<string, unknown>;
+  let selectedCcts: string[] = [];
+  try {
+    const parsed = JSON.parse(String(item.temperaturasCor ?? "[]"));
+    selectedCcts = Array.isArray(parsed) ? parsed.map(String) : [];
+  } catch {
+    return [];
+  }
+
+  const hasSpecificCctModule = Object.values(CCT_MODULE_FIELDS).some((field) => hasModuleValue(item[field]));
+  if (hasSpecificCctModule) {
+    return selectedCcts.filter((cct) =>
+      cct === "RGBW"
+        ? hasModuleValue(item.moduloLedRgbw)
+        : hasModuleValue(item[CCT_MODULE_FIELDS[cct as keyof typeof CCT_MODULE_FIELDS]])
+    );
+  }
+
+  return hasModuleValue(item.moduloLed) ? selectedCcts : [];
+}
 
 export default function ProductList() {
   const [, navigate] = useLocation();
@@ -420,10 +453,7 @@ export default function ProductList() {
               </thead>
               <tbody>
                 {items.map((product, idx) => {
-                  const temps = (() => {
-                    try { return JSON.parse(product.temperaturasCor || "[]"); }
-                    catch { return []; }
-                  })();
+                  const temps = getAvailableCcts(product);
                   const isAtivo = (product as any).ativo !== false;
 
                   return (
@@ -752,10 +782,7 @@ function ProductDetail({ id }: { id: number }) {
 
   if (!product) return <p className="text-muted-foreground text-sm">Produto não encontrado</p>;
 
-  const temps = (() => {
-    try { return JSON.parse(product.temperaturasCor || "[]"); }
-    catch { return []; }
-  })();
+  const temps = getAvailableCcts(product);
 
   const Row = ({ label, value }: { label: string; value?: string | null }) => (
     <div className="flex gap-3 py-2 border-b border-border/30 last:border-0">

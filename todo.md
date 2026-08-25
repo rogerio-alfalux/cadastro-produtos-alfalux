@@ -624,3 +624,9 @@
 - [x] Identificar que o backend rejeitava qualquer campo de markup mínimo enviado por não-admin, mesmo sem mudança
 - [x] Permitir salvar o valor bloqueado de markup mínimo quando igual ao valor existente, mantendo bloqueio para mudanças reais
 - [x] Validar criação e edição com testes de usuário comum e perfil administrativo
+
+## Bug Fix v53.3 — CCT exibido sem módulo LED
+
+- [x] Identificar que a listagem usava `temperaturasCor` sem verificar o módulo LED associado
+- [x] Ocultar todos os CCTs quando não houver módulo LED cadastrado
+- [x] Validar a listagem com módulos genéricos, módulos por CCT e ausência de módulo
