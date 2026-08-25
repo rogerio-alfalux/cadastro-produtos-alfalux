@@ -65,6 +65,7 @@ vi.mock("./db", () => ({
     custoDriverOnoffBivolt: null,
     custoDriverDim110v: null,
     custoDriverDimDali: null,
+    mkpMinimoOnoff220v: "2",
     createdAt: new Date(),
     updatedAt: new Date(),
   }),
@@ -77,9 +78,9 @@ vi.mock("./db", () => ({
 
 // ─── Context ──────────────────────────────────────────────────────────────────
 
-function createCtx(): TrpcContext {
+function createCtx(role: "user" | "admin" | null = null): TrpcContext {
   return {
-    user: null,
+    user: role ? ({ id: 2, role } as any) : null,
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
     res: { clearCookie: vi.fn() } as unknown as TrpcContext["res"],
   };
@@ -247,6 +248,23 @@ describe("products.update", () => {
       data: { produto: "PRODUTO ATUALIZADO" },
     });
     expect(result.success).toBe(true);
+  });
+
+  it("permite que usuário salve um markup mínimo bloqueado quando o valor não mudou", async () => {
+    const caller = appRouter.createCaller(createCtx("user"));
+    const result = await caller.products.update({
+      id: 1,
+      data: { produto: "PRODUTO ATUALIZADO", mkpMinimoOnoff220v: "2.00" },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("bloqueia para usuário a alteração real de markup mínimo", async () => {
+    const caller = appRouter.createCaller(createCtx("user"));
+    await expect(caller.products.update({
+      id: 1,
+      data: { mkpMinimoOnoff220v: "2.15" },
+    })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
   it("updates the D1+D2 option flag", async () => {

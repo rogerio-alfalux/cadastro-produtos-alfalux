@@ -606,3 +606,21 @@
 - [x] Limpar o filtro de Potência automaticamente ao trocar de PERFIS para outra categoria
 - [x] Reorganizar a barra de filtros com proporções e quebra responsiva harmoniosas
 - [x] Validar filtros combinados e a aparência em larguras diferentes
+
+## Acesso v53 — Administração Completa para Geysa
+
+- [x] Localizar a conta da Geysa e confirmar o perfil atual
+- [x] Confirmar perfil administrativo completo para operações de cadastro e gestão
+- [x] Validar a permissão administrativa no banco
+
+## Diagnóstico v53.1 — Acesso da Geysa ao Configurador
+
+- [x] Confirmar que a tela exibida pertence ao Configurador e não ao Cadastro de Produtos
+- [x] Verificar que o Configurador possui login e permissões independentes do Cadastro
+- [x] Orientar Geysa sobre o endereço correto e a autenticação complementar necessária
+
+## Bug Fix v53.2 — Salvamento bloqueado por markup mínimo
+
+- [x] Identificar que o backend rejeitava qualquer campo de markup mínimo enviado por não-admin, mesmo sem mudança
+- [x] Permitir salvar o valor bloqueado de markup mínimo quando igual ao valor existente, mantendo bloqueio para mudanças reais
+- [x] Validar criação e edição com testes de usuário comum e perfil administrativo

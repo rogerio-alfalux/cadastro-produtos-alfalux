@@ -433,7 +433,14 @@ export const appRouter = router({
         ] as const;
         if (!isAdmin) {
           for (const field of MKP_MINIMO_FIELDS) {
-            if (d[field] !== undefined) {
+            const incomingValue = d[field];
+            const existingValue = (existing as any)[field];
+            const normalizeMarkup = (value: unknown) => {
+              if (value === undefined || value === null || value === '') return null;
+              const numeric = Number(value);
+              return Number.isFinite(numeric) ? numeric : String(value);
+            };
+            if (incomingValue !== undefined && normalizeMarkup(incomingValue) !== normalizeMarkup(existingValue)) {
               throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas administradores podem alterar o markup mínimo.' });
             }
           }
