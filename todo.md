@@ -630,3 +630,11 @@
 - [x] Identificar que a listagem usava `temperaturasCor` sem verificar o módulo LED associado
 - [x] Ocultar todos os CCTs quando não houver módulo LED cadastrado
 - [x] Validar a listagem com módulos genéricos, módulos por CCT e ausência de módulo
+
+## Feature v54 — CCT Extra em Módulos LED
+
+- [x] Adicionar estrutura de CCTs extras ao schema e ao banco
+- [x] Adicionar botão e linhas editáveis de CCT extra no formulário de produtos
+- [x] Persistir CCT extra com temperatura, módulo LED e quantidade em criação/edição
+- [x] Expor CCTs extras na API pública sem alterar os cinco CCTs padrão
+- [x] Validar o fluxo completo e a remoção de CCTs extras

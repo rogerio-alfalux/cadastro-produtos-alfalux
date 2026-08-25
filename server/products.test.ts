@@ -238,6 +238,31 @@ describe("products.create", () => {
     expect(callArgs?.moduloLed3500).toBe("MÓDULO LED 3500K");
     expect(callArgs?.qtdModuloLed3500).toBe("2.5");
   });
+
+  it("persists additional CCT LED modules for a specific product", async () => {
+    const { createProduct } = await import("./db");
+    const caller = appRouter.createCaller(createCtx());
+    const extras = [{ cct: "6500", modelo: "MÓDULO LED 6500K", qtd: 1.5 }];
+    await caller.products.create({
+      categoria: "DOWNLIGHTS",
+      instalacao: "EMBUTIR",
+      familia: "LUNA",
+      sku: "TEST-CCT-EXTRA",
+      produto: "PRODUTO COM CCT EXTRA",
+      moduloLed: "MÓDULO PRINCIPAL",
+      otica: "NÃO APLICÁVEL",
+      oticaNaoAplicavel: true,
+      holder: "NÃO APLICÁVEL",
+      holderNaoAplicavel: true,
+      dissipador: "NÃO APLICÁVEL",
+      dissipadorNaoAplicavel: true,
+      driverOnoff220: "DRIVER 220V",
+      driverOnoffBivolt: "DRIVER BIVOLT",
+      moduloLedExtra: JSON.stringify(extras),
+    });
+    const callArgs = (createProduct as any).mock.calls.at(-1)?.[0];
+    expect(callArgs?.moduloLedExtra).toEqual(extras);
+  });
 });
 
 describe("products.update", () => {
@@ -297,6 +322,21 @@ describe("products.update", () => {
     const callArgs = (updateProduct as any).mock.calls.at(-1)?.[1];
     expect(callArgs?.moduloLed3500).toBe("MÓDULO REVISÃO 3500K");
     expect(callArgs?.qtdModuloLed3500).toBe("3");
+  });
+
+  it("updates the additional CCT LED modules", async () => {
+    const { updateProduct } = await import("./db");
+    const caller = appRouter.createCaller(createCtx());
+    const extras = [
+      { cct: "5700", modelo: "MÓDULO LED 5700K", qtd: 2 },
+      { cct: "6500", modelo: "MÓDULO LED 6500K", qtd: 1 },
+    ];
+    await caller.products.update({
+      id: 1,
+      data: { moduloLedExtra: JSON.stringify(extras) },
+    });
+    const callArgs = (updateProduct as any).mock.calls.at(-1)?.[1];
+    expect(callArgs?.moduloLedExtra).toEqual(extras);
   });
 });
 

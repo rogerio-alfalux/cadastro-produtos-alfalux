@@ -28,6 +28,16 @@ import { storageGetSignedUrl, storageGet } from "./storage";
 
 // ─── Validation schema ────────────────────────────────────────────────────────
 
+function parseModuloLedExtra(raw: string | null | undefined): Array<{ cct: string; modelo: string; qtd: number }> | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 const productSchema = z.object({
   categoria: z.string().optional(),
   instalacao: z.string().min(1, "INSTALAÇÃO é obrigatório"),
@@ -101,6 +111,8 @@ const productSchema = z.object({
   driverDimTriac220vExtra: z.string().nullish(),
   // Óticas extras (JSON string de array [{modelo, qtd}])
   oticaExtra: z.string().nullish(),
+  // CCTs extras de módulo LED (JSON string de array [{cct, modelo, qtd}])
+  moduloLedExtra: z.string().nullish(),
   // Preço de venda por tipo de driver (null = não informado)
   precoVendaOnoff220: z.string().nullish(),
   precoVendaOnoffBivolt: z.string().nullish(),
@@ -323,6 +335,7 @@ export const appRouter = router({
           qtdModuloLed3500: input.qtdModuloLed3500 ? String(input.qtdModuloLed3500) : null,
           qtdModuloLed4000: input.qtdModuloLed4000 ? String(input.qtdModuloLed4000) : null,
           qtdModuloLed5000: input.qtdModuloLed5000 ? String(input.qtdModuloLed5000) : null,
+          moduloLedExtra: parseModuloLedExtra(input.moduloLedExtra),
           otica: input.oticaNaoAplicavel ? "NÃO APLICÁVEL" : input.otica.toUpperCase(),
           qtdOtica: input.qtdOtica ?? 1,
           holder: input.holderNaoAplicavel ? "NÃO APLICÁVEL" : input.holder.toUpperCase(),
@@ -535,6 +548,7 @@ export const appRouter = router({
         if (d.driverDimTriac110vExtra !== undefined) update.driverDimTriac110vExtra = d.driverDimTriac110vExtra || null;
         if (d.driverDimTriac220vExtra !== undefined) update.driverDimTriac220vExtra = d.driverDimTriac220vExtra || null;
         if (d.oticaExtra !== undefined) update.oticaExtra = d.oticaExtra || null;
+        if (d.moduloLedExtra !== undefined) update.moduloLedExtra = parseModuloLedExtra(d.moduloLedExtra);
         if (d.composicaoD1D2 !== undefined) update.composicaoD1D2 = d.composicaoD1D2 || null;
         if (d.precoVendaOnoff220 !== undefined) update.precoVendaOnoff220 = d.precoVendaOnoff220 || null;
         if (d.precoVendaOnoffBivolt !== undefined) update.precoVendaOnoffBivolt = d.precoVendaOnoffBivolt || null;

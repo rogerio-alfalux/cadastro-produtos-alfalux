@@ -785,15 +785,44 @@ router.get("/all", async (_req, res) => {
       result.ledModuleCode4000 = ml4000 ? lookupCode(ml4000) : null;
       result.ledModuleCode5000 = ml5000 ? lookupCode(ml5000) : null;
 
+      // CCTs adicionais, específicos deste produto. Mantém os campos legados acima
+      // intactos e envia uma coleção estruturada para o Configurador.
+      let rawLedModulesExtras: unknown[] = [];
+      try {
+        const raw = (p as any).moduloLedExtra;
+        const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+        if (Array.isArray(parsed)) rawLedModulesExtras = parsed;
+      } catch {
+        rawLedModulesExtras = [];
+      }
+      const seenExtraCcts = new Set<string>();
+      const ledModulesExtras = rawLedModulesExtras
+        .map((item) => {
+          const row = (item ?? {}) as Record<string, unknown>;
+          const cct = String(row.cct ?? "").replace(/\D/g, "");
+          const model = String(row.modelo ?? "").trim();
+          const qtd = Math.max(0.01, Number(row.qtd) || 1);
+          return { cct, model, qtd, code: model ? lookupCode(model) : null };
+        })
+        .filter((item) => {
+          const cctNumerico = Number(item.cct);
+          const valido = !!item.model && Number.isInteger(cctNumerico) && cctNumerico >= 1000 && cctNumerico <= 10000;
+          if (!valido || seenExtraCcts.has(item.cct)) return false;
+          seenExtraCcts.add(item.cct);
+          return true;
+        });
+      result.ledModulesExtras = ledModulesExtras;
+
       // Derivar temperaturasCor automaticamente dos módulos preenchidos
       // Se o produto usa o novo modelo CCT, sobrescreve o campo temperaturasCor
-      if (hasCctModules) {
+      if (hasCctModules || ledModulesExtras.length > 0) {
         const derivedTemps: string[] = [];
         if (ml2700) derivedTemps.push("2700");
         if (ml3000) derivedTemps.push("3000");
         if (ml3500) derivedTemps.push("3500");
         if (ml4000) derivedTemps.push("4000");
         if (ml5000) derivedTemps.push("5000");
+        derivedTemps.push(...ledModulesExtras.map((item) => item.cct));
         result.temperaturasCor = derivedTemps;
       }
 

@@ -355,6 +355,32 @@ const CATEGORIAS = ["PERFIS", "DOWNLIGHTS", "PAINÉIS", "SPOTS", "ARANDELAS", "�
 const INSTALACOES = ["EMBUTIR", "SOBREPOR", "PENDENTE", "ARANDELA", "NO FRAME"];
 const TEMPERATURAS = ["2700", "3000", "3500", "4000", "5000"];
 
+interface ModuloLedExtra {
+  cct: string;
+  modelo: string;
+  qtd: number;
+}
+
+const emptyModuloLedExtra = (): ModuloLedExtra => ({ cct: "", modelo: "", qtd: 1 });
+
+function parseModulosLedExtra(raw: unknown): ModuloLedExtra[] {
+  if (!raw) return [];
+  try {
+    const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((item): ModuloLedExtra => {
+      const row = (item ?? {}) as Record<string, unknown>;
+      return {
+        cct: String(row.cct ?? "").replace(/\D/g, ""),
+        modelo: String(row.modelo ?? "").trim(),
+        qtd: Math.max(0.01, Number(row.qtd) || 1),
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
 interface FormData {
   categoria: string;
   instalacao: string;
@@ -699,6 +725,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
   const [produtoOriginalNome, setProdutoOriginalNome] = useState<string | null>(null);
   const [driversExtra, setDriversExtra] = useState<DriversExtraState>(defaultDriversExtra);
   const [oticasExtra, setOticasExtra] = useState<OticaExtra[]>([]);
+  const [modulosLedExtra, setModulosLedExtra] = useState<ModuloLedExtra[]>([]);
   const [showSemDriverDialog, setShowSemDriverDialog] = useState(false);
   const [d1d2Drivers, setD1d2Drivers] = useState<D1D2DriversState>(emptyD1D2DriversState());
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -868,6 +895,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         try { return JSON.parse(raw) as OticaExtra[]; } catch { return []; }
       };
       setOticasExtra(parseOticaExtra((p as any).oticaExtra));
+      setModulosLedExtra(parseModulosLedExtra((p as any).moduloLedExtra));
 
       // Carregar composição D1+D2 se existir
       const parseComposicaoD1D2 = (raw: any): D1D2DriversState => {
@@ -1096,8 +1124,26 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       return;
     }
 
+    const extrasComConteudo = modulosLedExtra.filter((item) => item.cct.trim() || item.modelo.trim());
+    const extrasNormalizados = extrasComConteudo.map((item) => ({
+      cct: item.cct.replace(/\D/g, ""),
+      modelo: item.modelo.trim(),
+      qtd: Math.max(0.01, Number(item.qtd) || 1),
+    }));
+    const cctsExtras = new Set<string>();
+    const possuiExtraInvalido = extrasNormalizados.some((item) => {
+      const cctNumerico = Number(item.cct);
+      const repetido = TEMPERATURAS.includes(item.cct) || cctsExtras.has(item.cct);
+      cctsExtras.add(item.cct);
+      return !item.cct || !item.modelo || !Number.isInteger(cctNumerico) || cctNumerico < 1000 || cctNumerico > 10000 || repetido;
+    });
+    if (possuiExtraInvalido) {
+      toast.error("Cada CCT adicional deve ter uma temperatura única entre 1000K e 10000K e um módulo LED selecionado");
+      return;
+    }
+
     // Derivar temperaturasCor automaticamente dos módulos CCT preenchidos
-    const hasCctModules = !!(form.moduloLed2700 || form.moduloLed3000 || form.moduloLed3500 || form.moduloLed4000 || form.moduloLed5000);
+    const hasCctModules = !!(form.moduloLed2700 || form.moduloLed3000 || form.moduloLed3500 || form.moduloLed4000 || form.moduloLed5000 || extrasNormalizados.length);
     const derivedTemps = hasCctModules
       ? [
           ...(form.moduloLed2700 ? ["2700"] : []),
@@ -1105,6 +1151,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
           ...(form.moduloLed3500 ? ["3500"] : []),
           ...(form.moduloLed4000 ? ["4000"] : []),
           ...(form.moduloLed5000 ? ["5000"] : []),
+          ...extrasNormalizados.map((item) => item.cct),
         ]
       : form.temperaturasCor;
 
@@ -1122,6 +1169,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       moduloLed3500: form.moduloLed3500 !== "" ? form.moduloLed3500 : null,
       moduloLed4000: form.moduloLed4000 !== "" ? form.moduloLed4000 : null,
       moduloLed5000: form.moduloLed5000 !== "" ? form.moduloLed5000 : null,
+      moduloLedExtra: form.moduloRgbw || form.moduloLampada || extrasNormalizados.length === 0 ? null : JSON.stringify(extrasNormalizados),
       qtdModuloLed2700: form.moduloLed2700 ? form.qtdModuloLed2700 : undefined,
       qtdModuloLed3000: form.moduloLed3000 ? form.qtdModuloLed3000 : undefined,
       qtdModuloLed3500: form.moduloLed3500 ? form.qtdModuloLed3500 : undefined,
@@ -1604,6 +1652,72 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                     )}
                   </div>
                 ))}
+                {!form.moduloRgbw && !form.moduloLampada && (
+                  <div className="mt-1 rounded-lg border border-dashed border-primary/35 bg-primary/5 p-3 space-y-3">
+                    {modulosLedExtra.map((item, index) => (
+                      <div key={index} className="flex flex-col sm:flex-row sm:items-center gap-3">
+                        <div className="flex items-center gap-1.5 w-full sm:w-32 flex-shrink-0">
+                          <Input
+                            aria-label={`CCT adicional ${index + 1}`}
+                            className="input-dark text-sm text-center px-2"
+                            type="number"
+                            min="1000"
+                            max="10000"
+                            step="1"
+                            value={item.cct}
+                            placeholder="CCT"
+                            onChange={(e) => setModulosLedExtra((prev) => prev.map((row, rowIndex) => rowIndex === index ? { ...row, cct: e.target.value.replace(/\D/g, "") } : row))}
+                          />
+                          <span className="text-xs font-semibold text-primary">K</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <ComponentSelect
+                            tipo="MODULO_LED"
+                            value={item.modelo}
+                            onChange={(modelo) => setModulosLedExtra((prev) => prev.map((row, rowIndex) => rowIndex === index ? { ...row, modelo } : row))}
+                            placeholder="Selecione o módulo LED para este CCT..."
+                            hasError={false}
+                          />
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <div className="flex flex-col items-center gap-1">
+                            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">QTD</span>
+                            <Input
+                              aria-label={`Quantidade do CCT adicional ${index + 1}`}
+                              className="input-dark text-sm text-center px-2 w-16"
+                              type="number"
+                              min="0.01"
+                              max="999"
+                              step="0.01"
+                              value={item.qtd}
+                              onChange={(e) => {
+                                const parsed = parseFloat(e.target.value.replace(',', '.'));
+                                setModulosLedExtra((prev) => prev.map((row, rowIndex) => rowIndex === index ? { ...row, qtd: isNaN(parsed) ? 1 : Math.max(0.01, Math.round(parsed * 1000) / 1000) } : row));
+                              }}
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setModulosLedExtra((prev) => prev.filter((_, rowIndex) => rowIndex !== index))}
+                            className="mt-4 p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                            title="Remover CCT adicional"
+                            aria-label="Remover CCT adicional"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setModulosLedExtra((prev) => [...prev, emptyModuloLedExtra()])}
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+                    >
+                      <PlusCircle className="w-4 h-4" />
+                      Adicionar CCT
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -2117,7 +2231,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
             <h2 className="section-header mb-0">TEMPERATURA DE COR</h2>
             {form.moduloLampada ? (
               <span className="text-[10px] text-amber-400 ml-auto">Não aplicável — luminária com lâmpada</span>
-            ) : (form.moduloLed2700 || form.moduloLed3000 || form.moduloLed3500 || form.moduloLed4000 || form.moduloLed5000) ? (
+            ) : (form.moduloLed2700 || form.moduloLed3000 || form.moduloLed3500 || form.moduloLed4000 || form.moduloLed5000 || modulosLedExtra.some((item) => item.cct && item.modelo)) ? (
               <span className="text-[10px] text-muted-foreground ml-auto">Derivado automaticamente dos módulos LED</span>
             ) : (
               <span className="text-[10px] text-muted-foreground ml-auto">Marcadas por padrão — desmarque se não aplicável</span>
@@ -2136,7 +2250,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                 RGBW
               </div>
             </div>
-          ) : (form.moduloLed2700 || form.moduloLed3000 || form.moduloLed3500 || form.moduloLed4000 || form.moduloLed5000) ? (
+          ) : (form.moduloLed2700 || form.moduloLed3000 || form.moduloLed3500 || form.moduloLed4000 || form.moduloLed5000 || modulosLedExtra.some((item) => item.cct && item.modelo)) ? (
             // Modo derivado: CCTs determinados pelos módulos preenchidos
             <div className="flex flex-wrap gap-3">
               {TEMPERATURAS.map((temp) => {
@@ -2163,6 +2277,17 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                   </div>
                 );
               })}
+              {modulosLedExtra.filter((item) => item.cct && item.modelo).map((item, index) => (
+                <div
+                  key={`${item.cct}-${item.modelo}-${index}`}
+                  className="temp-badge temp-badge-active cursor-default select-none"
+                  style={{ borderColor: "oklch(0.70 0.12 165)", color: "oklch(0.70 0.12 165)", backgroundColor: "oklch(0.70 0.12 165 / 0.15)" }}
+                  title={`Módulo ${item.cct}K cadastrado`}
+                >
+                  <span className="w-2 h-2 rounded-full mr-1.5 inline-block bg-current" />
+                  {item.cct}K
+                </div>
+              ))}
             </div>
           ) : (
             // Modo manual: seleção livre (produtos legados sem módulos CCT)

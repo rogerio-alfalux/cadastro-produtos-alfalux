@@ -58,6 +58,21 @@ function hasModuleValue(value: unknown) {
   return typeof value === "string" && value.trim() !== "" && value.trim().toUpperCase() !== "NÃO APLICÁVEL";
 }
 
+function getExtraCcts(product: Record<string, unknown>): string[] {
+  try {
+    const raw = product.moduloLedExtra;
+    const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.flatMap((item) => {
+      const row = (item ?? {}) as Record<string, unknown>;
+      const cct = String(row.cct ?? "").replace(/\D/g, "");
+      return hasModuleValue(row.modelo) && /^\d{4,5}$/.test(cct) ? [cct] : [];
+    });
+  } catch {
+    return [];
+  }
+}
+
 function getAvailableCcts(product: unknown): string[] {
   const item = product as Record<string, unknown>;
   let selectedCcts: string[] = [];
@@ -68,12 +83,15 @@ function getAvailableCcts(product: unknown): string[] {
     return [];
   }
 
-  const hasSpecificCctModule = Object.values(CCT_MODULE_FIELDS).some((field) => hasModuleValue(item[field]));
+  const extraCcts = getExtraCcts(item);
+  const extraCctsSet = new Set(extraCcts);
+  const cctsDoProduto = Array.from(new Set([...selectedCcts, ...extraCcts]));
+  const hasSpecificCctModule = Object.values(CCT_MODULE_FIELDS).some((field) => hasModuleValue(item[field])) || extraCcts.length > 0;
   if (hasSpecificCctModule) {
-    return selectedCcts.filter((cct) =>
+    return cctsDoProduto.filter((cct) =>
       cct === "RGBW"
         ? hasModuleValue(item.moduloLedRgbw)
-        : hasModuleValue(item[CCT_MODULE_FIELDS[cct as keyof typeof CCT_MODULE_FIELDS]])
+        : extraCctsSet.has(cct) || hasModuleValue(item[CCT_MODULE_FIELDS[cct as keyof typeof CCT_MODULE_FIELDS]])
     );
   }
 

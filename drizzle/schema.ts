@@ -55,6 +55,8 @@ export const products = mysqlTable("products", {
   qtdModuloLed3500: decimal("qtdModuloLed3500", { precision: 10, scale: 2 }),
   qtdModuloLed4000: decimal("qtdModuloLed4000", { precision: 10, scale: 2 }),
   qtdModuloLed5000: decimal("qtdModuloLed5000", { precision: 10, scale: 2 }),
+  // CCTs adicionais por produto: [{ cct, modelo, qtd }]
+  moduloLedExtra: json("moduloLedExtra"),
   otica: text("otica").notNull(),
   qtdOtica: int("qtdOtica").default(1).notNull(),
   oticaNaoAplicavel: boolean("oticaNaoAplicavel").default(false).notNull(),
