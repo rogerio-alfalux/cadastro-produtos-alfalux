@@ -661,3 +661,10 @@
 
 - [x] Confirmar que `/api/products/all` retorna `documentos` e os três aliases de URL
 - [x] Disponibilizar o checkpoint validado para publicação em produção
+
+## Correção v55.2 — Falha de Implantação
+
+- [x] Reproduzir o build de produção e identificar a etapa que falhou
+- [x] Confirmar que não havia erro de código, dependência, migração ou empacotamento a corrigir
+- [x] Validar testes, TypeScript, build e inicialização em modo de produção
+- [x] Criar checkpoint corrigido e informar a causa da falha
