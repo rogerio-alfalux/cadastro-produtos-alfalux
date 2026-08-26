@@ -37,6 +37,18 @@ const uploadExcel = multer({
   },
 });
 
+// Multer para documentos do produto. A extensão permitida depende do tipo.
+const uploadDocument = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 25 * 1024 * 1024 }, // 25MB
+});
+
+const documentRules = {
+  datasheet: { extensions: ["pdf"], label: "Datasheet" },
+  fotometria: { extensions: ["ies"], label: "Fotometria IES" },
+  desenhoTecnico: { extensions: ["pdf", "dwg", "dxf", "png", "jpg", "jpeg"], label: "Desenho Técnico" },
+} as const;
+
 // ─── Upload de imagem ─────────────────────────────────────────────────────────
 router.post("/upload-image", uploadImage.single("file"), async (req, res) => {
   try {
@@ -52,6 +64,37 @@ router.post("/upload-image", uploadImage.single("file"), async (req, res) => {
   } catch (err) {
     console.error("[upload-image]", err);
     return res.status(500).json({ error: "Erro ao fazer upload da imagem" });
+  }
+});
+
+// ─── Upload de documento ───────────────────────────────────────────────────────
+router.post("/upload-document", uploadDocument.single("file"), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: "Nenhum arquivo enviado" });
+
+    const tipo = String(req.body.tipo || "") as keyof typeof documentRules;
+    const rule = documentRules[tipo];
+    if (!rule) return res.status(400).json({ error: "Tipo de documento inválido" });
+
+    const originalName = req.file.originalname.replace(/[\\/\0]/g, "").trim();
+    const ext = originalName.split(".").pop()?.toLowerCase() || "";
+    if (!(rule.extensions as readonly string[]).includes(ext)) {
+      return res.status(400).json({
+        error: `${rule.label}: formatos aceitos — ${rule.extensions.map((item) => `.${item}`).join(", ")}`,
+      });
+    }
+
+    const key = `products/documents/${tipo}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const mimeType = req.file.mimetype || "application/octet-stream";
+    const { url } = await storagePut(key, req.file.buffer, mimeType);
+
+    return res.json({
+      tipo,
+      documento: { url, key, nome: originalName, mimeType },
+    });
+  } catch (err) {
+    console.error("[upload-document]", err);
+    return res.status(500).json({ error: "Erro ao fazer upload do documento" });
   }
 });
 
@@ -532,9 +575,39 @@ router.get("/all", async (_req, res) => {
       return match ? match[1] : (url.startsWith("http") ? null : url);
     };
 
+    type StoredDocument = { url: string; key: string; nome: string; mimeType: string };
+    type StoredDocuments = Partial<Record<"datasheet" | "fotometria" | "desenhoTecnico", StoredDocument>>;
+    const parseStoredDocuments = (raw: unknown): StoredDocuments => {
+      if (!raw) return {};
+      try {
+        const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+        const result: StoredDocuments = {};
+        for (const tipo of ["datasheet", "fotometria", "desenhoTecnico"] as const) {
+          const value = (parsed as Record<string, unknown>)[tipo];
+          if (!value || typeof value !== "object" || Array.isArray(value)) continue;
+          const document = value as Record<string, unknown>;
+          const url = String(document.url ?? "").trim();
+          const key = String(document.key ?? "").trim();
+          const nome = String(document.nome ?? "").trim();
+          const mimeType = String(document.mimeType ?? "application/octet-stream").trim();
+          if (url && key && nome) result[tipo] = { url, key, nome, mimeType };
+        }
+        return result;
+      } catch {
+        return {};
+      }
+    };
+
     const signedUrlMap = new Map<string, string>();
     const keysToSign = activeItems
-      .map((p: any) => extractKey(p.fotoUrl))
+      .flatMap((p: any) => {
+        const documents = parseStoredDocuments(p.documentos);
+        return [
+          extractKey(p.fotoUrl),
+          ...Object.values(documents).map((document) => document?.key || extractKey(document?.url) || null),
+        ];
+      })
       .filter((k): k is string => !!k);
     const uniqueKeys = Array.from(new Set(keysToSign));
 
@@ -555,6 +628,21 @@ router.get("/all", async (_req, res) => {
     const formatted = activeItems.map((p) => {
       const rawKey = extractKey(p.fotoUrl);
       const resolvedFotoUrl = rawKey ? (signedUrlMap.get(rawKey) ?? null) : null;
+      const storedDocuments = parseStoredDocuments((p as any).documentos);
+      const resolveDocument = (document: StoredDocument | undefined) => {
+        if (!document) return null;
+        const key = document.key || extractKey(document.url);
+        return {
+          nome: document.nome,
+          mimeType: document.mimeType,
+          url: key ? (signedUrlMap.get(key) ?? document.url) : document.url,
+        };
+      };
+      const publicDocuments = {
+        datasheet: resolveDocument(storedDocuments.datasheet),
+        fotometria: resolveDocument(storedDocuments.fotometria),
+        desenhoTecnico: resolveDocument(storedDocuments.desenhoTecnico),
+      };
       const temps: string[] = [];
       try {
         const parsed = JSON.parse(p.temperaturasCor || "[]");
@@ -650,6 +738,10 @@ router.get("/all", async (_req, res) => {
         dissipador: dissipadorVal,
         ledModule: ledModuleVal,
         fotoUrl: resolvedFotoUrl,
+        documentos: publicDocuments,
+        datasheetUrl: publicDocuments.datasheet?.url ?? null,
+        fotometriaIesUrl: publicDocuments.fotometria?.url ?? null,
+        desenhoTecnicoUrl: publicDocuments.desenhoTecnico?.url ?? null,
         temperaturasCor: temps,
         driver220: isValidDriver(p.driverOnoff220) ? makeDriver(p.driverOnoff220) : null,
         driverBivolt: (p.driverOnoffBivoltNaoAplicavel || !isValidDriver(p.driverOnoffBivolt))

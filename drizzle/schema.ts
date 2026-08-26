@@ -105,6 +105,9 @@ export const products = mysqlTable("products", {
   fotoUrl: text("fotoUrl"),
   fotoKey: text("fotoKey"),
 
+  // Documentos opcionais: datasheet, fotometria IES e desenho técnico
+  documentos: json("documentos"),
+
   // Custo da luminária (corpo)
   custoLuminaria: decimal("custoLuminaria", { precision: 10, scale: 2 }),
 

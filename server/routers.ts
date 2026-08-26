@@ -38,6 +38,31 @@ function parseModuloLedExtra(raw: string | null | undefined): Array<{ cct: strin
   }
 }
 
+type ProductDocument = { url: string; key: string; nome: string; mimeType: string };
+type ProductDocuments = Partial<Record<"datasheet" | "fotometria" | "desenhoTecnico", ProductDocument>>;
+
+function parseProductDocuments(raw: string | null | undefined): ProductDocuments | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+    const result: ProductDocuments = {};
+    for (const tipo of ["datasheet", "fotometria", "desenhoTecnico"] as const) {
+      const value = parsed[tipo];
+      if (!value || typeof value !== "object" || Array.isArray(value)) continue;
+      const document = value as Record<string, unknown>;
+      const url = String(document.url ?? "").trim();
+      const key = String(document.key ?? "").trim();
+      const nome = String(document.nome ?? "").trim();
+      const mimeType = String(document.mimeType ?? "application/octet-stream").trim();
+      if (url && key && nome) result[tipo] = { url, key, nome, mimeType };
+    }
+    return Object.keys(result).length > 0 ? result : null;
+  } catch {
+    return null;
+  }
+}
+
 const productSchema = z.object({
   categoria: z.string().optional(),
   instalacao: z.string().min(1, "INSTALAÇÃO é obrigatório"),
@@ -95,6 +120,7 @@ const productSchema = z.object({
   temperaturasCor: z.string().default('["2700","3000","3500","4000","5000"]'),
   fotoUrl: z.string().nullish(),
   fotoKey: z.string().nullish(),
+  documentos: z.string().nullish(),
   custoLuminaria: z.string().nullish(),
   custoDriverOnoff220: z.string().nullish(),
   custoDriverOnoffBivolt: z.string().nullish(),
@@ -378,6 +404,7 @@ export const appRouter = router({
           composicaoD1D2: input.composicaoD1D2 || null,
           fotoUrl: input.fotoUrl || null,
           fotoKey: input.fotoKey || null,
+          documentos: parseProductDocuments(input.documentos),
           precoVendaOnoff220: input.precoVendaOnoff220 || null,
           precoVendaOnoffBivolt: input.precoVendaOnoffBivolt || null,
           precoVendaDim110v: input.precoVendaDim110v || null,
@@ -534,6 +561,7 @@ export const appRouter = router({
         if (d.temperaturasCor !== undefined) update.temperaturasCor = d.temperaturasCor;
         if (d.fotoUrl !== undefined) update.fotoUrl = d.fotoUrl || null;
         if (d.fotoKey !== undefined) update.fotoKey = d.fotoKey || null;
+        if (d.documentos !== undefined) update.documentos = parseProductDocuments(d.documentos);
         if (d.custoLuminaria !== undefined) update.custoLuminaria = d.custoLuminaria || null;
         if (d.custoDriverOnoff220 !== undefined) update.custoDriverOnoff220 = d.custoDriverOnoff220 || null;
         if (d.custoDriverOnoffBivolt !== undefined) update.custoDriverOnoffBivolt = d.custoDriverOnoffBivolt || null;

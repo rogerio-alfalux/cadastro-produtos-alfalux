@@ -73,6 +73,29 @@ function getExtraCcts(product: Record<string, unknown>): string[] {
   }
 }
 
+type ProductDocumentBadge = { url: string; nome: string };
+type ProductDocumentBadges = Partial<Record<"datasheet" | "fotometria" | "desenhoTecnico", ProductDocumentBadge>>;
+
+function getProductDocuments(raw: unknown): ProductDocumentBadges {
+  if (!raw) return {};
+  try {
+    const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+    const result: ProductDocumentBadges = {};
+    for (const tipo of ["datasheet", "fotometria", "desenhoTecnico"] as const) {
+      const value = (parsed as Record<string, unknown>)[tipo];
+      if (!value || typeof value !== "object" || Array.isArray(value)) continue;
+      const document = value as Record<string, unknown>;
+      const url = String(document.url ?? "").trim();
+      const nome = String(document.nome ?? "").trim();
+      if (url) result[tipo] = { url, nome };
+    }
+    return result;
+  } catch {
+    return {};
+  }
+}
+
 function getAvailableCcts(product: unknown): string[] {
   const item = product as Record<string, unknown>;
   let selectedCcts: string[] = [];
@@ -465,6 +488,7 @@ export default function ProductList() {
                   <th className="text-left px-3 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider hidden xl:table-cell" style={{width: 110}}>INSTALAÇÃO</th>
                   <th className="text-left px-3 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider hidden xl:table-cell" style={{width: 120}}>CATEGORIA</th>
                   <th className="text-left px-3 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider hidden lg:table-cell" style={{width: 140}}>DRIVERS</th>
+                  <th className="text-left px-3 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider hidden md:table-cell" style={{width: 125}}>DOCUMENTOS</th>
                   <th className="text-right px-3 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider hidden lg:table-cell" style={{width: 90}}>CUSTO</th>
                   <th className="text-right px-3 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider" style={{width: 160}}>AÇÕES</th>
                 </tr>
@@ -472,6 +496,7 @@ export default function ProductList() {
               <tbody>
                 {items.map((product, idx) => {
                   const temps = getAvailableCcts(product);
+                  const productDocuments = getProductDocuments((product as any).documentos);
                   const isAtivo = (product as any).ativo !== false;
 
                   return (
@@ -567,6 +592,32 @@ export default function ProductList() {
                               )}
                             </>
                           )}
+                        </div>
+                      </td>
+
+                      {/* Documentos */}
+                      <td className="px-3 py-3 hidden md:table-cell">
+                        <div className="flex items-center gap-1.5 min-w-[104px]">
+                          {([
+                            { tipo: "datasheet", sigla: "DS", className: "border-cyan-500/35 bg-cyan-500/10 text-cyan-300" },
+                            { tipo: "fotometria", sigla: "IES", className: "border-violet-500/35 bg-violet-500/10 text-violet-300" },
+                            { tipo: "desenhoTecnico", sigla: "DT", className: "border-amber-500/35 bg-amber-500/10 text-amber-300" },
+                          ] as const).map(({ tipo, sigla, className }) => {
+                            const document = productDocuments[tipo];
+                            return document ? (
+                              <a
+                                key={tipo}
+                                href={document.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                title={document.nome || sigla}
+                                className={cn("h-6 min-w-7 px-1.5 rounded border text-[9px] font-extrabold tracking-wide inline-flex items-center justify-center hover:brightness-125 transition", className)}
+                              >
+                                {sigla}
+                              </a>
+                            ) : null;
+                          })}
+                          {Object.keys(productDocuments).length === 0 && <span className="text-xs text-muted-foreground/50">—</span>}
                         </div>
                       </td>
 

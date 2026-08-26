@@ -33,6 +33,11 @@ import {
   Copy,
   PlusCircle,
   Trash2,
+  FileText,
+  FileCode2,
+  Ruler,
+  ExternalLink,
+  Loader2,
 } from "lucide-react";
 
 // ─── Sub-components (defined OUTSIDE ProductForm to prevent remount on every render) ───
@@ -359,6 +364,45 @@ interface ModuloLedExtra {
   cct: string;
   modelo: string;
   qtd: number;
+}
+
+type ProductDocumentType = "datasheet" | "fotometria" | "desenhoTecnico";
+
+interface ProductDocument {
+  url: string;
+  key: string;
+  nome: string;
+  mimeType: string;
+}
+
+type ProductDocuments = Partial<Record<ProductDocumentType, ProductDocument>>;
+
+const DOCUMENT_CONFIG: Record<ProductDocumentType, { sigla: string; label: string; accept: string; hint: string }> = {
+  datasheet: { sigla: "DS", label: "Datasheet", accept: ".pdf,application/pdf", hint: "PDF" },
+  fotometria: { sigla: "IES", label: "Fotometria", accept: ".ies", hint: "arquivo IES" },
+  desenhoTecnico: { sigla: "DT", label: "Desenho Técnico", accept: ".pdf,.dwg,.dxf,.png,.jpg,.jpeg", hint: "PDF, DWG, DXF ou imagem" },
+};
+
+function parseProductDocuments(raw: unknown): ProductDocuments {
+  if (!raw) return {};
+  try {
+    const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+    const result: ProductDocuments = {};
+    for (const tipo of Object.keys(DOCUMENT_CONFIG) as ProductDocumentType[]) {
+      const value = (parsed as Record<string, unknown>)[tipo];
+      if (!value || typeof value !== "object" || Array.isArray(value)) continue;
+      const document = value as Record<string, unknown>;
+      const url = String(document.url ?? "").trim();
+      const key = String(document.key ?? "").trim();
+      const nome = String(document.nome ?? "").trim();
+      const mimeType = String(document.mimeType ?? "application/octet-stream");
+      if (url && key && nome) result[tipo] = { url, key, nome, mimeType };
+    }
+    return result;
+  } catch {
+    return {};
+  }
 }
 
 const emptyModuloLedExtra = (): ModuloLedExtra => ({ cct: "", modelo: "", qtd: 1 });
@@ -721,6 +765,8 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
   const [touched, setTouched] = useState<Partial<Record<keyof FormData, boolean>>>({});
   const [uploading, setUploading] = useState(false);
+  const [documents, setDocuments] = useState<ProductDocuments>({});
+  const [uploadingDocument, setUploadingDocument] = useState<ProductDocumentType | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [produtoOriginalNome, setProdutoOriginalNome] = useState<string | null>(null);
   const [driversExtra, setDriversExtra] = useState<DriversExtraState>(defaultDriversExtra);
@@ -758,6 +804,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         catch { return ["2700", "3000", "3500", "4000", "5000"]; }
       })();
       const p = existingProduct as any;
+      setDocuments(parseProductDocuments(p.documentos));
       const baseForm = {
         categoria: existingProduct.categoria || "",
         instalacao: existingProduct.instalacao || "",
@@ -1112,6 +1159,47 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
     }
   };
 
+  const handleDocumentUpload = async (tipo: ProductDocumentType, file: File) => {
+    const ext = file.name.split(".").pop()?.toLowerCase() || "";
+    const allowed: Record<ProductDocumentType, string[]> = {
+      datasheet: ["pdf"],
+      fotometria: ["ies"],
+      desenhoTecnico: ["pdf", "dwg", "dxf", "png", "jpg", "jpeg"],
+    };
+    if (!allowed[tipo].includes(ext)) {
+      toast.error(`Formato inválido para ${DOCUMENT_CONFIG[tipo].label}. Use ${DOCUMENT_CONFIG[tipo].hint}.`);
+      return;
+    }
+    if (file.size > 25 * 1024 * 1024) {
+      toast.error("O documento deve ter no máximo 25 MB.");
+      return;
+    }
+
+    setUploadingDocument(tipo);
+    try {
+      const fd = new FormData();
+      fd.append("tipo", tipo);
+      fd.append("file", file);
+      const res = await fetch("/api/products/upload-document", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok || !data.documento) throw new Error(data.error || "Erro ao enviar documento");
+      setDocuments((prev) => ({ ...prev, [tipo]: data.documento as ProductDocument }));
+      toast.success(`${DOCUMENT_CONFIG[tipo].label} enviado com sucesso!`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erro ao enviar documento");
+    } finally {
+      setUploadingDocument(null);
+    }
+  };
+
+  const removeDocument = (tipo: ProductDocumentType) => {
+    setDocuments((prev) => {
+      const next = { ...prev };
+      delete next[tipo];
+      return next;
+    });
+  };
+
   const doSubmit = () => {
     // Sync ref before validating to ensure we read the absolute latest state
     formRef.current = form;
@@ -1212,6 +1300,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       custoDriverDimDali: form.custoDriverDimDali || undefined,
       fotoUrl: form.fotoUrl !== "" ? form.fotoUrl : null,
       fotoKey: form.fotoKey !== "" ? form.fotoKey : null,
+      documentos: Object.keys(documents).length > 0 ? JSON.stringify(documents) : null,
       precoVendaOnoff220: form.precoVendaOnoff220 || undefined,
       precoVendaOnoffBivolt: form.precoVendaOnoffBivolt || undefined,
       precoVendaDim110v: form.precoVendaDim110v || undefined,
@@ -1413,6 +1502,95 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       )}
 
       <div className="space-y-6">
+        {/* ─── Documentos do produto ─────────────────────────────────────── */}
+        <section className="alfalux-card p-4">
+          <div className="flex items-center justify-between gap-4 mb-3">
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-primary" />
+              <h2 className="section-header mb-0">DOCUMENTOS DO PRODUTO</h2>
+            </div>
+            <span className="text-[10px] text-muted-foreground">Opcionais · máximo 25 MB por arquivo</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {(Object.keys(DOCUMENT_CONFIG) as ProductDocumentType[]).map((tipo) => {
+              const config = DOCUMENT_CONFIG[tipo];
+              const document = documents[tipo];
+              const isUploading = uploadingDocument === tipo;
+              const Icon = tipo === "datasheet" ? FileText : tipo === "fotometria" ? FileCode2 : Ruler;
+
+              return (
+                <div key={tipo} className={cn(
+                  "rounded-lg border px-3 py-2.5 transition-colors",
+                  document ? "border-primary/35 bg-primary/5" : "border-border/60 bg-muted/10"
+                )}>
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className={cn(
+                      "w-9 h-9 rounded-md flex-shrink-0 flex items-center justify-center border",
+                      document ? "border-primary/40 bg-primary/10 text-primary" : "border-border bg-muted/20 text-muted-foreground"
+                    )}>
+                      {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Icon className="w-4 h-4" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-extrabold tracking-wider text-primary">{config.sigla}</span>
+                        <span className="text-xs font-semibold text-foreground truncate">{config.label}</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground truncate" title={document?.nome}>
+                        {document?.nome || config.hint}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 mt-2">
+                    {document && (
+                      <a
+                        href={document.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="h-7 px-2 rounded border border-border text-[10px] font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/30 inline-flex items-center gap-1"
+                        title="Abrir documento"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        Abrir
+                      </a>
+                    )}
+                    <label className={cn(
+                      "h-7 px-2.5 rounded border border-primary/40 text-[10px] font-semibold text-primary hover:bg-primary/10 inline-flex items-center justify-center cursor-pointer transition-colors",
+                      isUploading && "opacity-50 pointer-events-none"
+                    )}>
+                      <Upload className="w-3 h-3 mr-1" />
+                      {document ? "Substituir" : "Anexar"}
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept={config.accept}
+                        disabled={isUploading}
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          if (file) void handleDocumentUpload(tipo, file);
+                          event.target.value = "";
+                        }}
+                      />
+                    </label>
+                    {document && (
+                      <button
+                        type="button"
+                        onClick={() => removeDocument(tipo)}
+                        className="h-7 w-7 rounded border border-destructive/30 text-destructive/80 hover:bg-destructive/10 inline-flex items-center justify-center transition-colors"
+                        title={`Remover ${config.label}`}
+                        aria-label={`Remover ${config.label}`}
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
         {/* ─── Seção 1: Identificação ─────────────────────────────────── */}
         <section className="alfalux-card p-6">
           <div className="flex items-center gap-2 mb-5">

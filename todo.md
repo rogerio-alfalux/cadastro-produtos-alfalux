@@ -645,3 +645,14 @@
 - [x] Gerar dump MySQL completo com CREATE TABLE e INSERT INTO para todas as tabelas
 - [x] Verificar a integridade básica do arquivo e entregar para download
 - [x] Informar de modo seguro o estado da URL e da conexão externa do banco
+
+## Feature v55 — Documentos do Produto
+
+- [x] Adicionar persistência para Datasheet, Fotometria IES e Desenho Técnico por produto
+- [x] Criar endpoints seguros para upload e remoção dos três tipos de documento
+- [x] Adicionar área compacta de documentos no topo do cadastro/edição do produto
+- [x] Preservar e carregar documentos existentes ao editar ou duplicar produtos
+- [x] Adicionar coluna Documentos com indicadores DS, IES e DT na listagem geral
+- [x] Expor URLs assinadas e metadados dos documentos na API pública de produtos
+- [x] Cobrir criação, edição, remoção e resposta da API com testes
+- [x] Validar TypeScript, suíte Vitest e interface responsiva antes do checkpoint

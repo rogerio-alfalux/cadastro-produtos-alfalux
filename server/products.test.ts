@@ -263,6 +263,35 @@ describe("products.create", () => {
     const callArgs = (createProduct as any).mock.calls.at(-1)?.[0];
     expect(callArgs?.moduloLedExtra).toEqual(extras);
   });
+
+  it("persists datasheet, IES and technical drawing metadata", async () => {
+    const { createProduct } = await import("./db");
+    const caller = appRouter.createCaller(createCtx());
+    const documentos = {
+      datasheet: { url: "/manus-storage/products/documents/datasheet/test.pdf", key: "products/documents/datasheet/test.pdf", nome: "datasheet.pdf", mimeType: "application/pdf" },
+      fotometria: { url: "/manus-storage/products/documents/fotometria/test.ies", key: "products/documents/fotometria/test.ies", nome: "fotometria.ies", mimeType: "application/octet-stream" },
+      desenhoTecnico: { url: "/manus-storage/products/documents/desenhoTecnico/test.dwg", key: "products/documents/desenhoTecnico/test.dwg", nome: "desenho.dwg", mimeType: "application/acad" },
+    };
+    await caller.products.create({
+      categoria: "DOWNLIGHTS",
+      instalacao: "EMBUTIR",
+      familia: "LUNA",
+      sku: "TEST-DOCS",
+      produto: "PRODUTO COM DOCUMENTOS",
+      moduloLed: "MÓDULO PRINCIPAL",
+      otica: "NÃO APLICÁVEL",
+      oticaNaoAplicavel: true,
+      holder: "NÃO APLICÁVEL",
+      holderNaoAplicavel: true,
+      dissipador: "NÃO APLICÁVEL",
+      dissipadorNaoAplicavel: true,
+      driverOnoff220: "DRIVER 220V",
+      driverOnoffBivolt: "DRIVER BIVOLT",
+      documentos: JSON.stringify(documentos),
+    });
+    const callArgs = (createProduct as any).mock.calls.at(-1)?.[0];
+    expect(callArgs?.documentos).toEqual(documentos);
+  });
 });
 
 describe("products.update", () => {
@@ -337,6 +366,14 @@ describe("products.update", () => {
     });
     const callArgs = (updateProduct as any).mock.calls.at(-1)?.[1];
     expect(callArgs?.moduloLedExtra).toEqual(extras);
+  });
+
+  it("removes all product documents when the field is cleared", async () => {
+    const { updateProduct } = await import("./db");
+    const caller = appRouter.createCaller(createCtx());
+    await caller.products.update({ id: 1, data: { documentos: null } });
+    const callArgs = (updateProduct as any).mock.calls.at(-1)?.[1];
+    expect(callArgs?.documentos).toBeNull();
   });
 });
 
