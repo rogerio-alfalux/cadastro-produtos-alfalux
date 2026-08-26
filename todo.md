@@ -638,3 +638,10 @@
 - [x] Persistir CCT extra com temperatura, módulo LED e quantidade em criação/edição
 - [x] Expor CCTs extras na API pública sem alterar os cinco CCTs padrão
 - [x] Validar o fluxo completo e a remoção de CCTs extras
+
+## Exportação de Migração — Dump Completo do Banco
+
+- [x] Inventariar todas as tabelas e suas contagens em modo somente leitura
+- [x] Gerar dump MySQL completo com CREATE TABLE e INSERT INTO para todas as tabelas
+- [x] Verificar a integridade básica do arquivo e entregar para download
+- [x] Informar de modo seguro o estado da URL e da conexão externa do banco
