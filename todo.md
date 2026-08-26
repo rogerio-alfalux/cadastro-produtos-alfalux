@@ -656,3 +656,8 @@
 - [x] Expor URLs assinadas e metadados dos documentos na API pública de produtos
 - [x] Cobrir criação, edição, remoção e resposta da API com testes
 - [x] Validar TypeScript, suíte Vitest e interface responsiva antes do checkpoint
+
+## Verificação v55.1 — Publicação da API de Documentos
+
+- [x] Confirmar que `/api/products/all` retorna `documentos` e os três aliases de URL
+- [x] Disponibilizar o checkpoint validado para publicação em produção
