@@ -49,6 +49,37 @@ const documentRules = {
   desenhoTecnico: { extensions: ["pdf", "dwg", "dxf", "png", "jpg", "jpeg"], label: "Desenho Técnico" },
 } as const;
 
+export function extractStorageKey(urlOrKey: string | null | undefined): string | null {
+  if (!urlOrKey) return null;
+  const value = urlOrKey.trim();
+  if (!value) return null;
+
+  const localMatch = value.match(/^\/manus-storage\/(.+)$/);
+  if (localMatch) return localMatch[1];
+
+  if (!value.startsWith("http://") && !value.startsWith("https://")) {
+    return value.replace(/^\/+/, "");
+  }
+
+  try {
+    const pathname = decodeURIComponent(new URL(value).pathname);
+    const documentsMarker = "/products/documents/";
+    const markerIndex = pathname.indexOf(documentsMarker);
+    if (markerIndex >= 0) return pathname.slice(markerIndex + 1);
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+export function resolveStoredDocumentKey(document: { url?: string | null; key?: string | null } | null | undefined): string | null {
+  if (!document) return null;
+  // O storage acrescenta um hash ao nome no upload. Registros antigos salvaram
+  // por engano a chave anterior ao hash, enquanto a URL local contém a chave real.
+  return extractStorageKey(document.url) || extractStorageKey(document.key);
+}
+
 // ─── Upload de imagem ─────────────────────────────────────────────────────────
 router.post("/upload-image", uploadImage.single("file"), async (req, res) => {
   try {
@@ -84,9 +115,9 @@ router.post("/upload-document", uploadDocument.single("file"), async (req, res) 
       });
     }
 
-    const key = `products/documents/${tipo}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const requestedKey = `products/documents/${tipo}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
     const mimeType = req.file.mimetype || "application/octet-stream";
-    const { url } = await storagePut(key, req.file.buffer, mimeType);
+    const { key, url } = await storagePut(requestedKey, req.file.buffer, mimeType);
 
     return res.json({
       tipo,
@@ -567,14 +598,6 @@ router.get("/all", async (_req, res) => {
       // Não bloqueia o endpoint — makeDriver usará extractEqCode como fallback
     }
 
-    // Resolver URLs públicas do S3 para todos os produtos com foto em paralelo
-    const extractKey = (url: string | null | undefined): string | null => {
-      if (!url) return null;
-      // Suporta tanto "/manus-storage/{key}" quanto chaves diretas
-      const match = url.match(/^\/manus-storage\/(.+)$/);
-      return match ? match[1] : (url.startsWith("http") ? null : url);
-    };
-
     type StoredDocument = { url: string; key: string; nome: string; mimeType: string };
     type StoredDocuments = Partial<Record<"datasheet" | "fotometria" | "desenhoTecnico", StoredDocument>>;
     const parseStoredDocuments = (raw: unknown): StoredDocuments => {
@@ -604,8 +627,8 @@ router.get("/all", async (_req, res) => {
       .flatMap((p: any) => {
         const documents = parseStoredDocuments(p.documentos);
         return [
-          extractKey(p.fotoUrl),
-          ...Object.values(documents).map((document) => document?.key || extractKey(document?.url) || null),
+          extractStorageKey(p.fotoUrl),
+          ...Object.values(documents).map((document) => resolveStoredDocumentKey(document)),
         ];
       })
       .filter((k): k is string => !!k);
@@ -626,12 +649,12 @@ router.get("/all", async (_req, res) => {
 
     // Mapear para o formato que o Configurador espera
     const formatted = activeItems.map((p) => {
-      const rawKey = extractKey(p.fotoUrl);
+      const rawKey = extractStorageKey(p.fotoUrl);
       const resolvedFotoUrl = rawKey ? (signedUrlMap.get(rawKey) ?? null) : null;
       const storedDocuments = parseStoredDocuments((p as any).documentos);
       const resolveDocument = (document: StoredDocument | undefined) => {
         if (!document) return null;
-        const key = document.key || extractKey(document.url);
+        const key = resolveStoredDocumentKey(document);
         return {
           nome: document.nome,
           mimeType: document.mimeType,

@@ -675,3 +675,13 @@
 - [x] Confirmar que não há divergência no Cadastro/API e que nenhuma correção de código é necessária
 - [x] Garantir que `/api/products/all` envie 500mA para o produto correto
 - [x] Validar a resposta publicada e registrar o diagnóstico
+
+## Correção v55.4 — URLs Assinadas de Documentos
+
+- [x] Reproduzir o HTTP 403 nos documentos do produto LDE-6450.140.18B
+- [x] Identificar a divergência entre chave armazenada e assinatura CloudFront/S3
+- [x] Corrigir a geração privada de URLs para Datasheet, Fotometria IES e Desenho Técnico
+- [x] Preservar o contrato `documentos` e os três aliases de URL na API pública
+- [x] Validar por GET cada URL disponível com HTTP 200/206 e conteúdo correto
+- [x] Adicionar testes de regressão para assinatura e compatibilidade de documentos
+- [x] Validar TypeScript, Vitest, build e criar checkpoint para publicação
