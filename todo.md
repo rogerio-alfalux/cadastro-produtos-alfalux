@@ -668,3 +668,10 @@
 - [x] Confirmar que não havia erro de código, dependência, migração ou empacotamento a corrigir
 - [x] Validar testes, TypeScript, build e inicialização em modo de produção
 - [x] Criar checkpoint corrigido e informar a causa da falha
+
+## Correção v55.3 — Corrente ZEUS 17W 24° TRL
+
+- [x] Comparar a corrente cadastrada com as respostas local e publicada da API
+- [x] Confirmar que não há divergência no Cadastro/API e que nenhuma correção de código é necessária
+- [x] Garantir que `/api/products/all` envie 500mA para o produto correto
+- [x] Validar a resposta publicada e registrar o diagnóstico
