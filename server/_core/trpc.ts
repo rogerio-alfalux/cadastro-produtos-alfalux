@@ -33,7 +33,7 @@ function requirePermission(permission: AppPermission) {
     if (!ctx.user) {
       throw new TRPCError({ code: "UNAUTHORIZED", message: UNAUTHED_ERR_MSG });
     }
-    if (!can(ctx.user.role, permission)) {
+    if (!can(ctx.user.role, permission, ctx.user.permissionOverrides)) {
       throw new TRPCError({ code: "FORBIDDEN", message: NOT_ADMIN_ERR_MSG });
     }
     return next({ ctx: { ...ctx, user: ctx.user } });

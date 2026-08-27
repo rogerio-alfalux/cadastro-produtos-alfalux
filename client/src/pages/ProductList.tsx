@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { can } from "@shared/permissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -127,9 +128,11 @@ function getAvailableCcts(product: unknown): string[] {
 export default function ProductList() {
   const [, navigate] = useLocation();
   const { user } = useAuth();
-  const isAdmin = user?.role === "admin";
-  const canViewCosts = isAdmin || user?.role === "costs";
-  const canManageDocuments = isAdmin || user?.role === "engineering";
+  const canUse = (permission: Parameters<typeof can>[1]) => user ? can(user.role, permission, user.permissionOverrides) : false;
+  const canManageEntities = canUse("manageEntities");
+  const canViewCosts = canUse("viewCosts") || canUse("editCosts");
+  const canEditCosts = canUse("editCosts");
+  const canManageDocuments = canUse("manageDocuments");
   const [search, setSearch] = useState("");
   const [filterCategoria, setFilterCategoria] = useState("_all");
   const [filterInstalacao, setFilterInstalacao] = useState("_all");
@@ -271,7 +274,7 @@ export default function ProductList() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          {isAdmin && <>
+          {canManageEntities && <>
             <Button
               variant="outline"
               size="sm"
@@ -295,7 +298,7 @@ export default function ProductList() {
             EXPORTAR EXCEL
           </Button>}
 
-          {isAdmin && <Button
+          {canManageEntities && <Button
             size="sm"
             onClick={() => navigate("/cadastrar")}
             className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold tracking-wider btn-glow"
@@ -462,7 +465,7 @@ export default function ProductList() {
                 {hasFilters ? "Tente ajustar os filtros" : "Cadastre o primeiro produto"}
               </p>
             </div>
-            {!hasFilters && isAdmin && (
+            {!hasFilters && canManageEntities && (
               <Button
                 size="sm"
                 onClick={() => navigate("/cadastrar")}
@@ -642,7 +645,7 @@ export default function ProductList() {
                       <td className="px-3 py-3">
                         <div className="flex items-center justify-end gap-1.5">
                           {/* Checkbox ativo/inativo */}
-                          {isAdmin && <TooltipProvider delayDuration={300}>
+                          {canManageEntities && <TooltipProvider delayDuration={300}>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <div className="flex items-center px-1">
@@ -673,35 +676,35 @@ export default function ProductList() {
                           >
                             <Eye className="w-3.5 h-3.5" />
                           </button>
-                          {isAdmin && <button
+                          {canManageEntities && <button
                             onClick={() => setDuplicarId(product.id)}
                             className="p-1.5 rounded-lg text-muted-foreground hover:text-cyan-400 hover:bg-cyan-400/10 transition-colors"
                             title="Duplicar produto"
                           >
                             <Copy className="w-3.5 h-3.5" />
                           </button>}
-                          {isAdmin && <button
+                          {canManageEntities && <button
                             onClick={() => setEditId(product.id)}
                             className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                             title="Editar"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>}
-                          {isAdmin && <button
+                          {canManageEntities && <button
                             onClick={() => setDeleteId(product.id)}
                             className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                             title="Excluir"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>}
-                          {canManageDocuments && !isAdmin && <button
+                          {canManageDocuments && !canManageEntities && <button
                             onClick={() => navigate(`/documentos/${product.id}`)}
                             className="p-1.5 rounded-lg text-muted-foreground hover:text-cyan-300 hover:bg-cyan-400/10 transition-colors"
                             title="Gerenciar documentos"
                           >
                             <FileText className="w-3.5 h-3.5" />
                           </button>}
-                          {user?.role === "costs" && <button
+                          {canEditCosts && !canManageEntities && <button
                             onClick={() => navigate(`/custos/${product.id}`)}
                             className="p-1.5 rounded-lg text-muted-foreground hover:text-amber-300 hover:bg-amber-400/10 transition-colors"
                             title="Editar custos e markups"

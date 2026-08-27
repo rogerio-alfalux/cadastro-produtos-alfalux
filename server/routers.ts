@@ -8,7 +8,7 @@ import { usersRouter } from "./routers/users";
 import { sdk } from "./_core/sdk";
 import { DUMMY_PASSWORD_HASH, verifyPassword } from "./passwords";
 import { getLocalUserByEmail, updateUsersByEmail } from "./db";
-import { isAllowedUserEmail, normalizeEmail } from "../shared/permissions";
+import { can, isAllowedUserEmail, normalizeEmail, type AppRole } from "../shared/permissions";
 import { componentsRouter } from "./routers/components";
 import { bulkOpsRouter } from "./routers/bulkOps";
 import { revendaRouter } from "./routers/revenda";
@@ -71,8 +71,8 @@ function parseProductDocuments(raw: string | null | undefined): ProductDocuments
 
 const isFinancialProductField = (field: string) => /^(custo|precoVenda|mkp)/.test(field);
 
-function redactProductFinancials<T extends Record<string, unknown>>(product: T, role: string | null | undefined): T {
-  if (role === "admin" || role === "costs") return product;
+function redactProductFinancials<T extends Record<string, unknown>>(product: T, role: AppRole | null | undefined, permissionOverrides?: unknown): T {
+  if (can(role, "viewCosts", permissionOverrides) || can(role, "editCosts", permissionOverrides)) return product;
   const sanitized = { ...product };
   for (const key of Object.keys(sanitized)) {
     if (isFinancialProductField(key)) sanitized[key as keyof T] = null as T[keyof T];
@@ -80,11 +80,11 @@ function redactProductFinancials<T extends Record<string, unknown>>(product: T, 
   return sanitized;
 }
 
-function assertProductUpdatePermission(role: string | null | undefined, data: Record<string, unknown>) {
+function assertProductUpdatePermission(role: AppRole | null | undefined, permissionOverrides: unknown, data: Record<string, unknown>) {
   const fields = Object.keys(data).filter((field) => data[field] !== undefined);
-  if (role === "admin") return;
-  if (role === "engineering" && fields.length > 0 && fields.every((field) => field === "documentos")) return;
-  if (role === "costs" && fields.length > 0 && fields.every(isFinancialProductField)) return;
+  if (can(role, "manageEntities", permissionOverrides)) return;
+  if (can(role, "manageDocuments", permissionOverrides) && fields.length > 0 && fields.every((field) => field === "documentos")) return;
+  if (can(role, "editCosts", permissionOverrides) && fields.length > 0 && fields.every(isFinancialProductField)) return;
   throw new TRPCError({ code: "FORBIDDEN", message: "Seu perfil não pode alterar estes campos do produto." });
 }
 
@@ -403,7 +403,7 @@ export const appRouter = router({
         const result = await listProducts(input);
         return {
           ...result,
-          items: result.items.map((item) => redactProductFinancials(item, ctx.user.role)),
+          items: result.items.map((item) => redactProductFinancials(item, ctx.user.role, ctx.user.permissionOverrides)),
         };
       }),
 
@@ -412,7 +412,7 @@ export const appRouter = router({
       .query(async ({ input, ctx }) => {
         const product = await getProductById(input.id);
         if (!product) throw new TRPCError({ code: "NOT_FOUND", message: "Produto não encontrado" });
-        return redactProductFinancials(product, ctx.user.role);
+        return redactProductFinancials(product, ctx.user.role, ctx.user.permissionOverrides);
       }),
 
     create: entityAdminProcedure
@@ -546,8 +546,8 @@ export const appRouter = router({
             .filter((field) => Object.prototype.hasOwnProperty.call(parsedData, field))
             .map((field) => [field, parsedData[field as keyof ProductUpdateData]]),
         ) as ProductUpdateData;
-        assertProductUpdatePermission(ctx.user.role, d as Record<string, unknown>);
-        const canEditCosts = ctx.user.role === "admin" || ctx.user.role === "costs";
+        assertProductUpdatePermission(ctx.user.role, ctx.user.permissionOverrides, d as Record<string, unknown>);
+        const canEditCosts = can(ctx.user.role, "editCosts", ctx.user.permissionOverrides);
 
         // Bloquear alteração de markup mínimo fora dos perfis financeiros autorizados
         const MKP_MINIMO_FIELDS = [
@@ -825,7 +825,7 @@ export const appRouter = router({
       const result = await listProducts({ limit: 2000, offset: 0 });
       const db = await getDb();
       const items = db ? await enrichManyWithModuloLedEq(db, result.items) : result.items;
-      return items.map((item) => redactProductFinancials(item, ctx.user.role));
+      return items.map((item) => redactProductFinancials(item, ctx.user.role, ctx.user.permissionOverrides));
     }),
 
     // Autocomplete suggestions for free-text fields

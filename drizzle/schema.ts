@@ -18,6 +18,7 @@ export const users = mysqlTable("users", {
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: mysqlEnum("role", ["user", "admin", "engineering", "costs"]).default("user").notNull(),
+  permissionOverrides: json("permissionOverrides").$type<import("../shared/permissions").PermissionOverrides>(),
   passwordHash: varchar("passwordHash", { length: 255 }),
   active: boolean("active").default(true).notNull(),
   failedLoginAttempts: int("failedLoginAttempts").default(0).notNull(),

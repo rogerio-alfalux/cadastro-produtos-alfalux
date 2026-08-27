@@ -22,7 +22,11 @@ vi.mock("./db", async () => {
   return { ...actual, ...dbMocks };
 });
 
-function context(role: "admin" | "engineering" | "costs" | "user" | null, email = "teste@grupoalfalux.com.br") {
+function context(
+  role: "admin" | "engineering" | "costs" | "user" | null,
+  email = "teste@grupoalfalux.com.br",
+  permissionOverrides: Record<string, boolean> | null = null,
+) {
   const cookies: Array<{ name: string; value: string; options: unknown }> = [];
   return {
     ctx: {
@@ -35,6 +39,7 @@ function context(role: "admin" | "engineering" | "costs" | "user" | null, email 
         role,
         passwordHash: "hash-privado",
         active: true,
+        permissionOverrides,
         failedLoginAttempts: 0,
         lockedUntil: null,
         createdAt: new Date(),
@@ -83,6 +88,13 @@ describe("matriz de permissões", () => {
     expect(can("costs", "manageDocuments")).toBe(false);
   });
 
+  it("aplica concessões e revogações individuais sem permitir gestão de usuários fora do perfil Admin", () => {
+    expect(can("engineering", "viewCosts", { viewCosts: true })).toBe(true);
+    expect(can("engineering", "manageDocuments", { manageDocuments: false })).toBe(false);
+    expect(can("admin", "editCosts", { editCosts: false })).toBe(false);
+    expect(can("engineering", "manageUsers", { manageUsers: true })).toBe(false);
+  });
+
   it("permite à Engenharia alterar somente documentos", async () => {
     dbMocks.getProductById.mockResolvedValue({ id: 1, documentos: null, mkpMinimoOnoff220v: "2" });
     dbMocks.updateProduct.mockResolvedValue(undefined);
@@ -102,6 +114,20 @@ describe("matriz de permissões", () => {
       mkpMinimoOnoff220v: null,
       precoVendaOnoff220: null,
     });
+  });
+
+  it("aplica permissões individuais na consulta e na edição de documentos", async () => {
+    dbMocks.listProducts.mockResolvedValue({
+      items: [{ id: 1, produto: "LUNA", custoLuminaria: "99.00", mkpMinimoOnoff220v: "2.1" }],
+      total: 1,
+    });
+    dbMocks.getProductById.mockResolvedValue({ id: 1, documentos: null, mkpMinimoOnoff220v: "2" });
+    const withCostAccess = appRouter.createCaller(context("engineering", "engenharia@grupoalfalux.com.br", { viewCosts: true }).ctx);
+    const list = await withCostAccess.products.list({});
+    expect(list.items[0]).toMatchObject({ custoLuminaria: "99.00", mkpMinimoOnoff220v: "2.1" });
+
+    const withoutDocumentAccess = appRouter.createCaller(context("engineering", "engenharia@grupoalfalux.com.br", { manageDocuments: false }).ctx);
+    await expect(withoutDocumentAccess.products.update({ id: 1, data: { documentos: JSON.stringify({}) } })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
   it("permite a Custos alterar somente custos, preços e markups", async () => {
@@ -157,8 +183,65 @@ describe("login e gestão administrativa", () => {
     await expect(appRouter.createCaller(context("engineering").ctx).users.list()).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
-  it("impede excluir os dois administradores protegidos", async () => {
-    const caller = appRouter.createCaller(context("admin", "rogeriojohnwayne@gmail.com").ctx);
-    await expect(caller.users.remove({ email: "geysa@grupoalfalux.com.br" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  it("permite promover qualquer usuário corporativo a Admin", async () => {
+    dbMocks.getUsersByEmail.mockResolvedValue([{
+      id: 22,
+      openId: "local:novo",
+      name: "Novo usuário",
+      email: "novo@grupoalfalux.com.br",
+      role: "engineering",
+      active: true,
+      passwordHash: "hash-privado",
+      permissionOverrides: null,
+    }]);
+    dbMocks.listManagedUsers.mockResolvedValue([
+      { id: 10, name: "Admin", email: "admin@grupoalfalux.com.br", role: "admin", active: true, permissionOverrides: null, hasPassword: true },
+      { id: 22, name: "Novo usuário", email: "novo@grupoalfalux.com.br", role: "engineering", active: true, permissionOverrides: null, hasPassword: true },
+    ]);
+    dbMocks.updateUsersByEmail.mockResolvedValue(undefined);
+    const caller = appRouter.createCaller(context("admin", "admin@grupoalfalux.com.br").ctx);
+    await expect(caller.users.update({
+      email: "novo@grupoalfalux.com.br",
+      name: "Novo usuário",
+      role: "admin",
+      active: true,
+      permissionOverrides: { viewCosts: false },
+    })).resolves.toEqual({ success: true });
+    expect(dbMocks.updateUsersByEmail).toHaveBeenCalledWith("novo@grupoalfalux.com.br", expect.objectContaining({
+      role: "admin",
+      permissionOverrides: { viewCosts: false },
+    }));
+  });
+
+  it("impede remover o último administrador ativo", async () => {
+    dbMocks.listManagedUsers.mockResolvedValue([
+      { id: 10, name: "Admin", email: "admin@grupoalfalux.com.br", role: "admin", active: true, permissionOverrides: null, hasPassword: true },
+    ]);
+    const caller = appRouter.createCaller(context("admin", "outro-admin@grupoalfalux.com.br").ctx);
+    await expect(caller.users.remove({ email: "admin@grupoalfalux.com.br" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("impede rebaixar o último administrador ativo", async () => {
+    dbMocks.getUsersByEmail.mockResolvedValue([{
+      id: 10,
+      openId: "local:admin",
+      name: "Admin",
+      email: "admin@grupoalfalux.com.br",
+      role: "admin",
+      active: true,
+      passwordHash: "hash-privado",
+      permissionOverrides: null,
+    }]);
+    dbMocks.listManagedUsers.mockResolvedValue([
+      { id: 10, name: "Admin", email: "admin@grupoalfalux.com.br", role: "admin", active: true, permissionOverrides: null, hasPassword: true },
+    ]);
+    const caller = appRouter.createCaller(context("admin", "outro-admin@grupoalfalux.com.br").ctx);
+    await expect(caller.users.update({
+      email: "admin@grupoalfalux.com.br",
+      name: "Admin",
+      role: "engineering",
+      active: true,
+      permissionOverrides: {},
+    })).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 });

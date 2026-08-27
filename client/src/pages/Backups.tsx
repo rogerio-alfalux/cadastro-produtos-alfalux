@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { can } from "@shared/permissions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,10 +43,10 @@ function formatDate(date: Date | string): string {
 
 export default function BackupsPage() {
   const { user } = useAuth();
-  const isAdmin = user?.role === "admin";
+  const canManageBackups = user ? can(user.role, "manageUsers", user.permissionOverrides) : false;
 
   const { data: backupList, isLoading, refetch } = trpc.backups.list.useQuery(undefined, {
-    enabled: isAdmin,
+    enabled: canManageBackups,
   });
 
   const generateMutation = trpc.backups.generate.useMutation({
@@ -91,7 +92,7 @@ export default function BackupsPage() {
     }
   }
 
-  if (!isAdmin) {
+  if (!canManageBackups) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-4 text-muted-foreground">
         <ShieldAlert className="w-12 h-12 text-destructive/60" />

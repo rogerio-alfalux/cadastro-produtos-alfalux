@@ -3,6 +3,7 @@ import { eq, like, and, or, sql, asc } from "drizzle-orm";
 import { getDb } from "../db";
 import { accessories } from "../../drizzle/schema";
 import { costProcedure, entityAdminProcedure, protectedProcedure, router } from "../_core/trpc";
+import { can } from "../../shared/permissions";
 
 // ─── Validation schema ────────────────────────────────────────────────────────
 
@@ -76,7 +77,7 @@ export const accessoriesRouter = router({
           .where(where),
       ]);
 
-      const visibleItems = ctx.user.role === "admin" || ctx.user.role === "costs"
+      const visibleItems = can(ctx.user.role, "viewCosts", ctx.user.permissionOverrides) || can(ctx.user.role, "editCosts", ctx.user.permissionOverrides)
         ? items
         : items.map((item) => ({ ...item, custo: null, precoVenda: null }));
       return { items: visibleItems, total: Number(countRows[0]?.total ?? 0) };
@@ -107,7 +108,7 @@ export const accessoriesRouter = router({
         .where(eq(accessories.id, input.id))
         .limit(1);
       if (!item) return null;
-      return ctx.user.role === "admin" || ctx.user.role === "costs"
+      return can(ctx.user.role, "viewCosts", ctx.user.permissionOverrides) || can(ctx.user.role, "editCosts", ctx.user.permissionOverrides)
         ? item
         : { ...item, custo: null, precoVenda: null };
     }),

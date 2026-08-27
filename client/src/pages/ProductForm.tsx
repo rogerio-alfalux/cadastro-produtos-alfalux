@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { can } from "@shared/permissions";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -760,7 +761,7 @@ function inferirCorrenteDriver({
 export default function ProductForm({ editId, duplicarDeId, onSuccess }: ProductFormProps) {
   const [, navigate] = useLocation();
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const canEditCosts = user ? can(user.role, "editCosts", user.permissionOverrides) : false;
   const [form, setForm] = useState<FormData>(defaultForm);
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
   const [touched, setTouched] = useState<Partial<Record<keyof FormData, boolean>>>({});
@@ -1279,7 +1280,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       mkpPadraoDimTriac110v: form.mkpPadraoDimTriac110v || undefined,
       mkpPadraoDimTriac220v: form.mkpPadraoDimTriac220v || undefined,
       // Markup mínimo por tipo de driver — apenas admin pode alterar
-      ...(isAdmin ? {
+      ...(canEditCosts ? {
         mkpMinimoOnoff220v: form.mkpMinimoOnoff220v || undefined,
         mkpMinimoOnoffBivolt: form.mkpMinimoOnoffBivolt || undefined,
         mkpMinimoDim110v: form.mkpMinimoDim110v || undefined,
@@ -2637,7 +2638,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                             />
                           </td>
                           <td className="py-2.5 px-2">
-                            {isAdmin ? (
+                            {canEditCosts ? (
                               <Input
                                 className="input-dark text-sm h-8 w-24 text-center"
                                 type="number" step="0.1" min="1"

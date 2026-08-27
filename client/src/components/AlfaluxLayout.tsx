@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/_core/hooks/useAuth";
-import type { AppRole } from "@shared/permissions";
+import { can, type AppPermission } from "@shared/permissions";
 import {
   ArrowLeftRight,
   ChevronRight,
@@ -25,19 +25,19 @@ interface NavItem {
   label: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
-  roles: AppRole[];
+  permission: AppPermission;
 }
 
 const navItems: NavItem[] = [
-  { label: "PRODUTOS", href: "/", icon: Database, roles: ["admin", "engineering", "costs", "user"] },
-  { label: "CADASTRAR", href: "/cadastrar", icon: PlusCircle, roles: ["admin"] },
-  { label: "REVENDA", href: "/revenda", icon: ShoppingCart, roles: ["admin"] },
-  { label: "ACESSÓRIOS", href: "/acessorios", icon: Wrench, roles: ["admin"] },
-  { label: "COMPONENTES", href: "/componentes", icon: Cpu, roles: ["admin"] },
-  { label: "SUBSTITUIÇÃO", href: "/substituicao-em-massa", icon: ArrowLeftRight, roles: ["admin"] },
-  { label: "DOCS EM LOTE", href: "/documentos-em-massa", icon: FileStack, roles: ["admin"] },
-  { label: "BACKUPS", href: "/backups", icon: HardDrive, roles: ["admin"] },
-  { label: "USUÁRIOS", href: "/usuarios", icon: Users, roles: ["admin"] },
+  { label: "PRODUTOS", href: "/", icon: Database, permission: "viewCatalog" },
+  { label: "CADASTRAR", href: "/cadastrar", icon: PlusCircle, permission: "manageEntities" },
+  { label: "REVENDA", href: "/revenda", icon: ShoppingCart, permission: "manageEntities" },
+  { label: "ACESSÓRIOS", href: "/acessorios", icon: Wrench, permission: "manageEntities" },
+  { label: "COMPONENTES", href: "/componentes", icon: Cpu, permission: "manageEntities" },
+  { label: "SUBSTITUIÇÃO", href: "/substituicao-em-massa", icon: ArrowLeftRight, permission: "manageEntities" },
+  { label: "DOCS EM LOTE", href: "/documentos-em-massa", icon: FileStack, permission: "manageDocuments" },
+  { label: "BACKUPS", href: "/backups", icon: HardDrive, permission: "manageUsers" },
+  { label: "USUÁRIOS", href: "/usuarios", icon: Users, permission: "manageUsers" },
 ];
 
 function breadcrumbLabel(location: string) {
@@ -59,7 +59,7 @@ export default function AlfaluxLayout({ children }: { children: React.ReactNode 
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, logout } = useAuth();
-  const visibleNavItems = navItems.filter((item) => user && item.roles.includes(user.role));
+  const visibleNavItems = navItems.filter((item) => user && can(user.role, item.permission, user.permissionOverrides));
 
   const renderNavItem = (item: NavItem, mobile = false) => {
     const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));

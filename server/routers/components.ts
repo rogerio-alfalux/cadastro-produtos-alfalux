@@ -4,6 +4,7 @@ import { entityAdminProcedure, protectedProcedure, router } from "../_core/trpc"
 import { TRPCError } from "@trpc/server";
 import { getDb } from "../db";
 import { components, products } from "../../drizzle/schema";
+import { can } from "../../shared/permissions";
 
 const COMPONENT_TYPES = [
   "DRIVER_ONOFF_220",
@@ -146,7 +147,7 @@ export const componentsRouter = router({
         conditions.length > 0
           ? await db.select().from(components).where(and(...conditions)).orderBy(asc(components.tipo), asc(components.modelo))
           : await db.select().from(components).orderBy(asc(components.tipo), asc(components.modelo));
-      if (ctx.user.role === "admin" || ctx.user.role === "costs") return rows;
+      if (can(ctx.user.role, "viewCosts", ctx.user.permissionOverrides) || can(ctx.user.role, "editCosts", ctx.user.permissionOverrides)) return rows;
       return rows.map((row) => ({ ...row, custo: null, custoDriver: null, mkpPadraoDriver: null }));
     }),
 
@@ -218,7 +219,9 @@ export const componentsRouter = router({
       const { id, ...data } = input;
       const changedFields = Object.keys(data).filter((field) => data[field as keyof typeof data] !== undefined);
       const costFields = new Set(["custo", "custoDriver", "mkpPadraoDriver"]);
-      if (ctx.user.role !== "admin" && !(ctx.user.role === "costs" && changedFields.every((field) => costFields.has(field)))) {
+      const canManageEntities = can(ctx.user.role, "manageEntities", ctx.user.permissionOverrides);
+      const canEditCosts = can(ctx.user.role, "editCosts", ctx.user.permissionOverrides);
+      if (!canManageEntities && !(canEditCosts && changedFields.every((field) => costFields.has(field)))) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Seu perfil só pode alterar custos e markups." });
       }
       // Bloquear código duplicado (excluindo o próprio registro)

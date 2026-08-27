@@ -17,6 +17,7 @@ import UsersPage from "@/pages/Users";
 import { ProductCostsEditor, ProductDocumentsEditor } from "@/pages/ProductAccessEditor";
 import BulkDocumentsPage from "@/pages/BulkDocuments";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { can } from "@shared/permissions";
 import { Loader2 } from "lucide-react";
 
 function CadastrarPage() {
@@ -27,9 +28,11 @@ function Router() {
   const { user, loading } = useAuth();
   if (loading) return <div className="min-h-screen grid place-items-center bg-background"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>;
   if (!user) return <LoginPage />;
-  const isAdmin = user.role === "admin";
-  const canDocuments = isAdmin || user.role === "engineering";
-  const canCosts = isAdmin || user.role === "costs";
+  const canUse = (permission: Parameters<typeof can>[1]) => can(user.role, permission, user.permissionOverrides);
+  const canDocuments = canUse("manageDocuments");
+  const canCosts = canUse("editCosts");
+  const canManageUsers = canUse("manageUsers");
+  const canManageEntities = canUse("manageEntities");
 
   return (
     <AlfaluxLayout>
@@ -38,14 +41,14 @@ function Router() {
         <Route path="/login" component={ProductList} />
         <Route path="/documentos/:id">{canDocuments ? <ProductDocumentsEditor /> : <NotFound />}</Route>
         <Route path="/custos/:id">{canCosts ? <ProductCostsEditor /> : <NotFound />}</Route>
-        <Route path="/usuarios">{isAdmin ? <UsersPage /> : <NotFound />}</Route>
-        <Route path="/documentos-em-massa">{isAdmin ? <BulkDocumentsPage /> : <NotFound />}</Route>
-        <Route path="/cadastrar">{isAdmin ? <CadastrarPage /> : <NotFound />}</Route>
-        <Route path="/componentes">{isAdmin ? <ComponentsPage /> : <NotFound />}</Route>
-        <Route path="/revenda">{isAdmin ? <RevendaPage /> : <NotFound />}</Route>
-        <Route path="/acessorios">{isAdmin ? <AccessoriesPage /> : <NotFound />}</Route>
-        <Route path="/backups">{isAdmin ? <BackupsPage /> : <NotFound />}</Route>
-        <Route path="/substituicao-em-massa">{isAdmin ? <BulkReplacePage /> : <NotFound />}</Route>
+        <Route path="/usuarios">{canManageUsers ? <UsersPage /> : <NotFound />}</Route>
+        <Route path="/documentos-em-massa">{canDocuments ? <BulkDocumentsPage /> : <NotFound />}</Route>
+        <Route path="/cadastrar">{canManageEntities ? <CadastrarPage /> : <NotFound />}</Route>
+        <Route path="/componentes">{canManageEntities ? <ComponentsPage /> : <NotFound />}</Route>
+        <Route path="/revenda">{canManageEntities ? <RevendaPage /> : <NotFound />}</Route>
+        <Route path="/acessorios">{canManageEntities ? <AccessoriesPage /> : <NotFound />}</Route>
+        <Route path="/backups">{canManageUsers ? <BackupsPage /> : <NotFound />}</Route>
+        <Route path="/substituicao-em-massa">{canManageEntities ? <BulkReplacePage /> : <NotFound />}</Route>
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

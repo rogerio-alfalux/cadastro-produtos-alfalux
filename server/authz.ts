@@ -6,7 +6,7 @@ export function requireRestPermission(permission: AppPermission) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       const user = await sdk.authenticateRequest(req);
-      if (!can(user.role, permission)) {
+      if (!can(user.role, permission, user.permissionOverrides)) {
         res.status(403).json({ error: "Permissão insuficiente." });
         return;
       }

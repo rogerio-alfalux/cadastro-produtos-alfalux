@@ -726,3 +726,15 @@
 - [x] Ajustar espaçamentos e dimensões para preservar a legibilidade do cabeçalho
 - [x] Manter o menu móvel recolhido e responsivo
 - [x] Validar desktop, largura intermediária e celular antes do checkpoint
+
+## Feature v58 — Administração e Permissões Individuais
+
+- [x] Permitir que administradores atribuam o perfil Admin a qualquer usuário elegível
+- [x] Persistir permissões individuais de concessão e revogação por usuário
+- [x] Preservar a matriz padrão dos perfis como base de cada usuário
+- [x] Criar painel de permissões individuais com descrições claras por autorização
+- [x] Aplicar imediatamente permissões efetivas no backend e na interface
+- [x] Proteger alterações de perfil e permissões para que somente admins possam concedê-las
+- [x] Impedir que um admin revogue seu próprio acesso administrativo ou remova o último admin ativo
+- [x] Cobrir cenários de perfil, sobreposição e revogação com testes de regressão
+- [x] Validar TypeScript, Vitest, build e interface antes do checkpoint
