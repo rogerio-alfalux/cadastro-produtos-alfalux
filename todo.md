@@ -702,3 +702,13 @@
 - [x] Aplicar as mesmas restrições no backend, independentemente da interface
 - [x] Adicionar testes por perfil para login, domínio, documentos, custos e operações administrativas
 - [x] Validar migração, TypeScript, Vitest, build e fluxos visuais antes do checkpoint
+
+## Feature v57 — Documentos por Família e Potência
+
+- [x] Confirmar documentos e público elegível do BLAZE H P IF 1B 575MM 18W
+- [x] Criar prévia e aplicação administrativa de documentos por família e potência
+- [x] Reutilizar referências de storage sem duplicar arquivos entre produtos
+- [x] Criar tela administrativa para aplicar Datasheet, IES e Desenho Técnico em lote
+- [x] Permitir filtro opcional de potência somente para a categoria PERFIS
+- [x] Aplicar Datasheet e IES a todos os BLAZE H P de potência 18W
+- [x] Validar persistência, API pública, testes e interface antes do checkpoint

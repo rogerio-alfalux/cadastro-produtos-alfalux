@@ -16,6 +16,7 @@ import BulkReplacePage from "@/pages/BulkReplace";
 import LoginPage from "@/pages/Login";
 import UsersPage from "@/pages/Users";
 import { ProductCostsEditor, ProductDocumentsEditor } from "@/pages/ProductAccessEditor";
+import BulkDocumentsPage from "@/pages/BulkDocuments";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 
@@ -39,6 +40,7 @@ function Router() {
         <Route path="/documentos/:id">{canDocuments ? <ProductDocumentsEditor /> : <NotFound />}</Route>
         <Route path="/custos/:id">{canCosts ? <ProductCostsEditor /> : <NotFound />}</Route>
         <Route path="/usuarios">{isAdmin ? <UsersPage /> : <NotFound />}</Route>
+        <Route path="/documentos-em-massa">{isAdmin ? <BulkDocumentsPage /> : <NotFound />}</Route>
         <Route path="/cadastrar">{isAdmin ? <CadastrarPage /> : <NotFound />}</Route>
         <Route path="/componentes">{isAdmin ? <ComponentsPage /> : <NotFound />}</Route>
         <Route path="/operacoes-em-massa">{isAdmin ? <BulkOpsPage /> : <NotFound />}</Route>

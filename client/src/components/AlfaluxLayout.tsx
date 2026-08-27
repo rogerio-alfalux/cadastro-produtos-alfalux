@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Cpu,
   Database,
+  FileStack,
   HardDrive,
   Layers,
   LayoutGrid,
@@ -36,6 +37,7 @@ const navItems: NavItem[] = [
   { label: "COMPONENTES", href: "/componentes", icon: Cpu, roles: ["admin"] },
   { label: "EM MASSA", href: "/operacoes-em-massa", icon: Layers, roles: ["admin"] },
   { label: "SUBSTITUIÇÃO", href: "/substituicao-em-massa", icon: ArrowLeftRight, roles: ["admin"] },
+  { label: "DOCS EM LOTE", href: "/documentos-em-massa", icon: FileStack, roles: ["admin"] },
   { label: "BACKUPS", href: "/backups", icon: HardDrive, roles: ["admin"] },
   { label: "USUÁRIOS", href: "/usuarios", icon: Users, roles: ["admin"] },
 ];
@@ -43,6 +45,7 @@ const navItems: NavItem[] = [
 function breadcrumbLabel(location: string) {
   if (location === "/") return "PRODUTOS";
   if (location === "/cadastrar") return "CADASTRAR PRODUTO";
+  if (location.startsWith("/documentos-em-massa")) return "DOCUMENTOS EM LOTE";
   if (location.startsWith("/documentos")) return "DOCUMENTOS";
   if (location.startsWith("/custos")) return "CUSTOS E MARKUPS";
   if (location.startsWith("/usuarios")) return "USUÁRIOS";
