@@ -712,3 +712,10 @@
 - [x] Permitir filtro opcional de potência somente para a categoria PERFIS
 - [x] Aplicar Datasheet e IES a todos os BLAZE H P de potência 18W
 - [x] Validar persistência, API pública, testes e interface antes do checkpoint
+
+## Ajuste v57.1 — Navegação Superior
+
+- [x] Remover o item e a rota de Operações em Massa
+- [x] Dividir a navegação superior administrativa em duas linhas organizadas
+- [x] Garantir visibilidade completa dos itens sem rolagem horizontal
+- [x] Validar desktop e tela menor antes do checkpoint

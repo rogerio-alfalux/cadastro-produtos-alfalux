@@ -8,7 +8,6 @@ import AlfaluxLayout from "./components/AlfaluxLayout";
 import ProductList from "./pages/ProductList";
 import ProductForm from "./pages/ProductForm";
 import ComponentsPage from "./pages/Components";
-import BulkOpsPage from "./pages/BulkOps";
 import RevendaPage from "./pages/Revenda";
 import AccessoriesPage from "@/pages/Accessories";
 import BackupsPage from "@/pages/Backups";
@@ -43,7 +42,6 @@ function Router() {
         <Route path="/documentos-em-massa">{isAdmin ? <BulkDocumentsPage /> : <NotFound />}</Route>
         <Route path="/cadastrar">{isAdmin ? <CadastrarPage /> : <NotFound />}</Route>
         <Route path="/componentes">{isAdmin ? <ComponentsPage /> : <NotFound />}</Route>
-        <Route path="/operacoes-em-massa">{isAdmin ? <BulkOpsPage /> : <NotFound />}</Route>
         <Route path="/revenda">{isAdmin ? <RevendaPage /> : <NotFound />}</Route>
         <Route path="/acessorios">{isAdmin ? <AccessoriesPage /> : <NotFound />}</Route>
         <Route path="/backups">{isAdmin ? <BackupsPage /> : <NotFound />}</Route>
