@@ -30,17 +30,20 @@ describe("relatórios gerenciais", () => {
     expect(metrics).toMatchObject({ totalProducts: 2, activeProducts: 1, families: 2, productsWithCost: 2, totalCost: 200, averageCost: 100 });
   });
 
-  it("gera fórmulas de custo total e preço sugerido na planilha", () => {
-    const workbook = buildProductReportWorkbook([product], ["financial"], { familia: "BLAZE H" });
-    const sheet = workbook.Sheets.Produtos;
-    const headers = Object.keys(sheet).filter((key) => key.endsWith("1")).map((key) => String(sheet[key].v));
+  it("gera fórmulas financeiras e formatação executiva no workbook", async () => {
+    const workbook = await buildProductReportWorkbook([product], ["financial"], { familia: "BLAZE H" });
+    const sheet = workbook.getWorksheet("Produtos")!;
+    const headers = sheet.getRow(1).values.slice(1).map((value) => String(value));
     const totalIndex = headers.indexOf("CUSTO TOTAL ON/OFF 220V (R$)");
     const standardIndex = headers.indexOf("PREÇO SUGERIDO — MARKUP PADRÃO (R$)");
     const minimumIndex = headers.indexOf("PREÇO SUGERIDO — MARKUP MÍNIMO (R$)");
-    const cell = (index: number) => `${String.fromCharCode(65 + index)}2`;
-    expect(sheet[cell(totalIndex)].f).toContain("SUM");
-    expect(sheet[cell(standardIndex)].f).toContain("*");
-    expect(sheet[cell(minimumIndex)].f).toContain("*");
+    const row = sheet.getRow(2);
+    expect(String((row.getCell(totalIndex + 1).value as { formula?: string }).formula)).toContain("SUM");
+    expect(String((row.getCell(standardIndex + 1).value as { formula?: string }).formula)).toContain("*");
+    expect(String((row.getCell(minimumIndex + 1).value as { formula?: string }).formula)).toContain("*");
+    expect(sheet.getRow(1).getCell(1).fill).toMatchObject({ fgColor: { argb: "102A43" } });
+    expect(sheet.views[0]).toMatchObject({ state: "frozen", ySplit: 1 });
+    expect(workbook.getWorksheet("Resumo")!.getCell("A1").value).toBe("RELATÓRIO GERENCIAL — ALFALUX");
   });
 
   it("aceita apenas seções conhecidas e usa todas quando não há seleção", () => {

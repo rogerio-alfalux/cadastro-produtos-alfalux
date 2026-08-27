@@ -1,13 +1,27 @@
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { REPORT_SECTION_KEYS, type ReportSection } from "../shared/reports";
 
 export { REPORT_SECTION_KEYS, REPORT_SECTION_LABELS, type ReportSection } from "../shared/reports";
 export type ProductReportItem = Record<string, unknown>;
 
+const COLORS = {
+  navy: "102A43",
+  navySoft: "243B53",
+  blue: "1D72B8",
+  sky: "D9EAF7",
+  mist: "F3F6F9",
+  grey: "E2E8F0",
+  ink: "172B4D",
+  muted: "627D98",
+  white: "FFFFFF",
+  green: "D9F2E6",
+  amber: "FFF3D6",
+};
+
 export function parseReportSections(raw?: string | null): ReportSection[] {
   const requested = (raw ?? "").split(",").map((value) => value.trim()).filter(Boolean);
   const sections = requested.filter((value): value is ReportSection => REPORT_SECTION_KEYS.includes(value as ReportSection));
-  return sections.length ? sections : [...REPORT_SECTION_KEYS];
+  return sections.length ? sections : Array.from(REPORT_SECTION_KEYS);
 }
 
 export function asNumber(value: unknown): number | null {
@@ -77,6 +91,12 @@ export function getReportFilterOptions(items: ProductReportItem[], scope: Report
   };
 }
 
+function parseDocuments(raw: unknown) {
+  if (!raw) return {} as Record<string, { nome?: string }>;
+  if (typeof raw === "object") return raw as Record<string, { nome?: string }>;
+  try { return JSON.parse(String(raw)) as Record<string, { nome?: string }>; } catch { return {}; }
+}
+
 function excelColumn(index: number) {
   let column = "";
   let value = index + 1;
@@ -88,13 +108,17 @@ function excelColumn(index: number) {
   return column;
 }
 
-function parseDocuments(raw: unknown) {
-  if (!raw) return {} as Record<string, { nome?: string }>;
-  if (typeof raw === "object") return raw as Record<string, { nome?: string }>;
-  try { return JSON.parse(String(raw)) as Record<string, { nome?: string }>; } catch { return {}; }
+function styleHeader(row: ExcelJS.Row) {
+  row.height = 26;
+  row.eachCell((cell) => {
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: COLORS.navy } };
+    cell.font = { bold: true, color: { argb: COLORS.white }, size: 10 };
+    cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+    cell.border = { bottom: { style: "medium", color: { argb: COLORS.blue } } };
+  });
 }
 
-export function buildProductReportWorkbook(
+export async function buildProductReportWorkbook(
   items: ProductReportItem[],
   sections: ReportSection[],
   filters: Record<string, unknown>,
@@ -146,50 +170,120 @@ export function buildProductReportWorkbook(
     return row;
   });
 
-  const workbook = XLSX.utils.book_new();
-  const sheet = XLSX.utils.json_to_sheet(rows);
-  const headers = Object.keys(rows[0] ?? {});
-  if (include("financial") && rows.length) {
-    const position = (header: string) => excelColumn(headers.indexOf(header));
-    const bodyColumn = position("CUSTO CORPO ON/OFF 220V (R$)");
-    const driverColumn = position("CUSTO DRIVER ON/OFF 220V (R$)");
-    const totalColumn = position("CUSTO TOTAL ON/OFF 220V (R$)");
-    const standardColumn = position("MARKUP PADRÃO ON/OFF 220V");
-    const minimumColumn = position("MARKUP MÍNIMO ON/OFF 220V");
-    const suggestedStandardColumn = position("PREÇO SUGERIDO — MARKUP PADRÃO (R$)");
-    const suggestedMinimumColumn = position("PREÇO SUGERIDO — MARKUP MÍNIMO (R$)");
-    rows.forEach((_, index) => {
-      const rowNumber = index + 2;
-      sheet[`${totalColumn}${rowNumber}`] = { t: "n", f: `IF(COUNT(${bodyColumn}${rowNumber}:${driverColumn}${rowNumber})=0,"",SUM(${bodyColumn}${rowNumber}:${driverColumn}${rowNumber}))` };
-      sheet[`${suggestedStandardColumn}${rowNumber}`] = { t: "n", f: `IF(OR(${totalColumn}${rowNumber}="",${standardColumn}${rowNumber}=""),"",${totalColumn}${rowNumber}*${standardColumn}${rowNumber})` };
-      sheet[`${suggestedMinimumColumn}${rowNumber}`] = { t: "n", f: `IF(OR(${totalColumn}${rowNumber}="",${minimumColumn}${rowNumber}=""),"",${totalColumn}${rowNumber}*${minimumColumn}${rowNumber})` };
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = "Alfalux Cadastro de Produtos";
+  workbook.created = new Date();
+  workbook.calcProperties.fullCalcOnLoad = true;
+
+  const headers = Object.keys(rows[0] ?? {
+    "CATEGORIA": "", "INSTALAÇÃO": "", "FAMÍLIA": "", "SKU": "", "PRODUTO": "", "POTÊNCIA": "", "STATUS": "",
+  });
+  const detail = workbook.addWorksheet("Produtos", {
+    views: [{ state: "frozen", ySplit: 1 }],
+    properties: { tabColor: { argb: COLORS.blue } },
+    pageSetup: { orientation: "landscape", paperSize: 9, scale: 85, margins: { left: 0.25, right: 0.25, top: 0.5, bottom: 0.5, header: 0.2, footer: 0.2 } },
+  });
+  detail.columns = headers.map((header) => ({ header, key: header, width: Math.min(Math.max(header.length * 0.9, 14), 34) }));
+  rows.forEach((row) => detail.addRow(row));
+  styleHeader(detail.getRow(1));
+  detail.autoFilter = { from: "A1", to: `${excelColumn(headers.length - 1)}1` };
+
+  const currencyHeaders = ["CUSTO CORPO ON/OFF 220V (R$)", "CUSTO DRIVER ON/OFF 220V (R$)", "CUSTO TOTAL ON/OFF 220V (R$)", "PREÇO SUGERIDO — MARKUP PADRÃO (R$)", "PREÇO SUGERIDO — MARKUP MÍNIMO (R$)", "PREÇO CADASTRADO ON/OFF 220V (R$)"];
+  const markupHeaders = ["MARKUP PADRÃO ON/OFF 220V", "MARKUP MÍNIMO ON/OFF 220V"];
+  const financialFormulaHeaders = ["CUSTO TOTAL ON/OFF 220V (R$)", "PREÇO SUGERIDO — MARKUP PADRÃO (R$)", "PREÇO SUGERIDO — MARKUP MÍNIMO (R$)"];
+  const indexOf = (header: string) => headers.indexOf(header) + 1;
+  if (include("financial")) {
+    const body = excelColumn(indexOf("CUSTO CORPO ON/OFF 220V (R$)") - 1);
+    const driver = excelColumn(indexOf("CUSTO DRIVER ON/OFF 220V (R$)") - 1);
+    const total = excelColumn(indexOf("CUSTO TOTAL ON/OFF 220V (R$)") - 1);
+    const standard = excelColumn(indexOf("MARKUP PADRÃO ON/OFF 220V") - 1);
+    const minimum = excelColumn(indexOf("MARKUP MÍNIMO ON/OFF 220V") - 1);
+    const suggestedStandard = excelColumn(indexOf("PREÇO SUGERIDO — MARKUP PADRÃO (R$)") - 1);
+    const suggestedMinimum = excelColumn(indexOf("PREÇO SUGERIDO — MARKUP MÍNIMO (R$)") - 1);
+    detail.eachRow((row, index) => {
+      if (index === 1) return;
+      row.getCell(indexOf("CUSTO TOTAL ON/OFF 220V (R$)")).value = { formula: `IF(COUNT(${body}${index}:${driver}${index})=0,"",SUM(${body}${index}:${driver}${index}))` };
+      row.getCell(indexOf("PREÇO SUGERIDO — MARKUP PADRÃO (R$)")).value = { formula: `IF(OR(${total}${index}="",${standard}${index}=""),"",${total}${index}*${standard}${index})` };
+      row.getCell(indexOf("PREÇO SUGERIDO — MARKUP MÍNIMO (R$)")).value = { formula: `IF(OR(${total}${index}="",${minimum}${index}=""),"",${total}${index}*${minimum}${index})` };
     });
   }
-  sheet["!cols"] = headers.map((header) => ({ wch: Math.min(Math.max(header.length + 2, 14), 38) }));
-  sheet["!autofilter"] = rows.length ? { ref: `A1:${excelColumn(headers.length - 1)}${rows.length + 1}` } : undefined;
-  XLSX.utils.book_append_sheet(workbook, sheet, "Produtos");
+  detail.eachRow((row, index) => {
+    if (index === 1) return;
+    row.height = 20;
+    row.eachCell((cell) => {
+      cell.font = { color: { argb: COLORS.ink }, size: 10 };
+      cell.alignment = { vertical: "middle", wrapText: true };
+      cell.border = { bottom: { style: "hair", color: { argb: COLORS.grey } } };
+      if (index % 2 === 1) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: COLORS.mist } };
+    });
+    currencyHeaders.forEach((header) => {
+      const column = indexOf(header);
+      if (column) { const cell = row.getCell(column); cell.numFmt = 'R$ #,##0.00'; cell.alignment = { vertical: "middle", horizontal: "right" }; }
+    });
+    markupHeaders.forEach((header) => { const column = indexOf(header); if (column) row.getCell(column).numFmt = '0.00x'; });
+    financialFormulaHeaders.forEach((header) => {
+      const column = indexOf(header);
+      if (column) { const cell = row.getCell(column); cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: COLORS.sky } }; cell.font = { bold: true, color: { argb: COLORS.ink }, size: 10 }; }
+    });
+    const status = row.getCell(indexOf("STATUS"));
+    status.font = { bold: true, color: { argb: status.value === "ATIVO" ? "107C41" : "A65B00" }, size: 10 };
+    status.fill = { type: "pattern", pattern: "solid", fgColor: { argb: status.value === "ATIVO" ? COLORS.green : COLORS.amber } };
+  });
 
   const metrics = calculateReportMetrics(items);
-  const summary = XLSX.utils.aoa_to_sheet([
-    ["RELATÓRIO GERENCIAL — CADASTRO DE PRODUTOS ALFALUX"],
-    ["Gerado em", new Date().toLocaleString("pt-BR")],
-    [],
-    ["Filtros aplicados"],
-    ["Família", filters.familia || "Todas"],
-    ["Categoria", filters.categoria || "Todas"],
-    ["Instalação", filters.instalacao || "Todas"],
-    ["Potência", filters.potencia || "Todas"],
-    ["Status", filters.apenasInativos ? "Somente inativos" : "Todos"],
-    [],
-    ["Indicadores"],
-    ["Produtos no relatório", metrics.totalProducts],
-    ["Produtos ativos", metrics.activeProducts],
-    ["Famílias abrangidas", metrics.families],
-    ["Produtos com custo ON/OFF 220V", metrics.productsWithCost],
-    ["Custo total ON/OFF 220V (R$)", metrics.totalCost],
-    ["Custo médio ON/OFF 220V (R$)", metrics.averageCost],
-  ]);
-  summary["!cols"] = [{ wch: 42 }, { wch: 24 }];
-  XLSX.utils.book_append_sheet(workbook, summary, "Resumo");
+  const summary = workbook.addWorksheet("Resumo", {
+    views: [{ showGridLines: false }],
+    properties: { tabColor: { argb: COLORS.navy } },
+    pageSetup: { orientation: "portrait", fitToWidth: 1, fitToHeight: 1, margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.2, footer: 0.2 } },
+  });
+  summary.columns = [{ width: 42 }, { width: 28 }];
+  summary.mergeCells("A1:B1");
+  const title = summary.getCell("A1");
+  title.value = "RELATÓRIO GERENCIAL — ALFALUX";
+  title.fill = { type: "pattern", pattern: "solid", fgColor: { argb: COLORS.navy } };
+  title.font = { bold: true, color: { argb: COLORS.white }, size: 16 };
+  title.alignment = { vertical: "middle", horizontal: "left" };
+  summary.getRow(1).height = 32;
+  summary.mergeCells("A2:B2");
+  const subtitle = summary.getCell("A2");
+  subtitle.value = `Carteira de produtos · Gerado em ${new Date().toLocaleString("pt-BR")}`;
+  subtitle.fill = { type: "pattern", pattern: "solid", fgColor: { argb: COLORS.navySoft } };
+  subtitle.font = { color: { argb: "D9E2EC" }, italic: true, size: 10 };
+  subtitle.alignment = { vertical: "middle" };
+  summary.getRow(2).height = 22;
+  summary.mergeCells("A4:B4");
+  summary.getCell("A4").value = "FILTROS APLICADOS";
+  summary.mergeCells("A11:B11");
+  summary.getCell("A11").value = "INDICADORES DO ESCOPO";
+  [4, 11].forEach((rowNumber) => {
+    const cell = summary.getCell(`A${rowNumber}`);
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: COLORS.blue } };
+    cell.font = { bold: true, color: { argb: COLORS.white }, size: 10 };
+    cell.alignment = { vertical: "middle" };
+    summary.getRow(rowNumber).height = 22;
+  });
+  const filterRows: Array<[string, string]> = [["Família", String(filters.familia || "Todas")], ["Categoria", String(filters.categoria || "Todas")], ["Instalação", String(filters.instalacao || "Todas")], ["Potência", String(filters.potencia || "Todas")], ["Status", filters.apenasInativos ? "Somente inativos" : "Todos"]];
+  filterRows.forEach(([label, value], index) => {
+    const row = summary.getRow(index + 5); row.values = [label, value]; row.height = 20;
+    row.getCell(1).font = { bold: true, color: { argb: COLORS.ink }, size: 10 };
+    row.getCell(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: COLORS.sky } };
+    row.getCell(2).font = { color: { argb: COLORS.ink }, size: 10 };
+    row.getCell(2).fill = { type: "pattern", pattern: "solid", fgColor: { argb: COLORS.mist } };
+  });
+  const metricRows: Array<[string, number, boolean]> = [["Produtos no relatório", metrics.totalProducts, false], ["Produtos ativos", metrics.activeProducts, false], ["Famílias abrangidas", metrics.families, false], ["Produtos com custo ON/OFF 220V", metrics.productsWithCost, false], ["Custo total ON/OFF 220V (R$)", metrics.totalCost, true], ["Custo médio ON/OFF 220V (R$)", metrics.averageCost, true]];
+  metricRows.forEach(([label, value, monetary], index) => {
+    const row = summary.getRow(index + 12); row.values = [label, value]; row.height = 23;
+    row.getCell(1).font = { bold: true, color: { argb: COLORS.ink }, size: 10 };
+    row.getCell(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: index % 2 ? COLORS.mist : COLORS.sky } };
+    row.getCell(2).font = { bold: true, color: { argb: COLORS.navy }, size: 11 };
+    row.getCell(2).fill = { type: "pattern", pattern: "solid", fgColor: { argb: COLORS.white } };
+    row.getCell(2).alignment = { horizontal: "right", vertical: "middle" };
+    if (monetary) row.getCell(2).numFmt = 'R$ #,##0.00';
+  });
+  [summary, detail].forEach((worksheet) => {
+    worksheet.eachRow((row) => row.eachCell((cell) => {
+      if (!cell.border || Object.keys(cell.border).length === 0) cell.border = { bottom: { style: "hair", color: { argb: COLORS.grey } } };
+    }));
+  });
   return workbook;
 }

@@ -198,8 +198,8 @@ router.get("/reports-excel", requireRestPermission("viewReports"), async (req, r
       familia: value("familia"), potencia: value("potencia"), apenasInativos: req.query.apenasInativos === "true",
     };
     const { items } = await listProducts({ ...filters, limit: 5000, offset: 0 });
-    const workbook = buildProductReportWorkbook(items, parseReportSections(value("sections")), filters);
-    const buf = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+    const workbook = await buildProductReportWorkbook(items, parseReportSections(value("sections")), filters);
+    const buf = Buffer.from(await workbook.xlsx.writeBuffer());
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     res.setHeader("Content-Disposition", `attachment; filename="relatorio-gerencial-alfalux-${new Date().toISOString().slice(0, 10)}.xlsx"`);
     return res.send(buf);

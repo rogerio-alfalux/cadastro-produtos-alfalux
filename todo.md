@@ -765,3 +765,11 @@
 - [x] Filtrar opções de instalação e potência conforme a família, categoria e escopo selecionados
 - [x] Limpar filtros que deixarem de ser compatíveis após uma nova seleção
 - [x] Validar BLAZE H com instalação Pendente, exportação Excel, testes e interface antes do checkpoint
+
+## Ajuste v59.3 — Estética do Excel Gerencial
+
+- [x] Aplicar identidade visual azul-marinho e cinza claro às abas do relatório
+- [x] Destacar cabeçalhos, filtros e indicadores com hierarquia legível
+- [x] Formatar valores financeiros, markups, fórmulas e linhas alternadas
+- [x] Configurar impressão, congelamento de cabeçalho e leitura em tela
+- [x] Gerar amostra, validar fórmulas, testes, TypeScript e build antes do checkpoint
