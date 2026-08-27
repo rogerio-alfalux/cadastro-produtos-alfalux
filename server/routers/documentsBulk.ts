@@ -61,9 +61,20 @@ const targetSchema = z.object({
   categoria: z.string().optional(),
   potencia: z.enum(["18W", "26W", "36W-SF", "36W-SL"]).optional(),
   produtoContem: z.string().max(120).optional(),
-  sourceProductId: z.number().int().positive(),
+  sourceProductId: z.number().int().positive().optional(),
+  documentos: z.object({
+    datasheet: z.object({ url: z.string().min(1), key: z.string().min(1), nome: z.string().min(1), mimeType: z.string().min(1) }).optional(),
+    fotometria: z.object({ url: z.string().min(1), key: z.string().min(1), nome: z.string().min(1), mimeType: z.string().min(1) }).optional(),
+    desenhoTecnico: z.object({ url: z.string().min(1), key: z.string().min(1), nome: z.string().min(1), mimeType: z.string().min(1) }).optional(),
+  }).optional(),
   tipos: z.array(z.enum(documentTypes)).min(1, "Selecione ao menos um documento"),
   substituirExistentes: z.boolean().default(false),
+}).superRefine((input, ctx) => {
+  const documents = parseDocuments(input.documentos);
+  const hasUploadedDocuments = input.tipos.every((type) => !!documents[type]);
+  if (!input.sourceProductId && !hasUploadedDocuments) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Selecione um produto de referência ou envie todos os documentos selecionados." });
+  }
 });
 
 async function resolveSourceDocuments(sourceProductId: number, types: ProductDocumentType[]) {
@@ -76,6 +87,22 @@ async function resolveSourceDocuments(sourceProductId: number, types: ProductDoc
     throw new Error(`O produto de referência não possui: ${missing.map((type) => labels[type]).join(", ")}.`);
   }
   return { sourceProduct, sourceDocuments };
+}
+
+async function resolveDocuments(input: z.infer<typeof targetSchema>) {
+  const uploadedDocuments = parseDocuments(input.documentos);
+  const missingTypes = input.tipos.filter((type) => !uploadedDocuments[type]);
+  if (missingTypes.length === 0) {
+    return { sourceProduct: null, sourceDocuments: uploadedDocuments, skipsSource: false };
+  }
+  const source = await resolveSourceDocuments(input.sourceProductId!, missingTypes);
+  return {
+    ...source,
+    sourceDocuments: { ...source.sourceDocuments, ...uploadedDocuments },
+    // Se algum arquivo foi enviado nesta tela, o produto de referência também
+    // participa da atualização para receber a versão mais recente.
+    skipsSource: missingTypes.length === input.tipos.length,
+  };
 }
 
 async function listTargets(input: z.infer<typeof targetSchema>) {
@@ -98,7 +125,7 @@ export const documentsBulkRouter = router({
     .input(targetSchema)
     .query(async ({ input }) => {
       const [source, targets] = await Promise.all([
-        resolveSourceDocuments(input.sourceProductId, input.tipos),
+        resolveDocuments(input),
         listTargets(input),
       ]);
       const selected = new Set(input.tipos);
@@ -111,20 +138,20 @@ export const documentsBulkRouter = router({
           produto: target.produto,
           familia: target.familia,
           potencia: target.potencia,
-          isSource: target.id === input.sourceProductId,
+          isSource: source.skipsSource && target.id === input.sourceProductId,
           currentTypes: documentTypes.filter((type) => !!current[type]),
           documentsToApply,
-          willChange: target.id !== input.sourceProductId && documentsToApply.some((type) => !!source.sourceDocuments[type]),
+          willChange: !(source.skipsSource && target.id === input.sourceProductId) && documentsToApply.some((type) => !!source.sourceDocuments[type]),
           selectedTypes: Array.from(selected),
         };
       });
       return {
-        source: {
+        source: source.sourceProduct ? {
           id: source.sourceProduct.id,
           sku: source.sourceProduct.sku,
           produto: source.sourceProduct.produto,
           documents: source.sourceDocuments,
-        },
+        } : null,
         total: preview.length,
         affected: preview.filter((item) => item.willChange).length,
         items: preview.slice(0, 100),
@@ -135,7 +162,7 @@ export const documentsBulkRouter = router({
     .input(targetSchema)
     .mutation(async ({ input }) => {
       const [source, targets, db] = await Promise.all([
-        resolveSourceDocuments(input.sourceProductId, input.tipos),
+        resolveDocuments(input),
         listTargets(input),
         getDb(),
       ]);
@@ -144,7 +171,7 @@ export const documentsBulkRouter = router({
       let updated = 0;
       let unchanged = 0;
       for (const target of targets) {
-        if (target.id === input.sourceProductId) {
+        if (source.skipsSource && target.id === input.sourceProductId) {
           unchanged += 1;
           continue;
         }
@@ -157,6 +184,6 @@ export const documentsBulkRouter = router({
         await db.update(products).set({ documentos: JSON.stringify(merged.documents) }).where(eq(products.id, target.id));
         updated += 1;
       }
-      return { total: targets.length, updated, unchanged, sourceProductId: input.sourceProductId };
+      return { total: targets.length, updated, unchanged, sourceProductId: source.sourceProduct?.id ?? null };
     }),
 });

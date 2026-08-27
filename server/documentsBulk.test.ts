@@ -33,6 +33,16 @@ describe("mergeSharedDocuments", () => {
     expect(result.documents.fotometria).toBeUndefined();
   });
 
+  it("substitui um arquivo atualizado e preserva os demais anexos do produto", () => {
+    const updatedDatasheet = { ...datasheet, key: "products/documents/datasheet/atualizado_hash.pdf", url: "/manus-storage/products/documents/datasheet/atualizado_hash.pdf", nome: "datasheet-revisado.pdf" };
+    const current: ProductDocuments = { datasheet, fotometria: ies, desenhoTecnico: technical };
+    const result = mergeSharedDocuments(current, { datasheet: updatedDatasheet }, ["datasheet"], true);
+    expect(result.changed).toBe(true);
+    expect(result.documents.datasheet).toEqual(updatedDatasheet);
+    expect(result.documents.fotometria).toEqual(ies);
+    expect(result.documents.desenhoTecnico).toEqual(technical);
+  });
+
   it("não marca alteração quando o produto já referencia o mesmo arquivo", () => {
     const current: ProductDocuments = { datasheet };
     const result = mergeSharedDocuments(current, { datasheet }, ["datasheet"], true);

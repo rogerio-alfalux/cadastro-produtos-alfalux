@@ -749,3 +749,11 @@
 - [x] Criar interface exclusiva de Relatórios com visão executiva e seleção de colunas
 - [x] Restringir página, consultas e exportação à permissão individual de Relatórios
 - [x] Validar cálculos, filtros, segurança, TypeScript, Vitest, build e interface antes do checkpoint
+
+## Ajuste v59.1 — Substituição de Documentos em Lote
+
+- [x] Permitir o upload de documentos atualizados diretamente na tela Docs em Lote
+- [x] Permitir selecionar quais tipos substituir: Datasheet, Fotometria IES e Desenho Técnico
+- [x] Aplicar a atualização ao escopo de família e potência sem apagar documentos não selecionados
+- [x] Reutilizar a mesma referência de storage em todos os produtos do escopo
+- [x] Validar persistência, API pública, URLs assinadas, testes e interface antes do checkpoint
