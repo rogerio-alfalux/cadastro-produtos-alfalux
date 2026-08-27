@@ -5,6 +5,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { can, type AppPermission } from "@shared/permissions";
 import {
   ArrowLeftRight,
+  ChartNoAxesCombined,
   ChevronRight,
   Cpu,
   Database,
@@ -38,6 +39,7 @@ const navItems: NavItem[] = [
   { label: "DOCS EM LOTE", href: "/documentos-em-massa", icon: FileStack, permission: "manageDocuments" },
   { label: "BACKUPS", href: "/backups", icon: HardDrive, permission: "manageUsers" },
   { label: "USUÁRIOS", href: "/usuarios", icon: Users, permission: "manageUsers" },
+  { label: "RELATÓRIOS", href: "/relatorios", icon: ChartNoAxesCombined, permission: "viewReports" },
 ];
 
 function breadcrumbLabel(location: string) {
@@ -46,7 +48,8 @@ function breadcrumbLabel(location: string) {
   if (location.startsWith("/documentos-em-massa")) return "DOCUMENTOS EM LOTE";
   if (location.startsWith("/documentos")) return "DOCUMENTOS";
   if (location.startsWith("/custos")) return "CUSTOS E MARKUPS";
-  if (location.startsWith("/usuarios")) return "USUÁRIOS";
+  if (location === "/usuarios") return "USUÁRIOS";
+  if (location === "/relatorios") return "RELATÓRIOS";
   if (location.startsWith("/revenda")) return "REVENDA";
   if (location.startsWith("/acessorios")) return "ACESSÓRIOS";
   if (location.startsWith("/componentes")) return "COMPONENTES";

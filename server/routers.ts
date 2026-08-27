@@ -14,6 +14,7 @@ import { bulkOpsRouter } from "./routers/bulkOps";
 import { revendaRouter } from "./routers/revenda";
 import { accessoriesRouter } from "./routers/accessories";
 import { documentsBulkRouter } from "./routers/documentsBulk";
+import { reportsRouter } from "./routers/reports";
 import {
   bulkInsertProducts,
   countProducts,
@@ -329,6 +330,7 @@ export const appRouter = router({
   components: componentsRouter,
   bulkOps: bulkOpsRouter,
   documentosEmMassa: documentsBulkRouter,
+  reports: reportsRouter,
   revenda: revendaRouter,
   accessories: accessoriesRouter,
   users: usersRouter,

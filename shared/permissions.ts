@@ -9,6 +9,7 @@ export const PROTECTED_ADMIN_EMAILS = [OWNER_ADMIN_EMAIL, GEYSA_ADMIN_EMAIL] as 
 export const APP_PERMISSIONS = [
   "viewCatalog",
   "manageUsers",
+  "viewReports",
   "manageEntities",
   "manageDocuments",
   "viewCosts",
@@ -24,6 +25,7 @@ export const PERMISSION_DEFINITIONS: ReadonlyArray<{
 }> = [
   { key: "viewCatalog", label: "Consultar Catálogo", description: "Visualizar produtos, componentes, acessórios e revenda." },
   { key: "manageUsers", label: "Gerenciar Usuários", description: "Criar, editar, ativar e excluir acessos, perfis e permissões." },
+  { key: "viewReports", label: "Acessar Relatórios", description: "Consultar indicadores gerenciais e exportar relatórios financeiros em Excel." },
   { key: "manageEntities", label: "Gerenciar Cadastros", description: "Criar, editar, ativar, desativar e excluir produtos, componentes, acessórios e revenda." },
   { key: "manageDocuments", label: "Gerenciar Documentos", description: "Enviar, substituir e remover Datasheets, fotometrias IES e desenhos técnicos." },
   { key: "viewCosts", label: "Ver Custos e Preços", description: "Visualizar custos, preços de venda e markups." },
@@ -80,6 +82,8 @@ export function can(
   // permanece exclusiva de usuários cujo perfil-base é Administrador.
   if (permission === "manageUsers" && role !== "admin") return false;
   const overrides = normalizePermissionOverrides(permissionOverrides);
+  // Relatórios financeiros exigem concessão explícita e individual de um Administrador.
+  if (permission === "viewReports") return role === "admin" && overrides.viewReports === true;
   if (typeof overrides[permission] === "boolean") return overrides[permission] as boolean;
   return ROLE_PERMISSIONS[role]?.includes(permission) === true;
 }

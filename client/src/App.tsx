@@ -16,6 +16,7 @@ import LoginPage from "@/pages/Login";
 import UsersPage from "@/pages/Users";
 import { ProductCostsEditor, ProductDocumentsEditor } from "@/pages/ProductAccessEditor";
 import BulkDocumentsPage from "@/pages/BulkDocuments";
+import ReportsPage from "@/pages/Reports";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { can } from "@shared/permissions";
 import { Loader2 } from "lucide-react";
@@ -33,6 +34,7 @@ function Router() {
   const canCosts = canUse("editCosts");
   const canManageUsers = canUse("manageUsers");
   const canManageEntities = canUse("manageEntities");
+  const canViewReports = canUse("viewReports");
 
   return (
     <AlfaluxLayout>
@@ -42,6 +44,7 @@ function Router() {
         <Route path="/documentos/:id">{canDocuments ? <ProductDocumentsEditor /> : <NotFound />}</Route>
         <Route path="/custos/:id">{canCosts ? <ProductCostsEditor /> : <NotFound />}</Route>
         <Route path="/usuarios">{canManageUsers ? <UsersPage /> : <NotFound />}</Route>
+        <Route path="/relatorios">{canViewReports ? <ReportsPage /> : <NotFound />}</Route>
         <Route path="/documentos-em-massa">{canDocuments ? <BulkDocumentsPage /> : <NotFound />}</Route>
         <Route path="/cadastrar">{canManageEntities ? <CadastrarPage /> : <NotFound />}</Route>
         <Route path="/componentes">{canManageEntities ? <ComponentsPage /> : <NotFound />}</Route>

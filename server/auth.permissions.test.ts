@@ -93,6 +93,9 @@ describe("matriz de permissões", () => {
     expect(can("engineering", "manageDocuments", { manageDocuments: false })).toBe(false);
     expect(can("admin", "editCosts", { editCosts: false })).toBe(false);
     expect(can("engineering", "manageUsers", { manageUsers: true })).toBe(false);
+    expect(can("admin", "viewReports")).toBe(false);
+    expect(can("admin", "viewReports", { viewReports: true })).toBe(true);
+    expect(can("engineering", "viewReports", { viewReports: true })).toBe(false);
   });
 
   it("permite à Engenharia alterar somente documentos", async () => {
@@ -128,6 +131,11 @@ describe("matriz de permissões", () => {
 
     const withoutDocumentAccess = appRouter.createCaller(context("engineering", "engenharia@grupoalfalux.com.br", { manageDocuments: false }).ctx);
     await expect(withoutDocumentAccess.products.update({ id: 1, data: { documentos: JSON.stringify({}) } })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("exige a concessão individual de Relatórios mesmo para Administradores", async () => {
+    const withoutReports = appRouter.createCaller(context("admin", "admin@grupoalfalux.com.br", { viewReports: false }).ctx);
+    await expect(withoutReports.reports.summary()).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
   it("permite a Custos alterar somente custos, preços e markups", async () => {

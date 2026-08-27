@@ -738,3 +738,14 @@
 - [x] Impedir que um admin revogue seu próprio acesso administrativo ou remova o último admin ativo
 - [x] Cobrir cenários de perfil, sobreposição e revogação com testes de regressão
 - [x] Validar TypeScript, Vitest, build e interface antes do checkpoint
+
+## Feature v59 — Relatórios Gerenciais
+
+- [x] Mapear campos de produtos, custos, preços, markups e filtros disponíveis para relatórios
+- [x] Criar a permissão individual de Administrador para acesso a Relatórios
+- [x] Manter a permissão de Relatórios desativada inicialmente para Geysa
+- [x] Criar consultas de indicadores globais e tabelas filtráveis por família, produto, categoria e instalação
+- [x] Criar exportação Excel detalhada com custos, markups, preços e fórmulas aplicáveis
+- [x] Criar interface exclusiva de Relatórios com visão executiva e seleção de colunas
+- [x] Restringir página, consultas e exportação à permissão individual de Relatórios
+- [x] Validar cálculos, filtros, segurança, TypeScript, Vitest, build e interface antes do checkpoint

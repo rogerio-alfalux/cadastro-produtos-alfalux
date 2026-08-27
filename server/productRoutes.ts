@@ -6,6 +6,7 @@ import { bulkInsertProducts, listProducts, getDb } from "./db";
 import { components as componentsTable } from "../drizzle/schema";
 import { parsePublicDriverExtras } from "./driverExtras";
 import { requireRestPermission } from "./authz";
+import { buildProductReportWorkbook, parseReportSections } from "./reporting";
 
 const router = express.Router();
 
@@ -185,6 +186,26 @@ router.get("/export-excel", requireRestPermission("viewCosts"), async (_req, res
   } catch (err) {
     console.error("[export-excel]", err);
     return res.status(500).json({ error: "Erro ao exportar Excel" });
+  }
+});
+
+// ─── Relatório gerencial Excel ─────────────────────────────────────────────────
+router.get("/reports-excel", requireRestPermission("viewReports"), async (req, res) => {
+  try {
+    const value = (key: string) => typeof req.query[key] === "string" ? req.query[key].trim() || undefined : undefined;
+    const filters = {
+      search: value("search"), categoria: value("categoria"), instalacao: value("instalacao"),
+      familia: value("familia"), potencia: value("potencia"), apenasInativos: req.query.apenasInativos === "true",
+    };
+    const { items } = await listProducts({ ...filters, limit: 5000, offset: 0 });
+    const workbook = buildProductReportWorkbook(items, parseReportSections(value("sections")), filters);
+    const buf = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename="relatorio-gerencial-alfalux-${new Date().toISOString().slice(0, 10)}.xlsx"`);
+    return res.send(buf);
+  } catch (err) {
+    console.error("[reports-excel]", err);
+    return res.status(500).json({ error: "Erro ao gerar relatório Excel" });
   }
 });
 

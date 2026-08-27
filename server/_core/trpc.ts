@@ -43,6 +43,7 @@ function requirePermission(permission: AppPermission) {
 export const entityAdminProcedure = t.procedure.use(requirePermission("manageEntities"));
 export const documentProcedure = t.procedure.use(requirePermission("manageDocuments"));
 export const costProcedure = t.procedure.use(requirePermission("editCosts"));
+export const reportProcedure = t.procedure.use(requirePermission("viewReports"));
 
 export const adminProcedure = t.procedure.use(
   requirePermission("manageUsers"),

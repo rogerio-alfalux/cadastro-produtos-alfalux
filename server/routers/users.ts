@@ -25,6 +25,7 @@ const appRoleSchema = z.enum(APP_ROLES);
 const permissionOverridesSchema = z.object({
   viewCatalog: z.boolean().optional(),
   manageUsers: z.boolean().optional(),
+  viewReports: z.boolean().optional(),
   manageEntities: z.boolean().optional(),
   manageDocuments: z.boolean().optional(),
   viewCosts: z.boolean().optional(),
