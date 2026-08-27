@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { listProducts } from "../db";
 import { reportProcedure, router } from "../_core/trpc";
-import { calculateOnOff220Financials, calculateReportMetrics } from "../reporting";
+import { calculateOnOff220Financials, calculateReportMetrics, getReportFilterOptions } from "../reporting";
 
 const filtersSchema = z.object({
   search: z.string().trim().max(160).optional(),
@@ -13,6 +13,10 @@ const filtersSchema = z.object({
 }).optional();
 
 export const reportsRouter = router({
+  filterOptions: reportProcedure.input(filtersSchema).query(async ({ input }) => {
+    const { items } = await listProducts({ limit: 5000, offset: 0 });
+    return getReportFilterOptions(items, input ?? {});
+  }),
   summary: reportProcedure.input(filtersSchema).query(async ({ input }) => {
     const { items } = await listProducts({
       ...(input ?? {}),

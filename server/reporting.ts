@@ -44,6 +44,39 @@ export function calculateReportMetrics(items: ProductReportItem[]) {
   };
 }
 
+export type ReportFilterScope = {
+  familia?: string;
+  categoria?: string;
+  instalacao?: string;
+  potencia?: string;
+};
+
+function normalized(value: unknown) {
+  return String(value ?? "").trim();
+}
+
+function distinctValues(items: ProductReportItem[], key: keyof ReportFilterScope) {
+  return Array.from(new Set(items.map((item) => normalized(item[key])).filter(Boolean)))
+    .sort((first, second) => first.localeCompare(second, "pt-BR"));
+}
+
+/** Retorna somente valores existentes no escopo definido pelos demais filtros. */
+export function getReportFilterOptions(items: ProductReportItem[], scope: ReportFilterScope) {
+  const withinScope = (except: keyof ReportFilterScope) => items.filter((item) => {
+    return (Object.keys(scope) as Array<keyof ReportFilterScope>).every((key) => {
+      if (key === except) return true;
+      const selected = normalized(scope[key]);
+      return !selected || normalized(item[key]) === selected;
+    });
+  });
+  return {
+    familias: distinctValues(withinScope("familia"), "familia"),
+    categorias: distinctValues(withinScope("categoria"), "categoria"),
+    instalacoes: distinctValues(withinScope("instalacao"), "instalacao"),
+    potencias: distinctValues(withinScope("potencia"), "potencia"),
+  };
+}
+
 function excelColumn(index: number) {
   let column = "";
   let value = index + 1;

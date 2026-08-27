@@ -757,3 +757,11 @@
 - [x] Aplicar a atualização ao escopo de família e potência sem apagar documentos não selecionados
 - [x] Reutilizar a mesma referência de storage em todos os produtos do escopo
 - [x] Validar persistência, API pública, URLs assinadas, testes e interface antes do checkpoint
+
+## Correção v59.2 — Filtros Reais de Relatórios
+
+- [x] Carregar categorias e instalações diretamente dos valores existentes no cadastro
+- [x] Remover listas fixas incorretas de categorias e instalações
+- [x] Filtrar opções de instalação e potência conforme a família, categoria e escopo selecionados
+- [x] Limpar filtros que deixarem de ser compatíveis após uma nova seleção
+- [x] Validar BLAZE H com instalação Pendente, exportação Excel, testes e interface antes do checkpoint

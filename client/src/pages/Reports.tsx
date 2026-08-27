@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Download, FileSpreadsheet, Filter, Layers, Package, ReceiptText, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,16 +6,11 @@ import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
 import { REPORT_SECTION_KEYS, REPORT_SECTION_LABELS, type ReportSection } from "@shared/reports";
 
-const CATEGORIES = ["PERFIS", "PENDENTES", "ARANDELAS", "PLAFONS", "EMBUTIDOS", "SPOTS", "TRILHOS", "OUTROS"];
-const INSTALLATIONS = ["EMBUTIR", "SOBREPOR", "PENDENTE", "TRILHO", "PAREDE", "PISO", "MESA"];
-const POWERS = ["18W", "26W", "36W-SF", "36W-SL"];
-
 const currency = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value || 0);
 
 export default function ReportsPage() {
   const [filters, setFilters] = useState({ search: "", categoria: "", instalacao: "", familia: "", potencia: "", apenasInativos: false });
   const [sections, setSections] = useState<ReportSection[]>([...REPORT_SECTION_KEYS]);
-  const { data: families = [] } = trpc.components.families.useQuery();
   const queryInput = useMemo(() => ({
     ...filters,
     search: filters.search || undefined,
@@ -24,7 +19,25 @@ export default function ReportsPage() {
     familia: filters.familia || undefined,
     potencia: filters.potencia || undefined,
   }), [filters]);
+  const optionsInput = useMemo(() => ({
+    familia: filters.familia || undefined,
+    categoria: filters.categoria || undefined,
+    instalacao: filters.instalacao || undefined,
+    potencia: filters.potencia || undefined,
+  }), [filters.familia, filters.categoria, filters.instalacao, filters.potencia]);
+  const { data: options } = trpc.reports.filterOptions.useQuery(optionsInput);
   const { data, isFetching } = trpc.reports.summary.useQuery(queryInput);
+  useEffect(() => {
+    if (!options) return;
+    setFilters((current) => {
+      const next = { ...current };
+      if (next.familia && !options.familias.includes(next.familia)) next.familia = "";
+      if (next.categoria && !options.categorias.includes(next.categoria)) next.categoria = "";
+      if (next.instalacao && !options.instalacoes.includes(next.instalacao)) next.instalacao = "";
+      if (next.potencia && !options.potencias.includes(next.potencia)) next.potencia = "";
+      return next.familia === current.familia && next.categoria === current.categoria && next.instalacao === current.instalacao && next.potencia === current.potencia ? current : next;
+    });
+  }, [options]);
   const toggleSection = (section: ReportSection) => setSections((current) => current.includes(section) ? current.filter((item) => item !== section) : [...current, section]);
   const downloadReport = () => {
     const params = new URLSearchParams();
@@ -42,7 +55,7 @@ export default function ReportsPage() {
       <Button onClick={downloadReport} disabled={!data || sections.length === 0} className="gap-2"><Download className="h-4 w-4" />Exportar Excel com fórmulas</Button>
     </section>
 
-    <section className="rounded-xl border bg-card p-4 shadow-sm"><div className="mb-4 flex items-center gap-2"><Filter className="h-4 w-4 text-primary" /><h2 className="font-semibold">Escopo do relatório</h2>{isFetching && <span className="text-xs text-muted-foreground">Atualizando…</span>}</div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"><div><Label>Produto ou SKU</Label><Input className="mt-1" value={filters.search} onChange={(event) => setFilters({ ...filters, search: event.target.value })} placeholder="Buscar" /></div><div><Label>Família</Label><select className="mt-1 h-10 w-full rounded-md border bg-background px-3 text-sm" value={filters.familia} onChange={(event) => setFilters({ ...filters, familia: event.target.value })}><option value="">Todas</option>{families.map((family) => <option key={family} value={family}>{family}</option>)}</select></div><div><Label>Categoria</Label><select className="mt-1 h-10 w-full rounded-md border bg-background px-3 text-sm" value={filters.categoria} onChange={(event) => setFilters({ ...filters, categoria: event.target.value })}><option value="">Todas</option>{CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}</select></div><div><Label>Instalação</Label><select className="mt-1 h-10 w-full rounded-md border bg-background px-3 text-sm" value={filters.instalacao} onChange={(event) => setFilters({ ...filters, instalacao: event.target.value })}><option value="">Todas</option>{INSTALLATIONS.map((installation) => <option key={installation} value={installation}>{installation}</option>)}</select></div><div><Label>Potência</Label><select className="mt-1 h-10 w-full rounded-md border bg-background px-3 text-sm" value={filters.potencia} onChange={(event) => setFilters({ ...filters, potencia: event.target.value })}><option value="">Todas</option>{POWERS.map((power) => <option key={power} value={power}>{power}</option>)}</select></div><label className="mt-6 flex h-10 items-center gap-2 rounded-md border px-3 text-sm"><input type="checkbox" checked={filters.apenasInativos} onChange={(event) => setFilters({ ...filters, apenasInativos: event.target.checked })} />Somente inativos</label></div></section>
+    <section className="rounded-xl border bg-card p-4 shadow-sm"><div className="mb-4 flex items-center gap-2"><Filter className="h-4 w-4 text-primary" /><h2 className="font-semibold">Escopo do relatório</h2>{isFetching && <span className="text-xs text-muted-foreground">Atualizando…</span>}</div><p className="mb-4 text-xs text-muted-foreground">As opções são baseadas no cadastro real e se atualizam conforme os demais filtros selecionados.</p><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"><div><Label>Produto ou SKU</Label><Input className="mt-1" value={filters.search} onChange={(event) => setFilters({ ...filters, search: event.target.value })} placeholder="Buscar" /></div><div><Label>Família</Label><select className="mt-1 h-10 w-full rounded-md border bg-background px-3 text-sm" value={filters.familia} onChange={(event) => setFilters({ ...filters, familia: event.target.value })}><option value="">Todas</option>{options?.familias.map((family) => <option key={family} value={family}>{family}</option>)}</select></div><div><Label>Categoria</Label><select className="mt-1 h-10 w-full rounded-md border bg-background px-3 text-sm" value={filters.categoria} onChange={(event) => setFilters({ ...filters, categoria: event.target.value })}><option value="">Todas</option>{options?.categorias.map((category) => <option key={category} value={category}>{category}</option>)}</select></div><div><Label>Instalação</Label><select className="mt-1 h-10 w-full rounded-md border bg-background px-3 text-sm" value={filters.instalacao} onChange={(event) => setFilters({ ...filters, instalacao: event.target.value })}><option value="">Todas</option>{options?.instalacoes.map((installation) => <option key={installation} value={installation}>{installation}</option>)}</select></div><div><Label>Potência</Label><select className="mt-1 h-10 w-full rounded-md border bg-background px-3 text-sm" value={filters.potencia} onChange={(event) => setFilters({ ...filters, potencia: event.target.value })}><option value="">Todas</option>{options?.potencias.map((power) => <option key={power} value={power}>{power.replace("-", " ")}</option>)}</select></div><label className="mt-6 flex h-10 items-center gap-2 rounded-md border px-3 text-sm"><input type="checkbox" checked={filters.apenasInativos} onChange={(event) => setFilters({ ...filters, apenasInativos: event.target.checked })} />Somente inativos</label></div></section>
 
     <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">{[
       [Package, "Produtos", String(metrics?.totalProducts ?? 0)], [TrendingUp, "Ativos", String(metrics?.activeProducts ?? 0)], [Layers, "Famílias", String(metrics?.families ?? 0)], [ReceiptText, "Com custo", String(metrics?.productsWithCost ?? 0)], [ReceiptText, "Custo total", currency(metrics?.totalCost ?? 0)], [ReceiptText, "Custo médio", currency(metrics?.averageCost ?? 0)],

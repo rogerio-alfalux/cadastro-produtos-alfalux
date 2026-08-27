@@ -3,12 +3,13 @@ import {
   buildProductReportWorkbook,
   calculateOnOff220Financials,
   calculateReportMetrics,
+  getReportFilterOptions,
   parseReportSections,
 } from "./reporting";
 
 describe("relatórios gerenciais", () => {
   const product = {
-    id: 1, produto: "BLAZE H P 18W", sku: "LLP-001", familia: "BLAZE H", categoria: "PERFIS", instalacao: "PENDENTE", ativo: true,
+    id: 1, produto: "BLAZE H P 18W", sku: "LLP-001", familia: "BLAZE H", categoria: "PERFIS", instalacao: "PENDENTE", potencia: "18W", ativo: true,
     custoCorpoOnoff220v: "100.0000", custoDriverOnoff220: "20.00", mkpPadraoOnoff220v: "2.5", mkpMinimoOnoff220v: "1.8", precoVendaOnoff220: "300.00",
     moduloLed: "LED 3000K", temperaturasCor: "[\"3000\"]", driverOnoff220: "DRIVER 20W", qtdDriverOnoff220: "1",
   };
@@ -45,5 +46,17 @@ describe("relatórios gerenciais", () => {
   it("aceita apenas seções conhecidas e usa todas quando não há seleção", () => {
     expect(parseReportSections("financial,documents,invalida")).toEqual(["financial", "documents"]);
     expect(parseReportSections()).toHaveLength(4);
+  });
+
+  it("oferece somente instalações reais compatíveis com a família selecionada", () => {
+    const options = getReportFilterOptions([
+      product,
+      { ...product, id: 2, produto: "BLAZE H S 26W", potencia: "26W" },
+      { ...product, id: 3, familia: "LUNA", categoria: "DOWNLIGHTS", instalacao: "EMBUTIR", potencia: null },
+      { ...product, id: 4, familia: "LUNA", categoria: "DOWNLIGHTS", instalacao: "SOBREPOR", potencia: null },
+    ], { familia: "BLAZE H" });
+    expect(options.instalacoes).toEqual(["PENDENTE"]);
+    expect(options.categorias).toEqual(["PERFIS"]);
+    expect(options.potencias).toEqual(["18W", "26W"]);
   });
 });
