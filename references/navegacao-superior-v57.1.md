@@ -11,3 +11,7 @@ Diretriz de correção: retirar Em Massa, manter o perfil separado e organizar o
 ## Recorte 3
 
 Os itens finais Substituição, Docs em Lote, Backups, Usuários, nome/e-mail do perfil e saída competem pela mesma faixa horizontal. A correção deve preservar o perfil e o botão de saída no extremo direito e deslocar a navegação para duas linhas abaixo da linha de identificação.
+
+## Referência de refinamento v57.2
+
+Imagem analisada: 1396 × 200 pixels, em três recortes horizontais. Os dois primeiros recortes confirmam que, após a retirada de Operações em Massa, os nove acessos podem compartilhar uma única faixa no desktop. A identificação de usuário já está separada acima, preservando espaço útil para a navegação.

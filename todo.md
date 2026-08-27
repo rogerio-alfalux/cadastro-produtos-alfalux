@@ -719,3 +719,10 @@
 - [x] Dividir a navegação superior administrativa em duas linhas organizadas
 - [x] Garantir visibilidade completa dos itens sem rolagem horizontal
 - [x] Validar desktop e tela menor antes do checkpoint
+
+## Ajuste v57.2 — Navegação Superior em Uma Linha
+
+- [x] Consolidar Produtos, Cadastrar, Revenda, Acessórios, Componentes, Substituição, Docs em Lote, Backups e Usuários em uma linha no desktop
+- [x] Ajustar espaçamentos e dimensões para preservar a legibilidade do cabeçalho
+- [x] Manter o menu móvel recolhido e responsivo
+- [x] Validar desktop, largura intermediária e celular antes do checkpoint
