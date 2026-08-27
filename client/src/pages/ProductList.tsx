@@ -38,10 +38,13 @@ import {
   AlertTriangle,
   Zap,
   Copy,
+  FileText,
+  DollarSign,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import ProductForm from "./ProductForm";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 const CATEGORIAS = ["PERFIS", "DOWNLIGHTS", "PAINÉIS", "SPOTS", "ARANDELAS", "ÁREA EXTERNA", "BALIZADORES", "DECORATIVAS", "CUSTOMIZADOS"];
 const INSTALACOES = ["EMBUTIR", "SOBREPOR", "PENDENTE", "ARANDELA", "NO FRAME"];
@@ -123,6 +126,10 @@ function getAvailableCcts(product: unknown): string[] {
 
 export default function ProductList() {
   const [, navigate] = useLocation();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+  const canViewCosts = isAdmin || user?.role === "costs";
+  const canManageDocuments = isAdmin || user?.role === "engineering";
   const [search, setSearch] = useState("");
   const [filterCategoria, setFilterCategoria] = useState("_all");
   const [filterInstalacao, setFilterInstalacao] = useState("_all");
@@ -264,31 +271,21 @@ export default function ProductList() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Import */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => importRef.current?.click()}
-            disabled={importing}
-            className="border-border text-muted-foreground hover:text-foreground hover:bg-muted/40 text-xs font-semibold tracking-wider"
-          >
-            {importing ? (
-              <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-            ) : (
-              <Upload className="w-3.5 h-3.5 mr-1.5" />
-            )}
-            IMPORTAR EXCEL
-          </Button>
-          <input
-            ref={importRef}
-            type="file"
-            accept=".xlsx"
-            className="hidden"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImport(f); }}
-          />
+          {isAdmin && <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => importRef.current?.click()}
+              disabled={importing}
+              className="border-border text-muted-foreground hover:text-foreground hover:bg-muted/40 text-xs font-semibold tracking-wider"
+            >
+              {importing ? <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Upload className="w-3.5 h-3.5 mr-1.5" />}
+              IMPORTAR EXCEL
+            </Button>
+            <input ref={importRef} type="file" accept=".xlsx" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImport(f); }} />
+          </>}
 
-          {/* Export */}
-          <Button
+          {canViewCosts && <Button
             variant="outline"
             size="sm"
             onClick={handleExport}
@@ -296,17 +293,16 @@ export default function ProductList() {
           >
             <Download className="w-3.5 h-3.5 mr-1.5" />
             EXPORTAR EXCEL
-          </Button>
+          </Button>}
 
-          {/* New Product */}
-          <Button
+          {isAdmin && <Button
             size="sm"
             onClick={() => navigate("/cadastrar")}
             className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold tracking-wider btn-glow"
           >
             <PlusCircle className="w-3.5 h-3.5 mr-1.5" />
             NOVO PRODUTO
-          </Button>
+          </Button>}
         </div>
       </div>
 
@@ -466,7 +462,7 @@ export default function ProductList() {
                 {hasFilters ? "Tente ajustar os filtros" : "Cadastre o primeiro produto"}
               </p>
             </div>
-            {!hasFilters && (
+            {!hasFilters && isAdmin && (
               <Button
                 size="sm"
                 onClick={() => navigate("/cadastrar")}
@@ -489,7 +485,7 @@ export default function ProductList() {
                   <th className="text-left px-3 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider hidden xl:table-cell" style={{width: 120}}>CATEGORIA</th>
                   <th className="text-left px-3 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider hidden lg:table-cell" style={{width: 140}}>DRIVERS</th>
                   <th className="text-left px-3 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider hidden md:table-cell" style={{width: 125}}>DOCUMENTOS</th>
-                  <th className="text-right px-3 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider hidden lg:table-cell" style={{width: 90}}>CUSTO</th>
+                  {canViewCosts && <th className="text-right px-3 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider hidden lg:table-cell" style={{width: 90}}>CUSTO</th>}
                   <th className="text-right px-3 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider" style={{width: 160}}>AÇÕES</th>
                 </tr>
               </thead>
@@ -622,7 +618,7 @@ export default function ProductList() {
                       </td>
 
                       {/* Custo */}
-                      <td className="px-4 py-3 hidden lg:table-cell">
+                      {canViewCosts && <td className="px-4 py-3 hidden lg:table-cell">
                         {(() => {
                           const custo =
                             parseFloat(product.custoCorpoOnoff220v as string) ||
@@ -640,13 +636,13 @@ export default function ProductList() {
                             <span className="text-[10px] text-muted-foreground/40">—</span>
                           );
                         })()}
-                      </td>
+                      </td>}
 
                       {/* Actions */}
                       <td className="px-3 py-3">
                         <div className="flex items-center justify-end gap-1.5">
                           {/* Checkbox ativo/inativo */}
-                          <TooltipProvider delayDuration={300}>
+                          {isAdmin && <TooltipProvider delayDuration={300}>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <div className="flex items-center px-1">
@@ -668,7 +664,7 @@ export default function ProductList() {
                                 {isAtivo ? "Ativo — clique para desativar" : "Inativo — clique para ativar"}
                               </TooltipContent>
                             </Tooltip>
-                          </TooltipProvider>
+                          </TooltipProvider>}
 
                           <button
                             onClick={() => setViewId(product.id)}
@@ -677,27 +673,41 @@ export default function ProductList() {
                           >
                             <Eye className="w-3.5 h-3.5" />
                           </button>
-                          <button
+                          {isAdmin && <button
                             onClick={() => setDuplicarId(product.id)}
                             className="p-1.5 rounded-lg text-muted-foreground hover:text-cyan-400 hover:bg-cyan-400/10 transition-colors"
                             title="Duplicar produto"
                           >
                             <Copy className="w-3.5 h-3.5" />
-                          </button>
-                          <button
+                          </button>}
+                          {isAdmin && <button
                             onClick={() => setEditId(product.id)}
                             className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                             title="Editar"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
+                          </button>}
+                          {isAdmin && <button
                             onClick={() => setDeleteId(product.id)}
                             className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                             title="Excluir"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          </button>}
+                          {canManageDocuments && !isAdmin && <button
+                            onClick={() => navigate(`/documentos/${product.id}`)}
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-cyan-300 hover:bg-cyan-400/10 transition-colors"
+                            title="Gerenciar documentos"
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                          </button>}
+                          {user?.role === "costs" && <button
+                            onClick={() => navigate(`/custos/${product.id}`)}
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-amber-300 hover:bg-amber-400/10 transition-colors"
+                            title="Editar custos e markups"
+                          >
+                            <DollarSign className="w-3.5 h-3.5" />
+                          </button>}
                         </div>
                       </td>
                     </tr>

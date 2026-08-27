@@ -5,6 +5,7 @@ import { getDb } from "./db";
 import { accessories, components as componentsTable } from "../drizzle/schema";
 import { asc, eq, inArray } from "drizzle-orm";
 import { storagePut, storageGetSignedUrl } from "./storage";
+import { requireRestPermission } from "./authz";
 
 const router = express.Router();
 
@@ -30,7 +31,7 @@ const uploadImage = multer({
 
 // ─── Endpoint: Upload de foto de acessório ───────────────────────────────────
 // POST /api/acessorios/upload-foto
-router.post("/upload-foto", uploadImage.single("file"), async (req, res) => {
+router.post("/upload-foto", requireRestPermission("manageEntities"), uploadImage.single("file"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "Nenhum arquivo enviado" });
@@ -49,7 +50,7 @@ router.post("/upload-foto", uploadImage.single("file"), async (req, res) => {
 
 // ─── Endpoint: Excluir foto de acessório ─────────────────────────────────────
 // DELETE /api/acessorios/:id/foto
-router.delete("/:id/foto", async (req, res) => {
+router.delete("/:id/foto", requireRestPermission("manageEntities"), async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) {
@@ -245,7 +246,7 @@ router.get("/template", (_req, res) => {
 });
 
 // ─── POST /import-excel — importar acessórios em massa ───────────────────────
-router.post("/import-excel", uploadExcel.single("file"), async (req, res) => {
+router.post("/import-excel", requireRestPermission("manageEntities"), uploadExcel.single("file"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "Nenhum arquivo enviado" });

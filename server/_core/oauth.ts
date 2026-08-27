@@ -3,6 +3,7 @@ import type { Express, Request, Response } from "express";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
+import { isAllowedUserEmail, isProtectedAdminEmail, normalizeEmail } from "../../shared/permissions";
 
 function getQueryParam(req: Request, key: string): string | undefined {
   const value = req.query[key];
@@ -28,13 +29,34 @@ export function registerOAuthRoutes(app: Express) {
         return;
       }
 
+      const email = userInfo.email ? normalizeEmail(userInfo.email) : "";
+      if (!email || !isAllowedUserEmail(email)) {
+        res.status(403).json({ error: "E-mail não autorizado para este sistema." });
+        return;
+      }
+
+      const existingByOpenId = await db.getUserByOpenId(userInfo.openId);
+      const existingByEmail = await db.getUsersByEmail(email);
+      if (!existingByOpenId && existingByEmail.length === 0 && !isProtectedAdminEmail(email)) {
+        res.status(403).json({ error: "Usuário ainda não cadastrado por um administrador." });
+        return;
+      }
+
       await db.upsertUser({
         openId: userInfo.openId,
         name: userInfo.name || null,
-        email: userInfo.email ?? null,
+        email,
         loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
+        role: isProtectedAdminEmail(email) ? "admin" : existingByEmail[0]?.role,
+        active: isProtectedAdminEmail(email) ? true : existingByEmail[0]?.active,
         lastSignedIn: new Date(),
       });
+
+      const persistedUser = await db.getUserByOpenId(userInfo.openId);
+      if (!persistedUser?.active) {
+        res.status(403).json({ error: "Usuário inativo." });
+        return;
+      }
 
       const sessionToken = await sdk.createSessionToken(userInfo.openId, {
         name: userInfo.name || "",

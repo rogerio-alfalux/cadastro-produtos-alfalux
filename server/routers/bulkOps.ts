@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { asc, sql } from "drizzle-orm";
-import { publicProcedure, router } from "../_core/trpc";
+import { costProcedure, entityAdminProcedure, protectedProcedure, router } from "../_core/trpc";
 import { getDb } from "../db";
 import { products } from "../../drizzle/schema";
 
@@ -62,7 +62,7 @@ export const bulkOpsRouter = router({
 
 
   // ─── Autocomplete for moduloLed field ────────────────────────────────────────
-  moduloLedSuggestions: publicProcedure
+  moduloLedSuggestions: protectedProcedure
     .input(z.object({ query: z.string().default(""), categoria: z.string().optional(), familia: z.string().optional() }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -80,7 +80,7 @@ export const bulkOpsRouter = router({
     }),
 
   // ─── List distinct families ────────────────────────────────────────────────
-  families: publicProcedure.query(async () => {
+  families: protectedProcedure.query(async () => {
     const db = await getDb();
     if (!db) return [];
     const rows = await db
@@ -91,7 +91,7 @@ export const bulkOpsRouter = router({
   }),
 
   // ─── List distinct families filtered by category ───────────────────────────
-  familiesByCategory: publicProcedure
+  familiesByCategory: protectedProcedure
     .input(z.object({ categoria: z.string().optional() }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -110,7 +110,7 @@ export const bulkOpsRouter = router({
     }),
 
   // ─── List distinct driver values filtered by query string (autocomplete) ────
-  driverValuesByQuery: publicProcedure
+  driverValuesByQuery: protectedProcedure
     .input(z.object({ tipo: z.enum(DRIVER_TYPES), query: z.string().default("") }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -130,7 +130,7 @@ export const bulkOpsRouter = router({
     }),
 
   // ─── List distinct categories ──────────────────────────────────────────────
-  categories: publicProcedure.query(async () => {
+  categories: protectedProcedure.query(async () => {
     const db = await getDb();
     if (!db) return [];
     const result = await db.execute(sql`SELECT DISTINCT categoria FROM products WHERE categoria IS NOT NULL AND categoria != '' ORDER BY categoria ASC`);
@@ -138,7 +138,7 @@ export const bulkOpsRouter = router({
   }),
 
   // ─── List distinct driver values for a given type (for dropdown) ───────────
-  driverValues: publicProcedure
+  driverValues: protectedProcedure
     .input(z.object({ tipo: z.enum(DRIVER_TYPES) }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -151,7 +151,7 @@ export const bulkOpsRouter = router({
     }),
 
   // ─── Preview: count products affected by cost update (luminária) ───────────
-  previewCostLuminaria: publicProcedure
+  previewCostLuminaria: costProcedure
     .input(z.object({
       familia: z.string().optional(),
       categoria: z.string().optional(),
@@ -170,7 +170,7 @@ export const bulkOpsRouter = router({
 
 
   // ─── Apply: update custo da luminária em massa ─────────────────────────────
-  applyCostLuminaria: publicProcedure
+  applyCostLuminaria: costProcedure
     .input(z.object({
       familia: z.string().optional(),
       categoria: z.string().optional(),
@@ -193,7 +193,7 @@ export const bulkOpsRouter = router({
     }),
 
   // ─── Preview: count products affected by driver cost update ───────────────
-  previewCostDriver: publicProcedure
+  previewCostDriver: costProcedure
     .input(z.object({
       tipo: z.enum(DRIVER_TYPES),
       familia: z.string().optional(),
@@ -216,7 +216,7 @@ export const bulkOpsRouter = router({
     }),
 
   // ─── Apply: update custo de driver em massa ────────────────────────────────
-  applyCostDriver: publicProcedure
+  applyCostDriver: costProcedure
     .input(z.object({
       tipo: z.enum(DRIVER_TYPES),
       familia: z.string().optional(),
@@ -244,7 +244,7 @@ export const bulkOpsRouter = router({
     }),
 
   // ─── Preview: count products affected by driver set/remove ────────────────
-  previewDriver: publicProcedure
+  previewDriver: entityAdminProcedure
     .input(z.object({
       tipo: z.enum(DRIVER_TYPES),
       acao: z.enum(["INSERIR", "REMOVER"]),
@@ -285,7 +285,7 @@ export const bulkOpsRouter = router({
     }),
 
   // ─── Preview: substituição de componente em massa ─────────────────────────
-  previewReplaceComponent: publicProcedure
+  previewReplaceComponent: entityAdminProcedure
     .input(z.object({
       tipo: z.enum(["MODULO_LED", "OTICA", "HOLDER", "DISSIPADOR", "DRIVER_ONOFF_220", "DRIVER_ONOFF_BIVOLT", "DRIVER_DIM_110V", "DRIVER_DIM_DALI", "DRIVER_DIM_TRIAC_110V", "DRIVER_DIM_TRIAC_220V"] as const),
       componenteAtual: z.string().min(1),
@@ -319,7 +319,7 @@ export const bulkOpsRouter = router({
     }),
 
   // ─── Apply: substituir componente em massa ────────────────────────────────
-  applyReplaceComponent: publicProcedure
+  applyReplaceComponent: entityAdminProcedure
     .input(z.object({
       tipo: z.enum(["MODULO_LED", "OTICA", "HOLDER", "DISSIPADOR", "DRIVER_ONOFF_220", "DRIVER_ONOFF_BIVOLT", "DRIVER_DIM_110V", "DRIVER_DIM_DALI", "DRIVER_DIM_TRIAC_110V", "DRIVER_DIM_TRIAC_220V"] as const),
       componenteAtual: z.string().min(1),
@@ -350,7 +350,7 @@ export const bulkOpsRouter = router({
     }),
 
   // ─── Apply: inserir ou remover driver em massa ─────────────────────────────
-  applyDriver: publicProcedure
+  applyDriver: entityAdminProcedure
     .input(z.object({
       tipo: z.enum(DRIVER_TYPES),
       acao: z.enum(["INSERIR", "REMOVER"]),

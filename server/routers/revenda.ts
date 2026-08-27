@@ -2,7 +2,7 @@ import { z } from "zod";
 import { eq, like, and, or, sql, asc } from "drizzle-orm";
 import { getDb } from "../db";
 import { revendaProducts } from "../../drizzle/schema";
-import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
+import { costProcedure, entityAdminProcedure, protectedProcedure, router } from "../_core/trpc";
 
 // ─── Validation schema ────────────────────────────────────────────────────────
 
@@ -23,7 +23,7 @@ const revendaSchema = z.object({
 
 export const revendaRouter = router({
   // Listar com filtros e paginação
-  list: publicProcedure
+  list: protectedProcedure
     .input(
       z.object({
         search: z.string().optional(),
@@ -32,7 +32,7 @@ export const revendaRouter = router({
         offset: z.number().int().min(0).default(0),
       })
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) return { items: [], total: 0 };
 
@@ -70,11 +70,14 @@ export const revendaRouter = router({
           .where(where),
       ]);
 
-      return { items, total: Number(countRows[0]?.total ?? 0) };
+      const visibleItems = ctx.user.role === "admin" || ctx.user.role === "costs"
+        ? items
+        : items.map((item) => ({ ...item, custo: null, precoVenda: null }));
+      return { items: visibleItems, total: Number(countRows[0]?.total ?? 0) };
     }),
 
   // Listar fornecedores únicos para filtro
-  listFornecedores: publicProcedure.query(async () => {
+  listFornecedores: protectedProcedure.query(async () => {
     const db = await getDb();
     if (!db) return [];
     const rows = await db
@@ -87,9 +90,9 @@ export const revendaRouter = router({
   }),
 
   // Buscar por ID
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(z.object({ id: z.number().int() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) return null;
       const [item] = await db
@@ -97,11 +100,14 @@ export const revendaRouter = router({
         .from(revendaProducts)
         .where(eq(revendaProducts.id, input.id))
         .limit(1);
-      return item ?? null;
+      if (!item) return null;
+      return ctx.user.role === "admin" || ctx.user.role === "costs"
+        ? item
+        : { ...item, custo: null, precoVenda: null };
     }),
 
   // Criar
-  create: protectedProcedure
+  create: entityAdminProcedure
     .input(revendaSchema)
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -122,7 +128,7 @@ export const revendaRouter = router({
     }),
 
   // Atualizar
-  update: protectedProcedure
+  update: entityAdminProcedure
     .input(z.object({ id: z.number().int() }).merge(revendaSchema))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -147,7 +153,7 @@ export const revendaRouter = router({
     }),
 
   // Próximo código disponível
-  nextCode: publicProcedure.query(async () => {
+  nextCode: entityAdminProcedure.query(async () => {
     const db = await getDb();
     if (!db) return { codigo: "RV00001" };
     const rows = await db
@@ -164,7 +170,7 @@ export const revendaRouter = router({
   }),
 
   // Excluir
-  delete: protectedProcedure
+  delete: entityAdminProcedure
     .input(z.object({ id: z.number().int() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -172,6 +178,22 @@ export const revendaRouter = router({
       await db
         .delete(revendaProducts)
         .where(eq(revendaProducts.id, input.id));
+      return { success: true };
+    }),
+
+  updateCosts: costProcedure
+    .input(z.object({
+      id: z.number().int(),
+      custo: z.string().nullish(),
+      precoVenda: z.string().nullish(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Banco de dados indisponível");
+      await db.update(revendaProducts).set({
+        custo: input.custo?.trim() || null,
+        precoVenda: input.precoVenda?.trim() || null,
+      }).where(eq(revendaProducts.id, input.id));
       return { success: true };
     }),
 });

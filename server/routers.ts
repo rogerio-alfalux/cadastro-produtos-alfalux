@@ -3,7 +3,12 @@ import { z } from "zod";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { adminProcedure, publicProcedure, router } from "./_core/trpc";
+import { adminProcedure, entityAdminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { usersRouter } from "./routers/users";
+import { sdk } from "./_core/sdk";
+import { DUMMY_PASSWORD_HASH, verifyPassword } from "./passwords";
+import { getLocalUserByEmail, updateUsersByEmail } from "./db";
+import { isAllowedUserEmail, normalizeEmail } from "../shared/permissions";
 import { componentsRouter } from "./routers/components";
 import { bulkOpsRouter } from "./routers/bulkOps";
 import { revendaRouter } from "./routers/revenda";
@@ -61,6 +66,25 @@ function parseProductDocuments(raw: string | null | undefined): ProductDocuments
   } catch {
     return null;
   }
+}
+
+const isFinancialProductField = (field: string) => /^(custo|precoVenda|mkp)/.test(field);
+
+function redactProductFinancials<T extends Record<string, unknown>>(product: T, role: string | null | undefined): T {
+  if (role === "admin" || role === "costs") return product;
+  const sanitized = { ...product };
+  for (const key of Object.keys(sanitized)) {
+    if (isFinancialProductField(key)) sanitized[key as keyof T] = null as T[keyof T];
+  }
+  return sanitized;
+}
+
+function assertProductUpdatePermission(role: string | null | undefined, data: Record<string, unknown>) {
+  const fields = Object.keys(data).filter((field) => data[field] !== undefined);
+  if (role === "admin") return;
+  if (role === "engineering" && fields.length > 0 && fields.every((field) => field === "documentos")) return;
+  if (role === "costs" && fields.length > 0 && fields.every(isFinancialProductField)) return;
+  throw new TRPCError({ code: "FORBIDDEN", message: "Seu perfil não pode alterar estes campos do produto." });
 }
 
 const productSchema = z.object({
@@ -208,6 +232,9 @@ const productSchema = z.object({
   // ON/OFF BIVOLT: opcional — não é obrigatório
 });
 
+const productUpdateSchema = productSchema.partial();
+type ProductUpdateData = z.infer<typeof productUpdateSchema>;
+
 const bulkProductSchema = z.object({
   categoria: z.string().optional().default(""),
   instalacao: z.string().default(""),
@@ -302,8 +329,53 @@ export const appRouter = router({
   bulkOps: bulkOpsRouter,
   revenda: revendaRouter,
   accessories: accessoriesRouter,
+  users: usersRouter,
   auth: router({
-    me: publicProcedure.query((opts) => opts.ctx.user),
+    me: publicProcedure.query((opts) => {
+      if (!opts.ctx.user) return null;
+      const {
+        passwordHash: _passwordHash,
+        failedLoginAttempts: _failedLoginAttempts,
+        lockedUntil: _lockedUntil,
+        ...safeUser
+      } = opts.ctx.user;
+      return safeUser;
+    }),
+    login: publicProcedure
+      .input(z.object({ email: z.string().email(), password: z.string().min(1).max(128) }))
+      .mutation(async ({ input, ctx }) => {
+        const email = normalizeEmail(input.email);
+        const deny = async () => {
+          await verifyPassword(input.password, DUMMY_PASSWORD_HASH);
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "E-mail ou senha inválidos." });
+        };
+        if (!isAllowedUserEmail(email)) return deny();
+        const user = await getLocalUserByEmail(email);
+        if (!user?.passwordHash || !user.active) return deny();
+
+        const now = new Date();
+        if (user.lockedUntil && user.lockedUntil > now) {
+          throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Muitas tentativas. Aguarde 15 minutos." });
+        }
+        if (!verifyPassword(input.password, user.passwordHash)) {
+          const attempts = (user.failedLoginAttempts ?? 0) + 1;
+          await updateUsersByEmail(email, {
+            failedLoginAttempts: attempts >= 5 ? 0 : attempts,
+            lockedUntil: attempts >= 5 ? new Date(Date.now() + 15 * 60 * 1000) : null,
+          });
+          return deny();
+        }
+
+        await updateUsersByEmail(email, { failedLoginAttempts: 0, lockedUntil: null, lastSignedIn: now });
+        const sessionDuration = 12 * 60 * 60 * 1000;
+        const sessionToken = await sdk.createSessionToken(user.openId, {
+          name: user.name || email,
+          expiresInMs: sessionDuration,
+        });
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: sessionDuration });
+        return { success: true } as const;
+      }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
@@ -312,7 +384,7 @@ export const appRouter = router({
   }),
 
   products: router({
-    list: publicProcedure
+    list: protectedProcedure
       .input(
         z.object({
           search: z.string().optional(),
@@ -325,19 +397,23 @@ export const appRouter = router({
           apenasInativos: z.boolean().optional(),
         })
       )
-      .query(async ({ input }) => {
-        return await listProducts(input);
+      .query(async ({ input, ctx }) => {
+        const result = await listProducts(input);
+        return {
+          ...result,
+          items: result.items.map((item) => redactProductFinancials(item, ctx.user.role)),
+        };
       }),
 
-    getById: publicProcedure
+    getById: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
         const product = await getProductById(input.id);
         if (!product) throw new TRPCError({ code: "NOT_FOUND", message: "Produto não encontrado" });
-        return product;
+        return redactProductFinancials(product, ctx.user.role);
       }),
 
-    create: publicProcedure
+    create: entityAdminProcedure
       .input(productSchema)
       .mutation(async ({ input }) => {
         const data = {
@@ -456,22 +532,28 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    update: publicProcedure
-      .input(z.object({ id: z.number(), data: productSchema.partial() }))
+    update: protectedProcedure
+      .input(z.object({ id: z.number(), data: z.record(z.string(), z.unknown()) }))
       .mutation(async ({ input, ctx }) => {
         const existing = await getProductById(input.id);
         if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Produto não encontrado" });
 
-        const d = input.data;
-        const isAdmin = ctx.user?.role === 'admin';
+        const parsedData = productUpdateSchema.parse(input.data);
+        const d = Object.fromEntries(
+          Object.keys(input.data)
+            .filter((field) => Object.prototype.hasOwnProperty.call(parsedData, field))
+            .map((field) => [field, parsedData[field as keyof ProductUpdateData]]),
+        ) as ProductUpdateData;
+        assertProductUpdatePermission(ctx.user.role, d as Record<string, unknown>);
+        const canEditCosts = ctx.user.role === "admin" || ctx.user.role === "costs";
 
-        // Bloquear alteração de mkpMinimo para não-admins
+        // Bloquear alteração de markup mínimo fora dos perfis financeiros autorizados
         const MKP_MINIMO_FIELDS = [
           'mkpMinimoOnoff220v', 'mkpMinimoOnoffBivolt',
           'mkpMinimoDim110v', 'mkpMinimoDimDali',
           'mkpMinimoDimTriac110v', 'mkpMinimoDimTriac220v',
         ] as const;
-        if (!isAdmin) {
+        if (!canEditCosts) {
           for (const field of MKP_MINIMO_FIELDS) {
             const incomingValue = d[field];
             const existingValue = (existing as any)[field];
@@ -481,7 +563,7 @@ export const appRouter = router({
               return Number.isFinite(numeric) ? numeric : String(value);
             };
             if (incomingValue !== undefined && normalizeMarkup(incomingValue) !== normalizeMarkup(existingValue)) {
-              throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas administradores podem alterar o markup mínimo.' });
+              throw new TRPCError({ code: 'FORBIDDEN', message: 'Seu perfil não pode alterar o markup mínimo.' });
             }
           }
         }
@@ -629,14 +711,14 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    delete: publicProcedure
+    delete: entityAdminProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await deleteProduct(input.id);
         return { success: true };
       }),
 
-    toggleAtivo: publicProcedure
+    toggleAtivo: entityAdminProcedure
       .input(z.object({ id: z.number(), ativo: z.boolean() }))
       .mutation(async ({ input }) => {
         const db = await getDb();
@@ -648,7 +730,7 @@ export const appRouter = router({
       }),
 
 
-    bulkCreate: publicProcedure
+    bulkCreate: entityAdminProcedure
       .input(z.array(bulkProductSchema))
       .mutation(async ({ input }) => {
         const items = input.map((p) => ({
@@ -691,7 +773,7 @@ export const appRouter = router({
         return { success: true, inserted, skipped };
       }),
 
-    count: publicProcedure.query(async () => {
+    count: protectedProcedure.query(async () => {
       return { count: await countProducts() };
     }),
   }),
@@ -737,15 +819,15 @@ export const appRouter = router({
   // ─── (continuação products) ────────────────────────────────────────────────
   _products_tail: router({
 
-    getAll: publicProcedure.query(async () => {
+    getAll: protectedProcedure.query(async ({ ctx }) => {
       const result = await listProducts({ limit: 2000, offset: 0 });
       const db = await getDb();
-      if (!db) return result.items;
-      return enrichManyWithModuloLedEq(db, result.items);
+      const items = db ? await enrichManyWithModuloLedEq(db, result.items) : result.items;
+      return items.map((item) => redactProductFinancials(item, ctx.user.role));
     }),
 
     // Autocomplete suggestions for free-text fields
-    suggestions: publicProcedure
+    suggestions: protectedProcedure
       .input(
         z.object({
           field: z.enum([

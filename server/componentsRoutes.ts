@@ -5,6 +5,7 @@ import { getDb } from "./db";
 import { components } from "../drizzle/schema";
 import { eq, and, ne, asc } from "drizzle-orm";
 import { storagePut, storageGetSignedUrl } from "./storage";
+import { requireRestPermission } from "./authz";
 
 const router = express.Router();
 
@@ -47,7 +48,7 @@ const uploadImage = multer({
 });
 
 // POST /api/components/upload-foto
-router.post("/upload-foto", uploadImage.single("file"), async (req, res) => {
+router.post("/upload-foto", requireRestPermission("manageEntities"), uploadImage.single("file"), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: "Nenhum arquivo enviado" });
     const ext = req.file.originalname.split(".").pop()?.toLowerCase() || "jpg";
@@ -61,7 +62,7 @@ router.post("/upload-foto", uploadImage.single("file"), async (req, res) => {
 });
 
 // PUT /api/components/:id/foto
-router.put("/:id/foto", async (req, res) => {
+router.put("/:id/foto", requireRestPermission("manageEntities"), async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ error: "ID inv\u00e1lido" });
@@ -78,7 +79,7 @@ router.put("/:id/foto", async (req, res) => {
 });
 
 // DELETE /api/components/:id/foto
-router.delete("/:id/foto", async (req, res) => {
+router.delete("/:id/foto", requireRestPermission("manageEntities"), async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ error: "ID inv\u00e1lido" });
@@ -246,7 +247,7 @@ router.get("/template", (_req, res) => {
 });
 
 // ─── POST /import-excel — importar componentes em massa ───────────────────────
-router.post("/import-excel", uploadExcel.single("file"), async (req, res) => {
+router.post("/import-excel", requireRestPermission("manageEntities"), uploadExcel.single("file"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "Nenhum arquivo enviado" });

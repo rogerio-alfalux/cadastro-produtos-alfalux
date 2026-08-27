@@ -78,7 +78,7 @@ vi.mock("./db", () => ({
 
 // ─── Context ──────────────────────────────────────────────────────────────────
 
-function createCtx(role: "user" | "admin" | null = null): TrpcContext {
+function createCtx(role: "user" | "admin" | "engineering" | "costs" | null = "admin"): TrpcContext {
   return {
     user: role ? ({ id: 2, role } as any) : null,
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
@@ -304,13 +304,12 @@ describe("products.update", () => {
     expect(result.success).toBe(true);
   });
 
-  it("permite que usuário salve um markup mínimo bloqueado quando o valor não mudou", async () => {
+  it("bloqueia qualquer edição de produto para usuário sem perfil operacional", async () => {
     const caller = appRouter.createCaller(createCtx("user"));
-    const result = await caller.products.update({
+    await expect(caller.products.update({
       id: 1,
       data: { produto: "PRODUTO ATUALIZADO", mkpMinimoOnoff220v: "2.00" },
-    });
-    expect(result.success).toBe(true);
+    })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
   it("bloqueia para usuário a alteração real de markup mínimo", async () => {

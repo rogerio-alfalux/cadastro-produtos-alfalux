@@ -685,3 +685,20 @@
 - [x] Validar por GET cada URL disponível com HTTP 200/206 e conteúdo correto
 - [x] Adicionar testes de regressão para assinatura e compatibilidade de documentos
 - [x] Validar TypeScript, Vitest, build e criar checkpoint para publicação
+
+## Feature v56 — Usuários, Login e Permissões
+
+- [x] Mapear autenticação, usuários atuais e todas as operações sensíveis do sistema
+- [x] Adicionar perfis Admin, Engenharia e Custos ao modelo de usuários
+- [x] Implementar credenciais locais com senha forte armazenada somente como hash
+- [x] Restringir novos usuários ao domínio grupoalfalux, exceto o administrador proprietário
+- [x] Criar login por e-mail e senha com sessão segura e logout
+- [x] Criar painel exclusivo de administradores para incluir, editar, ativar e excluir usuários
+- [x] Garantir acesso total somente aos administradores proprietário e Geysa
+- [x] Permitir à Engenharia gerenciar documentos sem visualizar ou alterar custos e preços
+- [x] Permitir a Custos visualizar e alterar somente custos e markups
+- [x] Restringir criação e exclusão de produtos, componentes, acessórios e revenda a administradores
+- [x] Ocultar na interface campos, páginas e ações sem permissão
+- [x] Aplicar as mesmas restrições no backend, independentemente da interface
+- [x] Adicionar testes por perfil para login, domínio, documentos, custos e operações administrativas
+- [x] Validar migração, TypeScript, Vitest, build e fluxos visuais antes do checkpoint

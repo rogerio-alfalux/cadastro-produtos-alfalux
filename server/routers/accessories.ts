@@ -2,7 +2,7 @@ import { z } from "zod";
 import { eq, like, and, or, sql, asc } from "drizzle-orm";
 import { getDb } from "../db";
 import { accessories } from "../../drizzle/schema";
-import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
+import { costProcedure, entityAdminProcedure, protectedProcedure, router } from "../_core/trpc";
 
 // ─── Validation schema ────────────────────────────────────────────────────────
 
@@ -23,7 +23,7 @@ const accessorySchema = z.object({
 
 export const accessoriesRouter = router({
   // Listar com filtros e paginação
-  list: publicProcedure
+  list: protectedProcedure
     .input(
       z.object({
         search: z.string().optional(),
@@ -33,7 +33,7 @@ export const accessoriesRouter = router({
         apenasInativos: z.boolean().optional(),
       })
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) return { items: [], total: 0 };
 
@@ -76,11 +76,14 @@ export const accessoriesRouter = router({
           .where(where),
       ]);
 
-      return { items, total: Number(countRows[0]?.total ?? 0) };
+      const visibleItems = ctx.user.role === "admin" || ctx.user.role === "costs"
+        ? items
+        : items.map((item) => ({ ...item, custo: null, precoVenda: null }));
+      return { items: visibleItems, total: Number(countRows[0]?.total ?? 0) };
     }),
 
   // Listar famílias únicas para filtro
-  listFamilias: publicProcedure.query(async () => {
+  listFamilias: protectedProcedure.query(async () => {
     const db = await getDb();
     if (!db) return [];
     const rows = await db
@@ -93,9 +96,9 @@ export const accessoriesRouter = router({
   }),
 
   // Buscar por ID
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(z.object({ id: z.number().int() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) return null;
       const [item] = await db
@@ -103,11 +106,14 @@ export const accessoriesRouter = router({
         .from(accessories)
         .where(eq(accessories.id, input.id))
         .limit(1);
-      return item ?? null;
+      if (!item) return null;
+      return ctx.user.role === "admin" || ctx.user.role === "costs"
+        ? item
+        : { ...item, custo: null, precoVenda: null };
     }),
 
   // Criar
-  create: protectedProcedure
+  create: entityAdminProcedure
     .input(accessorySchema)
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -128,7 +134,7 @@ export const accessoriesRouter = router({
     }),
 
   // Atualizar
-  update: protectedProcedure
+  update: entityAdminProcedure
     .input(z.object({ id: z.number().int() }).merge(accessorySchema))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -153,7 +159,7 @@ export const accessoriesRouter = router({
     }),
 
   // Excluir
-  delete: protectedProcedure
+  delete: entityAdminProcedure
     .input(z.object({ id: z.number().int() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -165,12 +171,28 @@ export const accessoriesRouter = router({
     }),
 
   // ─── Toggle ativo status ───────────────────────────────────────────────────
-  toggleAtivo: publicProcedure
+  toggleAtivo: entityAdminProcedure
     .input(z.object({ id: z.number(), ativo: z.boolean() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Banco de dados indisponível");
       await db.update(accessories).set({ ativo: input.ativo }).where(eq(accessories.id, input.id));
       return { success: true, id: input.id, ativo: input.ativo };
+    }),
+
+  updateCosts: costProcedure
+    .input(z.object({
+      id: z.number().int(),
+      custo: z.string().nullish(),
+      precoVenda: z.string().nullish(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Banco de dados indisponível");
+      await db.update(accessories).set({
+        custo: input.custo?.trim() || null,
+        precoVenda: input.precoVenda?.trim() || null,
+      }).where(eq(accessories.id, input.id));
+      return { success: true };
     }),
 });

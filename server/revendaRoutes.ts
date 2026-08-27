@@ -4,6 +4,7 @@ import { getDb } from "./db";
 import { revendaProducts } from "../drizzle/schema";
 import { asc, eq } from "drizzle-orm";
 import { storagePut, storageGetSignedUrl } from "./storage";
+import { requireRestPermission } from "./authz";
 
 const router = express.Router();
 
@@ -42,7 +43,7 @@ const uploadImage = multer({
 
 // ─── Endpoint: Upload de foto de produto de revenda ──────────────────────────
 // POST /api/revenda/upload-foto
-router.post("/upload-foto", uploadImage.single("file"), async (req, res) => {
+router.post("/upload-foto", requireRestPermission("manageEntities"), uploadImage.single("file"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "Nenhum arquivo enviado" });
@@ -61,7 +62,7 @@ router.post("/upload-foto", uploadImage.single("file"), async (req, res) => {
 
 // ─── Endpoint: Excluir foto de produto de revenda ────────────────────────────
 // DELETE /api/revenda/:id/foto
-router.delete("/:id/foto", async (req, res) => {
+router.delete("/:id/foto", requireRestPermission("manageEntities"), async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) {

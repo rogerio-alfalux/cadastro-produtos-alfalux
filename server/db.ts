@@ -62,6 +62,50 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+export async function getUsersByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(users).where(eq(users.email, email.trim().toLowerCase()));
+}
+
+export async function getLocalUserByEmail(email: string) {
+  const matches = await getUsersByEmail(email);
+  return matches.find((user) => user.active && !!user.passwordHash) ?? undefined;
+}
+
+export async function listManagedUsers() {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db.select().from(users).orderBy(users.name, users.email, users.id);
+  const grouped = new Map<string, (typeof rows)[number]>();
+  for (const row of rows) {
+    const email = row.email?.trim().toLowerCase();
+    if (!email) continue;
+    const current = grouped.get(email);
+    if (!current || (!current.passwordHash && row.passwordHash) || row.id < current.id) {
+      grouped.set(email, row);
+    }
+  }
+  return Array.from(grouped.values()).map(({ passwordHash: _passwordHash, failedLoginAttempts: _failedLoginAttempts, lockedUntil: _lockedUntil, ...user }) => ({
+    ...user,
+    hasPassword: rows.some(
+      (row) => row.email?.trim().toLowerCase() === user.email?.trim().toLowerCase() && !!row.passwordHash,
+    ),
+  }));
+}
+
+export async function updateUsersByEmail(email: string, data: Partial<InsertUser>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(users).set(data).where(eq(users.email, email.trim().toLowerCase()));
+}
+
+export async function deleteUsersByEmail(email: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.delete(users).where(eq(users.email, email.trim().toLowerCase()));
+}
+
 // ─── Products ────────────────────────────────────────────────────────────────
 
 export async function listProducts(opts?: {

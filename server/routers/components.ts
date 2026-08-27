@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { eq, like, and, asc, sql, inArray } from "drizzle-orm";
-import { publicProcedure, router } from "../_core/trpc";
+import { entityAdminProcedure, protectedProcedure, router } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { getDb } from "../db";
 import { components, products } from "../../drizzle/schema";
@@ -127,7 +127,7 @@ async function propagateCustoToProducts(
 
 export const componentsRouter = router({
   // ─── List all components (optionally filtered by type/search) ────────────
-  list: publicProcedure
+  list: protectedProcedure
     .input(
       z.object({
         tipo: z.enum(COMPONENT_TYPES).optional(),
@@ -135,7 +135,7 @@ export const componentsRouter = router({
         apenasInativos: z.boolean().optional(),
       }).optional()
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) return [];
       const conditions = [];
@@ -146,11 +146,12 @@ export const componentsRouter = router({
         conditions.length > 0
           ? await db.select().from(components).where(and(...conditions)).orderBy(asc(components.tipo), asc(components.modelo))
           : await db.select().from(components).orderBy(asc(components.tipo), asc(components.modelo));
-      return rows;
+      if (ctx.user.role === "admin" || ctx.user.role === "costs") return rows;
+      return rows.map((row) => ({ ...row, custo: null, custoDriver: null, mkpPadraoDriver: null }));
     }),
 
   // ─── Create a component ──────────────────────────────────────────────────
-  create: publicProcedure
+  create: entityAdminProcedure
     .input(
       z.object({
         tipo: z.enum(COMPONENT_TYPES),
@@ -197,7 +198,7 @@ export const componentsRouter = router({
     }),
 
   // ─── Update a component ──────────────────────────────────────────────────
-  update: publicProcedure
+  update: protectedProcedure
     .input(
       z.object({
         id: z.number(),
@@ -211,10 +212,15 @@ export const componentsRouter = router({
         fotoKey: z.string().optional(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) throw new Error("Database unavailable");
       const { id, ...data } = input;
+      const changedFields = Object.keys(data).filter((field) => data[field as keyof typeof data] !== undefined);
+      const costFields = new Set(["custo", "custoDriver", "mkpPadraoDriver"]);
+      if (ctx.user.role !== "admin" && !(ctx.user.role === "costs" && changedFields.every((field) => costFields.has(field)))) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Seu perfil só pode alterar custos e markups." });
+      }
       // Bloquear código duplicado (excluindo o próprio registro)
       if (data.codigo?.trim()) {
         const codigoNorm = data.codigo.trim().toUpperCase();
@@ -249,10 +255,10 @@ export const componentsRouter = router({
       }
 
       await db.update(components).set({
-        modelo: data.modelo?.trim(),
-        codigo: data.codigo?.trim() ? data.codigo.trim().toUpperCase() : null,
-        observacao: data.observacao?.trim() || null,
-        custo: (data.custo && data.custo.trim() !== '') ? data.custo.trim().replace(',', '.') : null,
+        ...(data.modelo !== undefined ? { modelo: data.modelo.trim() } : {}),
+        ...(data.codigo !== undefined ? { codigo: data.codigo.trim() ? data.codigo.trim().toUpperCase() : null } : {}),
+        ...(data.observacao !== undefined ? { observacao: data.observacao.trim() || null } : {}),
+        ...(data.custo !== undefined ? { custo: data.custo.trim() ? data.custo.trim().replace(',', '.') : null } : {}),
         ...(newCustoDriver !== undefined ? { custoDriver: newCustoDriver } : {}),
         ...(data.mkpPadraoDriver !== undefined ? { mkpPadraoDriver: (data.mkpPadraoDriver && data.mkpPadraoDriver.trim() !== '') ? data.mkpPadraoDriver.trim().replace(',', '.') : null } : {}),
         ...(data.fotoUrl !== undefined ? { fotoUrl: data.fotoUrl || null } : {}),
@@ -272,7 +278,7 @@ export const componentsRouter = router({
     }),
 
   // ─── Check if a code is already in use (real-time validation) ───────────
-  checkCodigo: publicProcedure
+  checkCodigo: protectedProcedure
     .input(
       z.object({
         codigo: z.string().min(1),
@@ -300,7 +306,7 @@ export const componentsRouter = router({
     }),
 
   // ─── Delete a component ──────────────────────────────────────────────────
-  delete: publicProcedure
+  delete: entityAdminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -309,7 +315,7 @@ export const componentsRouter = router({
       return { success: true };
     }),
   // ─── Delete many components at once ──────────────────────────────────────
-  deleteMany: publicProcedure
+  deleteMany: entityAdminProcedure
     .input(z.object({ ids: z.array(z.number()).min(1) }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -319,7 +325,7 @@ export const componentsRouter = router({
     }),
 
   // ─── Toggle ativo status ───────────────────────────────────────────────────
-  toggleAtivo: publicProcedure
+  toggleAtivo: entityAdminProcedure
     .input(z.object({ id: z.number(), ativo: z.boolean() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -329,7 +335,7 @@ export const componentsRouter = router({
     }),
 
   // ─── Count products using a component value (for confirmation dialog) ────
-  countUsage: publicProcedure
+  countUsage: protectedProcedure
     .input(
       z.object({
         tipo: z.enum(COMPONENT_TYPES),
@@ -353,7 +359,7 @@ export const componentsRouter = router({
     }),
 
   // ─── Bulk replace component value across all matching products ───────────
-  bulkReplace: publicProcedure
+  bulkReplace: entityAdminProcedure
     .input(
       z.object({
         tipo: z.enum(COMPONENT_TYPES),
@@ -379,7 +385,7 @@ export const componentsRouter = router({
     }),
 
   // ─── Search components by tipo + query string (autocomplete) ───────────────
-  searchByTipo: publicProcedure
+  searchByTipo: protectedProcedure
     .input(z.object({
       tipo: z.enum(COMPONENT_TYPES),
       query: z.string().default(""),
@@ -405,7 +411,7 @@ export const componentsRouter = router({
     }),
 
   // ─── List products using a specific component ────────────────────────────
-  getProductsUsing: publicProcedure
+  getProductsUsing: protectedProcedure
     .input(
       z.object({
         tipo: z.enum(COMPONENT_TYPES),
@@ -439,7 +445,7 @@ export const componentsRouter = router({
     }),
 
   // ─── List distinct families (for filter dropdown) ────────────────────────
-  families: publicProcedure.query(async () => {
+  families: protectedProcedure.query(async () => {
     const db = await getDb();
     if (!db) return [];
     const rows = await db
@@ -450,7 +456,7 @@ export const componentsRouter = router({
   }),
 
   // ─── Preview bulk replace: show affected products ────────────────────────
-  previewReplace: publicProcedure
+  previewReplace: entityAdminProcedure
     .input(
       z.object({
         tipo: z.enum(COMPONENT_TYPES),
@@ -487,7 +493,7 @@ export const componentsRouter = router({
     }),
 
   // ─── Execute bulk replace ─────────────────────────────────────────────────
-  executeReplace: publicProcedure
+  executeReplace: entityAdminProcedure
     .input(
       z.object({
         tipo: z.enum(COMPONENT_TYPES),

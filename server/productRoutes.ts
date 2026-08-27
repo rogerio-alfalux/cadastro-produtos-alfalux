@@ -5,6 +5,7 @@ import { storagePut, storageGetSignedUrl } from "./storage";
 import { bulkInsertProducts, listProducts, getDb } from "./db";
 import { components as componentsTable } from "../drizzle/schema";
 import { parsePublicDriverExtras } from "./driverExtras";
+import { requireRestPermission } from "./authz";
 
 const router = express.Router();
 
@@ -81,7 +82,7 @@ export function resolveStoredDocumentKey(document: { url?: string | null; key?: 
 }
 
 // ─── Upload de imagem ─────────────────────────────────────────────────────────
-router.post("/upload-image", uploadImage.single("file"), async (req, res) => {
+router.post("/upload-image", requireRestPermission("manageEntities"), uploadImage.single("file"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "Nenhum arquivo enviado" });
@@ -99,7 +100,7 @@ router.post("/upload-image", uploadImage.single("file"), async (req, res) => {
 });
 
 // ─── Upload de documento ───────────────────────────────────────────────────────
-router.post("/upload-document", uploadDocument.single("file"), async (req, res) => {
+router.post("/upload-document", requireRestPermission("manageDocuments"), uploadDocument.single("file"), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: "Nenhum arquivo enviado" });
 
@@ -130,7 +131,7 @@ router.post("/upload-document", uploadDocument.single("file"), async (req, res) 
 });
 
 // ─── Exportação Excel ─────────────────────────────────────────────────────────
-router.get("/export-excel", async (_req, res) => {
+router.get("/export-excel", requireRestPermission("viewCosts"), async (_req, res) => {
   try {
     const { items } = await listProducts({ limit: 5000, offset: 0 });
 
@@ -472,7 +473,7 @@ function parseFormatoConfigurador(ws: any): any[] {
   return products;
 }
 
-router.post("/import-excel", uploadExcel.single("file"), async (req, res) => {
+router.post("/import-excel", requireRestPermission("manageEntities"), uploadExcel.single("file"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "Nenhum arquivo enviado" });
