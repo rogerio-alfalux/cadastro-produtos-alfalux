@@ -71,6 +71,37 @@ function parseProductDocuments(raw: string | null | undefined): ProductDocuments
   }
 }
 
+export function extractProductPhotoKey(raw: unknown): string | null {
+  if (typeof raw !== "string" || !raw.trim()) return null;
+  const value = raw.trim();
+  const localMatch = value.match(/^\/manus-storage\/(.+)$/);
+  if (localMatch) return localMatch[1];
+  if (!/^https?:\/\//i.test(value)) return value.replace(/^\/+/, "");
+
+  try {
+    const pathname = decodeURIComponent(new URL(value).pathname);
+    const markerIndex = pathname.indexOf("/products/photos/");
+    return markerIndex >= 0 ? pathname.slice(markerIndex + 1) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function resolveProductPhotoUrl<T extends Record<string, unknown>>(product: T): Promise<T & { fotoPublicUrl: string | null }> {
+  const storedUrl = typeof product.fotoUrl === "string" ? product.fotoUrl : null;
+  const storedKey = typeof product.fotoKey === "string" ? product.fotoKey : null;
+  const key = extractProductPhotoKey(storedUrl) || extractProductPhotoKey(storedKey);
+  if (!key) return { ...product, fotoPublicUrl: storedUrl };
+
+  try {
+    return { ...product, fotoPublicUrl: await storageGetSignedUrl(key) };
+  } catch {
+    // O proxy local continua sendo um fallback para não ocultar a foto se o
+    // serviço de assinatura estiver momentaneamente indisponível.
+    return { ...product, fotoPublicUrl: storedUrl };
+  }
+}
+
 const isFinancialProductField = (field: string) => /^(custo|precoVenda|mkp)/.test(field);
 
 function redactProductFinancials<T extends Record<string, unknown>>(product: T, role: AppRole | null | undefined, permissionOverrides?: unknown): T {
@@ -424,7 +455,8 @@ export const appRouter = router({
         const result = await listProducts(input);
         return {
           ...result,
-          items: result.items.map((item) => redactProductFinancials(item, ctx.user.role, ctx.user.permissionOverrides)),
+          items: (await Promise.all(result.items.map(resolveProductPhotoUrl)))
+            .map((item) => redactProductFinancials(item, ctx.user.role, ctx.user.permissionOverrides)),
         };
       }),
 
@@ -433,7 +465,11 @@ export const appRouter = router({
       .query(async ({ input, ctx }) => {
         const product = await getProductById(input.id);
         if (!product) throw new TRPCError({ code: "NOT_FOUND", message: "Produto não encontrado" });
-        return redactProductFinancials(product, ctx.user.role, ctx.user.permissionOverrides);
+        return redactProductFinancials(
+          await resolveProductPhotoUrl(product),
+          ctx.user.role,
+          ctx.user.permissionOverrides,
+        );
       }),
 
     create: entityAdminProcedure

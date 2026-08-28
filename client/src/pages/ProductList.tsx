@@ -525,6 +525,7 @@ export default function ProductList() {
                   const temps = getAvailableCcts(product);
                   const productDocuments = getProductDocuments((product as any).documentos);
                   const isAtivo = (product as any).ativo !== false;
+                  const productImageUrl = (product as any).fotoPublicUrl || product.fotoUrl;
 
                   return (
                     <tr
@@ -538,8 +539,8 @@ export default function ProductList() {
                       {/* Produto */}
                       <td className="px-4 py-3">
                         <div className="flex items-start gap-3">
-                          {product.fotoUrl ? (
-                            <img src={product.fotoUrl} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0 border border-border/40" />
+                          {productImageUrl ? (
+                            <img src={productImageUrl} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0 border border-border/40" />
                           ) : (
                             <div className="w-8 h-8 rounded-lg bg-muted/30 flex items-center justify-center flex-shrink-0">
                               <Zap className="w-4 h-4 text-muted-foreground/40" />
@@ -903,9 +904,9 @@ function ProductDetail({ id }: { id: number }) {
 
   return (
     <div className="space-y-4 animate-fade-in">
-      {product.fotoUrl && (
+      {(product.fotoPublicUrl || product.fotoUrl) && (
         <div className="flex justify-center">
-          <img src={product.fotoUrl} alt={product.produto} className="max-h-48 rounded-xl border border-border/40 object-contain" />
+          <img src={product.fotoPublicUrl || product.fotoUrl || undefined} alt={product.produto} className="max-h-48 rounded-xl border border-border/40 object-contain" />
         </div>
       )}
 

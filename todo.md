@@ -803,3 +803,18 @@
 - [x] Corrigir definitivamente a causa concreta do bloqueio de acesso
 - [x] Validar acesso à produção, sessão e permissões efetivas de Engenharia
 - [x] Adicionar regressão, validar TypeScript, Vitest e build antes do checkpoint
+
+## Correção v60.3 — Barreira de Acesso do WebDev
+
+- [x] Confirmar se os usuários estão acessando preview privado ou domínio publicado
+- [x] Validar o domínio publicado sem sessão da plataforma Manus
+- [x] Garantir que a página pública carregue o login interno por e-mail e senha
+- [x] Documentar a URL correta e eliminar o uso de links privados de preview
+
+## Correção v60.4 — Fotos no Acesso Publicado
+
+- [x] Reproduzir a falha das fotos na aplicação publicada
+- [x] Identificar se URLs de storage, proxy ou assinatura impedem o carregamento
+- [x] Corrigir a entrega de fotos sem tornar o armazenamento público
+- [x] Validar fotos de produtos com uma sessão da aplicação e preservar documentos privados
+- [x] Criar regressão, validar TypeScript, Vitest e build antes do checkpoint
