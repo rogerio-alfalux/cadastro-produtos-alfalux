@@ -795,3 +795,11 @@
 - [x] Garantir que usuários sem sessão permaneçam no login interno em vez de abrir a plataforma externa
 - [x] Validar login de usuário operacional sem o erro permission_denied
 - [x] Validar TypeScript, Vitest e build antes do checkpoint
+
+## Correção v60.2 — Login de Engenharia em Produção
+
+- [x] Coletar a resposta real do login publicado e o estado do cookie de sessão
+- [x] Reproduzir o login com uma conta de Engenharia controlada sem alterar dados de produção
+- [x] Corrigir definitivamente a causa concreta do bloqueio de acesso
+- [x] Validar acesso à produção, sessão e permissões efetivas de Engenharia
+- [x] Adicionar regressão, validar TypeScript, Vitest e build antes do checkpoint
