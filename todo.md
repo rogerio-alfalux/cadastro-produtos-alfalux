@@ -788,3 +788,10 @@
 - [x] Corrigir a causa que impede a criação de sessão por e-mail e senha
 - [x] Validar login, logout e permissões efetivas de Engenharia
 - [x] Adicionar regressão de autenticação e validar TypeScript, Vitest e build antes do checkpoint
+
+## Correção v60.1 — Acesso Operacional por Senha
+
+- [x] Remover o acesso OAuth legado da tela de login por senha
+- [x] Garantir que usuários sem sessão permaneçam no login interno em vez de abrir a plataforma externa
+- [x] Validar login de usuário operacional sem o erro permission_denied
+- [x] Validar TypeScript, Vitest e build antes do checkpoint

@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { LockKeyhole, LogIn, ShieldCheck, Zap } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { getLoginUrl } from "@/const";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -90,12 +89,9 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            <div className="mt-6 pt-6 border-t border-border/60">
-              <Button type="button" variant="outline" className="w-full text-xs" onClick={() => { window.location.href = getLoginUrl(); }}>
-                Acesso administrativo existente
-              </Button>
-              <p className="text-[11px] leading-relaxed text-muted-foreground mt-3 text-center">Disponível somente para os administradores previamente autorizados.</p>
-            </div>
+            <p className="text-[11px] leading-relaxed text-muted-foreground mt-6 pt-5 border-t border-border/60 text-center">
+              Use somente as credenciais definidas no painel de Usuários. Em caso de dificuldade, solicite a redefinição da senha a um administrador.
+            </p>
           </div>
         </div>
       </section>
