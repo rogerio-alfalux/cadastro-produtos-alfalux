@@ -42,7 +42,11 @@ export function getSessionCookieOptions(
   return {
     httpOnly: true,
     path: "/",
-    sameSite: "none",
-    secure: isSecureRequest(req),
+    // A sessão não precisa ser enviada em contextos cross-site. Lax mantém o
+    // retorno OAuth por navegação de topo e evita bloqueios de cookies de terceiros.
+    sameSite: "lax",
+    // Em produção, o TLS é terminado pelo proxy e este cookie precisa sempre
+    // carregar o atributo Secure — requisito do navegador para uma sessão estável.
+    secure: isSecureRequest(req) || process.env.NODE_ENV === "production",
   };
 }

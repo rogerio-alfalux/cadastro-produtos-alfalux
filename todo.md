@@ -781,3 +781,10 @@
 - [x] Mostrar somente categorias e instalações compatíveis com a família selecionada
 - [x] Limpar filtros incompatíveis e preservar a consulta correta de produtos
 - [x] Validar combinações reais, TypeScript, testes, build e interface antes do checkpoint
+
+## Correção v60 — Login do Perfil Engenharia
+
+- [x] Comparar credenciais, status e login das contas de Engenharia
+- [x] Corrigir a causa que impede a criação de sessão por e-mail e senha
+- [x] Validar login, logout e permissões efetivas de Engenharia
+- [x] Adicionar regressão de autenticação e validar TypeScript, Vitest e build antes do checkpoint

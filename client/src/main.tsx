@@ -5,7 +5,6 @@ import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
-import { getLoginUrl } from "./const";
 import "./index.css";
 
 const queryClient = new QueryClient();
@@ -17,8 +16,9 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
   const isUnauthorized = error.message === UNAUTHED_ERR_MSG;
 
   if (!isUnauthorized) return;
-
-  window.location.href = getLoginUrl();
+  // Login local usa senha. Não redirecionar um erro desse fluxo para o OAuth,
+  // pois isso oculta a causa e impede nova tentativa com a credencial correta.
+  if (window.location.pathname !== "/login") window.location.href = "/login";
 };
 
 queryClient.getQueryCache().subscribe(event => {

@@ -17,7 +17,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
 
   const login = trpc.auth.login.useMutation({
-    onSuccess: async () => {
+    onSuccess: async (result) => {
+      // Atualiza a sessão no cache antes de navegar. Assim, o primeiro render
+      // após o login não interpreta momentaneamente a sessão recém-criada como ausente.
+      utils.auth.me.setData(undefined, result.user);
       await utils.auth.me.invalidate();
       toast.success("Acesso autorizado");
       navigate("/");

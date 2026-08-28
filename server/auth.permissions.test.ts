@@ -177,9 +177,12 @@ describe("login e gestão administrativa", () => {
     });
     dbMocks.updateUsersByEmail.mockResolvedValue(undefined);
     const { ctx, cookies } = context(null);
-    await expect(appRouter.createCaller(ctx).auth.login({ email: "engenharia@grupoalfalux.com.br", password: "SenhaForte!2026" })).resolves.toEqual({ success: true });
+    await expect(appRouter.createCaller(ctx).auth.login({ email: "engenharia@grupoalfalux.com.br", password: "SenhaForte!2026" })).resolves.toMatchObject({
+      success: true,
+      user: { email: "engenharia@grupoalfalux.com.br", role: "engineering" },
+    });
     expect(cookies).toHaveLength(1);
-    expect(cookies[0].options).toMatchObject({ httpOnly: true, secure: true, sameSite: "none" });
+    expect(cookies[0].options).toMatchObject({ httpOnly: true, secure: true, sameSite: "lax" });
   });
 
   it("recusa domínio externo e senha incorreta", async () => {

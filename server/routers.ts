@@ -379,7 +379,13 @@ export const appRouter = router({
         });
         const cookieOptions = getSessionCookieOptions(ctx.req);
         ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: sessionDuration });
-        return { success: true } as const;
+        const {
+          passwordHash: _passwordHash,
+          failedLoginAttempts: _failedLoginAttempts,
+          lockedUntil: _lockedUntil,
+          ...safeUser
+        } = user;
+        return { success: true, user: safeUser } as const;
       }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
