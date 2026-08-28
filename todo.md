@@ -773,3 +773,11 @@
 - [x] Formatar valores financeiros, markups, fórmulas e linhas alternadas
 - [x] Configurar impressão, congelamento de cabeçalho e leitura em tela
 - [x] Gerar amostra, validar fórmulas, testes, TypeScript e build antes do checkpoint
+
+## Correção v59.4 — Filtros Condicionais na Listagem
+
+- [x] Carregar famílias, categorias e instalações a partir dos produtos realmente cadastrados
+- [x] Mostrar somente famílias compatíveis com a categoria e instalação selecionadas
+- [x] Mostrar somente categorias e instalações compatíveis com a família selecionada
+- [x] Limpar filtros incompatíveis e preservar a consulta correta de produtos
+- [x] Validar combinações reais, TypeScript, testes, build e interface antes do checkpoint

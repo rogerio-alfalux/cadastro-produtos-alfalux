@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -47,8 +47,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import ProductForm from "./ProductForm";
 import { useAuth } from "@/_core/hooks/useAuth";
 
-const CATEGORIAS = ["PERFIS", "DOWNLIGHTS", "PAINÉIS", "SPOTS", "ARANDELAS", "ÁREA EXTERNA", "BALIZADORES", "DECORATIVAS", "CUSTOMIZADOS"];
-const INSTALACOES = ["EMBUTIR", "SOBREPOR", "PENDENTE", "ARANDELA", "NO FRAME"];
 const PAGE_SIZE = 20;
 const CCT_MODULE_FIELDS = {
   "2700": "moduloLed2700",
@@ -147,7 +145,7 @@ export default function ProductList() {
   const [importing, setImporting] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
 
-  const queryInput = {
+  const queryInput = useMemo(() => ({
     search: search || undefined,
     categoria: filterCategoria !== "_all" ? filterCategoria : undefined,
     instalacao: filterInstalacao !== "_all" ? filterInstalacao : undefined,
@@ -156,14 +154,47 @@ export default function ProductList() {
     apenasInativos: filterAtivo === "inativos" ? true : undefined,
     limit: PAGE_SIZE,
     offset: page * PAGE_SIZE,
-  };
+  }), [search, filterCategoria, filterInstalacao, filterFamilia, filterPotencia, filterAtivo, page]);
+
+  const filterOptionsInput = useMemo(() => ({
+    categoria: filterCategoria !== "_all" ? filterCategoria : undefined,
+    instalacao: filterInstalacao !== "_all" ? filterInstalacao : undefined,
+    familia: filterFamilia !== "_all" ? filterFamilia : undefined,
+    potencia: filterPotencia !== "_all" ? filterPotencia : undefined,
+  }), [filterCategoria, filterInstalacao, filterFamilia, filterPotencia]);
 
   const { data, isLoading, refetch } = trpc.products.list.useQuery(queryInput, {
     keepPreviousData: true,
   } as any);
 
   const { data: countData } = trpc.products.count.useQuery();
-  const { data: familias = [] } = trpc.components.families.useQuery();
+  const { data: filterOptions } = trpc.products.filterOptions.useQuery(filterOptionsInput);
+  const categorias = filterOptions?.categorias ?? [];
+  const instalacoes = filterOptions?.instalacoes ?? [];
+  const familias = filterOptions?.familias ?? [];
+  const potencias = filterOptions?.potencias ?? [];
+
+  useEffect(() => {
+    if (!filterOptions) return;
+    let changed = false;
+    if (filterCategoria !== "_all" && !categorias.includes(filterCategoria)) {
+      setFilterCategoria("_all");
+      changed = true;
+    }
+    if (filterInstalacao !== "_all" && !instalacoes.includes(filterInstalacao)) {
+      setFilterInstalacao("_all");
+      changed = true;
+    }
+    if (filterFamilia !== "_all" && !familias.includes(filterFamilia)) {
+      setFilterFamilia("_all");
+      changed = true;
+    }
+    if (filterPotencia !== "_all" && !potencias.includes(filterPotencia)) {
+      setFilterPotencia("_all");
+      changed = true;
+    }
+    if (changed) setPage(0);
+  }, [filterOptions, categorias, instalacoes, familias, potencias, filterCategoria, filterInstalacao, filterFamilia, filterPotencia]);
 
   const utils = trpc.useUtils();
   const deleteMutation = trpc.products.delete.useMutation({
@@ -256,7 +287,7 @@ export default function ProductList() {
     setPage(0);
   };
 
-  const showPotenciaFilter = filterCategoria === "PERFIS";
+  const showPotenciaFilter = filterCategoria === "PERFIS" || (filterCategoria === "_all" && categorias.length === 1 && categorias[0] === "PERFIS");
   const hasFilters = search || filterCategoria !== "_all" || filterInstalacao !== "_all" || filterFamilia !== "_all" || filterPotencia !== "_all" || filterAtivo !== "_all";
 
   return (
@@ -340,7 +371,7 @@ export default function ProductList() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="_all">TODAS CATEGORIAS</SelectItem>
-              {CATEGORIAS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              {categorias.map((categoria) => <SelectItem key={categoria} value={categoria}>{categoria}</SelectItem>)}
             </SelectContent>
           </Select>
 
@@ -351,7 +382,7 @@ export default function ProductList() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="_all">TODAS INSTALAÇÕES</SelectItem>
-              {INSTALACOES.map((i) => <SelectItem key={i} value={i}>{i}</SelectItem>)}
+              {instalacoes.map((instalacao) => <SelectItem key={instalacao} value={instalacao}>{instalacao}</SelectItem>)}
             </SelectContent>
           </Select>
 
@@ -375,10 +406,7 @@ export default function ProductList() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="_all">TODAS POTÊNCIAS</SelectItem>
-                <SelectItem value="18W">18W</SelectItem>
-                <SelectItem value="26W">26W</SelectItem>
-                <SelectItem value="36W-SF">36W — Stripflex</SelectItem>
-                <SelectItem value="36W-SL">36W — Stripline</SelectItem>
+                {potencias.map((potencia) => <SelectItem key={potencia} value={potencia}>{potencia === "36W-SF" ? "36W — Stripflex" : potencia === "36W-SL" ? "36W — Stripline" : potencia}</SelectItem>)}
               </SelectContent>
             </Select>
           )}

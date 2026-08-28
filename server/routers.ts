@@ -15,6 +15,7 @@ import { revendaRouter } from "./routers/revenda";
 import { accessoriesRouter } from "./routers/accessories";
 import { documentsBulkRouter } from "./routers/documentsBulk";
 import { reportsRouter } from "./routers/reports";
+import { getReportFilterOptions } from "./reporting";
 import {
   bulkInsertProducts,
   countProducts,
@@ -388,6 +389,18 @@ export const appRouter = router({
   }),
 
   products: router({
+    filterOptions: protectedProcedure
+      .input(z.object({
+        categoria: z.string().optional(),
+        instalacao: z.string().optional(),
+        familia: z.string().optional(),
+        potencia: z.string().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        const { items } = await listProducts({ limit: 5000, offset: 0 });
+        return getReportFilterOptions(items, input ?? {});
+      }),
+
     list: protectedProcedure
       .input(
         z.object({
