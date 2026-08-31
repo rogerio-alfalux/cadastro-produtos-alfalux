@@ -852,3 +852,10 @@
 - [x] Vincular a mesma referência do manual a todas as variações da família LUME
 - [ ] Confirmar integridade dos vínculos, URL assinada e retorno pela API pública
 - [ ] Versionar a aplicação e registrar as contagens auditadas
+
+## Ajuste v62.2 — Diagramação de Documentos em Lote
+
+- [x] Analisar os pontos de quebra e overflow na seção Documentos e público
+- [x] Reorganizar cartões de documentos e filtros com grade responsiva e larguras equilibradas
+- [x] Garantir quebra de texto, áreas clicáveis e rótulos legíveis sem transbordamento
+- [x] Validar visualmente em desktop, tablet e celular, além de TypeScript e testes antes do checkpoint

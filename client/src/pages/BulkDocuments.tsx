@@ -103,13 +103,70 @@ export default function BulkDocumentsPage() {
       {sourceId && <div className="mt-4 inline-flex items-center gap-2 text-sm text-emerald-400 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-3 py-2"><CheckCircle2 className="w-4 h-4" />Produto de referência selecionado</div>}
     </section>
 
-    <section className="alfalux-card p-5">
-      <div className="flex items-center gap-2 mb-4"><span className="w-6 h-6 rounded-full bg-primary/15 text-primary text-xs font-bold grid place-items-center">2</span><h2 className="font-semibold">Documentos e público</h2></div>
-      <div className="grid lg:grid-cols-[1.2fr_1fr] gap-6">
-        <div className="space-y-4"><Label>Documentos a aplicar</Label><div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">{documentOptions.map((document) => <label key={document.type} className="flex items-center gap-3 rounded-lg border border-border/60 p-3 cursor-pointer hover:bg-muted/20"><Checkbox checked={selectedTypes.includes(document.type)} onCheckedChange={(checked) => setSelectedTypes((current) => checked ? [...current, document.type] : current.filter((item) => item !== document.type))} /><span className="text-[10px] font-bold rounded border border-primary/30 text-primary px-1.5 py-0.5">{document.badge}</span><span className="text-sm">{document.label}</span></label>)}</div><div className="rounded-xl border border-dashed border-primary/35 bg-primary/[0.035] p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-semibold">Enviar arquivos atualizados</p><p className="mt-1 text-xs text-muted-foreground">O arquivo enviado aqui tem prioridade sobre o documento do produto de referência e pode substituir somente os tipos selecionados.</p></div><UploadCloud className="h-5 w-5 shrink-0 text-primary" /></div><div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{documentOptions.map((document) => { const uploaded = uploadedDocuments[document.type]; const uploading = uploadingType === document.type; return <div key={document.type} className="rounded-lg border border-border/60 bg-card p-3"><div className="flex items-center justify-between gap-2"><span className="text-xs font-semibold">{document.badge} · {document.label}</span>{uploaded && <button type="button" onClick={() => setUploadedDocuments((current) => { const next = { ...current }; delete next[document.type]; return next; })} className="text-muted-foreground hover:text-destructive" aria-label={`Remover ${document.label}`}><X className="h-4 w-4" /></button>}</div>{uploaded ? <p className="mt-3 truncate text-xs text-emerald-400" title={uploaded.nome}>{uploaded.nome}</p> : <label className="mt-3 flex h-9 cursor-pointer items-center justify-center rounded-md border border-primary/40 bg-primary/10 px-2 text-xs font-semibold text-primary hover:bg-primary/15">{uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>ENVIAR<input type="file" className="sr-only" accept={document.accept} onChange={(event) => { void uploadDocument(document.type, event.target.files?.[0] || null); event.currentTarget.value = ""; }} /></>}</label>}</div>; })}</div></div><label className="flex items-start gap-3 rounded-lg border border-border/60 p-3 cursor-pointer"><Checkbox checked={replaceExisting} onCheckedChange={(checked) => setReplaceExisting(checked === true)} /><span><span className="text-sm font-medium block">Substituir documentos existentes</span><span className="text-xs text-muted-foreground">Ative esta opção para trocar somente os arquivos selecionados. Se desmarcada, anexos já atribuídos a cada produto são preservados.</span></span></label></div>
-        <div className="grid sm:grid-cols-2 gap-3 content-start"><div className="space-y-2"><Label>Família</Label><Select value={targetFamily || "_none"} onValueChange={(value) => setTargetFamily(value === "_none" ? "" : value)}><SelectTrigger><SelectValue placeholder="Selecione a família" /></SelectTrigger><SelectContent><SelectItem value="_none">Selecione a família</SelectItem>{families.map((family) => <SelectItem key={family} value={family}>{family}</SelectItem>)}</SelectContent></Select></div><div className="space-y-2"><Label>Categoria</Label><Select value={targetCategory} onValueChange={(value) => { setTargetCategory(value); if (value !== "PERFIS") setTargetPower(""); }}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="_all">Todas</SelectItem><SelectItem value="PERFIS">Perfis</SelectItem></SelectContent></Select></div>{targetCategory === "PERFIS" && <div className="space-y-2"><Label>Potência</Label><Select value={targetPower || "_all"} onValueChange={(value) => setTargetPower(value === "_all" ? "" : value)}><SelectTrigger><SelectValue placeholder="Todas as potências" /></SelectTrigger><SelectContent><SelectItem value="_all">Todas as potências</SelectItem>{powers.map((power) => <SelectItem key={power} value={power}>{power.replace("-", " ")}</SelectItem>)}</SelectContent></Select></div>}<div className="space-y-2"><Label>Nome do produto contém</Label><Input value={productTerm} onChange={(event) => setProductTerm(event.target.value)} placeholder="Ex.: BLAZE H P" /></div></div>
+    <section className="alfalux-card overflow-hidden">
+      <div className="flex items-center gap-2 border-b border-border/60 px-5 py-4">
+        <span className="grid h-6 w-6 place-items-center rounded-full bg-primary/15 text-xs font-bold text-primary">2</span>
+        <h2 className="font-semibold">Documentos e público</h2>
       </div>
-      <div className="mt-5 pt-5 border-t border-border/60 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><p className="text-xs text-muted-foreground">A prévia mostra os produtos que serão afetados antes de qualquer alteração.</p><Button disabled={!canPreview || preview.isFetching} onClick={() => void preview.refetch()}><Files className="w-4 h-4 mr-2" />{preview.isFetching ? "GERANDO PRÉVIA..." : "GERAR PRÉVIA"}</Button></div>
+
+      <div className="grid gap-6 p-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(23rem,0.9fr)] xl:gap-8">
+        <div className="min-w-0 space-y-5">
+          <div className="space-y-3">
+            <Label className="text-sm font-semibold">Documentos a aplicar</Label>
+            <div className="grid grid-cols-1 gap-3 min-[560px]:grid-cols-2">
+              {documentOptions.map((document) => (
+                <label key={document.type} className="flex min-w-0 cursor-pointer items-center gap-2.5 rounded-xl border border-border/60 px-3 py-3.5 transition-colors hover:bg-muted/20">
+                  <Checkbox className="shrink-0" checked={selectedTypes.includes(document.type)} onCheckedChange={(checked) => setSelectedTypes((current) => checked ? [...current, document.type] : current.filter((item) => item !== document.type))} />
+                  <span className="shrink-0 rounded border border-primary/30 px-1.5 py-0.5 text-[10px] font-bold text-primary">{document.badge}</span>
+                  <span className="min-w-0 break-words text-sm font-medium leading-5">{document.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-dashed border-primary/35 bg-primary/[0.035] p-4 sm:p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold">Enviar arquivos atualizados</p>
+                <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">O arquivo enviado aqui tem prioridade sobre o documento do produto de referência e pode substituir somente os tipos selecionados.</p>
+              </div>
+              <UploadCloud className="h-5 w-5 shrink-0 text-primary" />
+            </div>
+            <div className="mt-4 grid grid-cols-1 gap-3 min-[560px]:grid-cols-2">
+              {documentOptions.map((document) => {
+                const uploaded = uploadedDocuments[document.type];
+                const uploading = uploadingType === document.type;
+                return (
+                  <div key={document.type} className="min-w-0 rounded-lg border border-border/60 bg-card p-3.5">
+                    <div className="flex min-w-0 items-start justify-between gap-2">
+                      <span className="min-w-0 break-words text-xs font-semibold leading-5">{document.badge} · {document.label}</span>
+                      {uploaded && <button type="button" onClick={() => setUploadedDocuments((current) => { const next = { ...current }; delete next[document.type]; return next; })} className="shrink-0 text-muted-foreground transition-colors hover:text-destructive" aria-label={`Remover ${document.label}`}><X className="h-4 w-4" /></button>}
+                    </div>
+                    {uploaded ? <p className="mt-3 truncate text-xs text-emerald-400" title={uploaded.nome}>{uploaded.nome}</p> : <label className="mt-3 flex h-9 w-full cursor-pointer items-center justify-center rounded-md border border-primary/40 bg-primary/10 px-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/15">{uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>ENVIAR<input type="file" className="sr-only" accept={document.accept} onChange={(event) => { void uploadDocument(document.type, event.target.files?.[0] || null); event.currentTarget.value = ""; }} /></>}</label>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <label className="flex min-w-0 cursor-pointer items-start gap-3 rounded-xl border border-border/60 bg-muted/[0.025] p-4 transition-colors hover:bg-muted/10">
+            <Checkbox className="mt-0.5 shrink-0" checked={replaceExisting} onCheckedChange={(checked) => setReplaceExisting(checked === true)} />
+            <span className="min-w-0"><span className="block text-sm font-medium">Substituir documentos existentes</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">Ative esta opção para trocar somente os arquivos selecionados. Se desmarcada, anexos já atribuídos a cada produto são preservados.</span></span>
+          </label>
+        </div>
+
+        <div className="min-w-0 rounded-xl border border-border/60 bg-muted/[0.025] p-4 sm:p-5">
+          <p className="mb-4 text-sm font-semibold">Público da aplicação</p>
+          <div className="grid grid-cols-1 gap-x-4 gap-y-5 min-[500px]:grid-cols-2">
+            <div className="min-w-0 space-y-2"><Label>Família</Label><Select value={targetFamily || "_none"} onValueChange={(value) => setTargetFamily(value === "_none" ? "" : value)}><SelectTrigger className="w-full"><SelectValue placeholder="Selecione a família" /></SelectTrigger><SelectContent><SelectItem value="_none">Selecione a família</SelectItem>{families.map((family) => <SelectItem key={family} value={family}>{family}</SelectItem>)}</SelectContent></Select></div>
+            <div className="min-w-0 space-y-2"><Label>Categoria</Label><Select value={targetCategory} onValueChange={(value) => { setTargetCategory(value); if (value !== "PERFIS") setTargetPower(""); }}><SelectTrigger className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="_all">Todas</SelectItem><SelectItem value="PERFIS">Perfis</SelectItem></SelectContent></Select></div>
+            {targetCategory === "PERFIS" && <div className="min-w-0 space-y-2"><Label>Potência</Label><Select value={targetPower || "_all"} onValueChange={(value) => setTargetPower(value === "_all" ? "" : value)}><SelectTrigger className="w-full"><SelectValue placeholder="Todas as potências" /></SelectTrigger><SelectContent><SelectItem value="_all">Todas as potências</SelectItem>{powers.map((power) => <SelectItem key={power} value={power}>{power.replace("-", " ")}</SelectItem>)}</SelectContent></Select></div>}
+            <div className="min-w-0 space-y-2"><Label>Nome do produto contém</Label><Input className="w-full" value={productTerm} onChange={(event) => setProductTerm(event.target.value)} placeholder="Ex.: BLAZE H P" /></div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col items-start justify-between gap-3 border-t border-border/60 bg-muted/[0.025] px-5 py-4 sm:flex-row sm:items-center"><p className="text-xs leading-5 text-muted-foreground">A prévia mostra os produtos que serão afetados antes de qualquer alteração.</p><Button className="shrink-0" disabled={!canPreview || preview.isFetching} onClick={() => void preview.refetch()}><Files className="mr-2 h-4 w-4" />{preview.isFetching ? "GERANDO PRÉVIA..." : "GERAR PRÉVIA"}</Button></div>
     </section>
 
     {preview.data && <section className="alfalux-card overflow-hidden"><div className="p-5 border-b border-border/60 flex flex-col md:flex-row md:items-center justify-between gap-4"><div><p className="font-semibold">Prévia de aplicação</p><p className="text-sm text-muted-foreground mt-1"><strong className="text-foreground">{preview.data.affected}</strong> de {preview.data.total} produto(s) receberão os documentos selecionados.</p></div><Button disabled={!preview.data.affected || apply.isPending} onClick={() => { if (window.confirm(`Aplicar documentos compartilhados em ${preview.data.affected} produto(s)?`)) apply.mutate(input); }}><UploadCloud className="w-4 h-4 mr-2" />{apply.isPending ? "APLICANDO..." : `APLICAR EM ${preview.data.affected} PRODUTOS`}</Button></div><div className="overflow-x-auto"><table className="w-full min-w-[650px]"><thead><tr className="bg-muted/20 border-b border-border/60"><th className="text-left p-3 text-[11px] tracking-wider">PRODUTO</th><th className="text-left p-3 text-[11px] tracking-wider">SKU</th><th className="text-left p-3 text-[11px] tracking-wider">POTÊNCIA</th><th className="text-left p-3 text-[11px] tracking-wider">RESULTADO</th></tr></thead><tbody>{preview.data.items.map((item) => <tr key={item.id} className="border-b border-border/40 last:border-0"><td className="p-3 text-sm">{item.produto}</td><td className="p-3 text-xs text-muted-foreground font-mono">{item.sku}</td><td className="p-3 text-xs">{item.potencia || "—"}</td><td className="p-3 text-xs">{item.isSource ? <span className="text-muted-foreground">Produto de referência</span> : item.willChange ? <span className="text-emerald-400">Receberá {item.documentsToApply.map((type) => documentOptions.find((item) => item.type === type)?.badge).join(", ")}</span> : <span className="text-muted-foreground">Sem alteração</span>}</td></tr>)}</tbody></table></div></section>}
