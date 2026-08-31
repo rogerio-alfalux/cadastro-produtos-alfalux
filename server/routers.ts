@@ -71,6 +71,56 @@ function parseProductDocuments(raw: string | null | undefined): ProductDocuments
   }
 }
 
+export function extractProductDocumentKey(raw: unknown): string | null {
+  if (typeof raw !== "string" || !raw.trim()) return null;
+  const value = raw.trim();
+  const localMatch = value.match(/^\/manus-storage\/(.+)$/);
+  if (localMatch) return localMatch[1];
+  if (!/^https?:\/\//i.test(value)) return value.replace(/^\/+/, "");
+
+  try {
+    const pathname = decodeURIComponent(new URL(value).pathname);
+    const markerIndex = pathname.indexOf("/products/documents/");
+    return markerIndex >= 0 ? pathname.slice(markerIndex + 1) : null;
+  } catch {
+    return null;
+  }
+}
+
+function resolveProductDocumentKey(document: ProductDocument): string | null {
+  // A URL local contém a chave final com hash para arquivos antigos cujo campo
+  // key foi gravado antes de o storage acrescentar o sufixo único.
+  return extractProductDocumentKey(document.url) || extractProductDocumentKey(document.key);
+}
+
+export async function resolveProductDocumentViewUrls<T extends Record<string, unknown>>(
+  product: T,
+): Promise<T & { documentosVisualizacao: ProductDocuments | null }> {
+  const storedDocuments = parseProductDocuments(
+    typeof product.documentos === "string" ? product.documentos : null,
+  );
+  if (!storedDocuments) return { ...product, documentosVisualizacao: null };
+
+  const resolvedEntries = await Promise.all(
+    Object.entries(storedDocuments).map(async ([type, document]) => {
+      const key = resolveProductDocumentKey(document);
+      if (!key) return [type, document] as const;
+      try {
+        return [type, { ...document, url: await storageGetSignedUrl(key) }] as const;
+      } catch {
+        // Mantém a referência existente como contingência para uma falha
+        // temporária de assinatura; o proxy privado continua disponível.
+        return [type, document] as const;
+      }
+    }),
+  );
+
+  return {
+    ...product,
+    documentosVisualizacao: Object.fromEntries(resolvedEntries) as ProductDocuments,
+  };
+}
+
 export function extractProductPhotoKey(raw: unknown): string | null {
   if (typeof raw !== "string" || !raw.trim()) return null;
   const value = raw.trim();
@@ -100,6 +150,10 @@ async function resolveProductPhotoUrl<T extends Record<string, unknown>>(product
     // serviço de assinatura estiver momentaneamente indisponível.
     return { ...product, fotoPublicUrl: storedUrl };
   }
+}
+
+async function resolveProductAssetUrls<T extends Record<string, unknown>>(product: T) {
+  return resolveProductDocumentViewUrls(await resolveProductPhotoUrl(product));
 }
 
 const isFinancialProductField = (field: string) => /^(custo|precoVenda|mkp)/.test(field);
@@ -455,7 +509,7 @@ export const appRouter = router({
         const result = await listProducts(input);
         return {
           ...result,
-          items: (await Promise.all(result.items.map(resolveProductPhotoUrl)))
+          items: (await Promise.all(result.items.map(resolveProductAssetUrls)))
             .map((item) => redactProductFinancials(item, ctx.user.role, ctx.user.permissionOverrides)),
         };
       }),
@@ -466,7 +520,7 @@ export const appRouter = router({
         const product = await getProductById(input.id);
         if (!product) throw new TRPCError({ code: "NOT_FOUND", message: "Produto não encontrado" });
         return redactProductFinancials(
-          await resolveProductPhotoUrl(product),
+          await resolveProductAssetUrls(product),
           ctx.user.role,
           ctx.user.permissionOverrides,
         );

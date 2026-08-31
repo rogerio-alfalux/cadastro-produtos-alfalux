@@ -818,3 +818,11 @@
 - [x] Corrigir a entrega de fotos sem tornar o armazenamento público
 - [x] Validar fotos de produtos com uma sessão da aplicação e preservar documentos privados
 - [x] Criar regressão, validar TypeScript, Vitest e build antes do checkpoint
+
+## Correção v60.5 — Visualização de Desenhos Técnicos pela Engenharia
+
+- [x] Reproduzir a abertura de desenho técnico com uma sessão de Engenharia
+- [x] Identificar a divergência entre a referência salva no upload e a URL de visualização
+- [x] Corrigir a entrega autorizada de desenhos técnicos sem expor o storage
+- [x] Validar upload e abertura do documento por Engenharia, além de Datasheet e IES
+- [x] Criar regressões, validar TypeScript, Vitest e build antes do checkpoint

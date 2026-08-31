@@ -120,10 +120,21 @@ router.post("/upload-document", requireRestPermission("manageDocuments"), upload
     const requestedKey = `products/documents/${tipo}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
     const mimeType = req.file.mimetype || "application/octet-stream";
     const { key, url } = await storagePut(requestedKey, req.file.buffer, mimeType);
+    const documento = { url, key, nome: originalName, mimeType };
+    let urlVisualizacao = url;
+    try {
+      urlVisualizacao = await storageGetSignedUrl(key);
+    } catch (signError) {
+      console.warn("[upload-document] Falha ao assinar URL de visualização; usando proxy privado", signError);
+    }
 
     return res.json({
       tipo,
-      documento: { url, key, nome: originalName, mimeType },
+      // "documento" é a referência durável que será salva no produto.
+      documento,
+      // A cópia abaixo é transitória e permite abrir o arquivo imediatamente
+      // após o upload, antes mesmo de uma nova consulta do produto.
+      documentoVisualizacao: { ...documento, url: urlVisualizacao },
     });
   } catch (err) {
     console.error("[upload-document]", err);

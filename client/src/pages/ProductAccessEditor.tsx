@@ -63,21 +63,38 @@ function parseDocuments(raw: unknown): ProductDocuments {
   }
 }
 
+function getDocumentViewUrls(raw: unknown): Partial<Record<DocumentType, string>> {
+  const documents = parseDocuments(raw);
+  return Object.fromEntries(
+    (Object.keys(documents) as DocumentType[])
+      .map((type) => [type, documents[type]?.url] as const)
+      .filter((entry): entry is [DocumentType, string] => Boolean(entry[1])),
+  );
+}
+
 export function ProductDocumentsEditor() {
   const [, params] = useRoute<{ id: string }>("/documentos/:id");
   const [, navigate] = useLocation();
   const id = Number(params?.id);
   const { data: product, isLoading } = trpc.products.getById.useQuery({ id }, { enabled: Number.isFinite(id) });
   const [documents, setDocuments] = useState<ProductDocuments>({});
+  const [documentViewUrls, setDocumentViewUrls] = useState<Partial<Record<DocumentType, string>>>({});
   const [uploading, setUploading] = useState<DocumentType | null>(null);
   const refs = useRef<Partial<Record<DocumentType, HTMLInputElement | null>>>({});
 
-  useEffect(() => { if (product) setDocuments(parseDocuments(product.documentos)); }, [product]);
+  useEffect(() => {
+    if (!product) return;
+    setDocuments(parseDocuments(product.documentos));
+    setDocumentViewUrls(getDocumentViewUrls((product as Record<string, unknown>).documentosVisualizacao));
+  }, [product]);
   const update = trpc.products.update.useMutation({ onError: (error) => toast.error(error.message) });
 
   const persist = async (next: ProductDocuments, successMessage: string) => {
     await update.mutateAsync({ id, data: { documentos: Object.keys(next).length ? JSON.stringify(next) : null } });
     setDocuments(next);
+    setDocumentViewUrls((current) => Object.fromEntries(
+      Object.entries(current).filter(([type]) => Boolean(next[type as DocumentType])),
+    ) as Partial<Record<DocumentType, string>>);
     toast.success(successMessage);
   };
 
@@ -91,6 +108,10 @@ export function ProductDocumentsEditor() {
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "Falha no upload");
       await persist({ ...documents, [type]: payload.documento }, `${DOCUMENTS[type].label} atualizado`);
+      setDocumentViewUrls((current) => ({
+        ...current,
+        [type]: payload.documentoVisualizacao?.url || payload.documento?.url,
+      }));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Falha no upload");
     } finally {
@@ -114,7 +135,7 @@ export function ProductDocumentsEditor() {
           <input ref={(element) => { refs.current[type] = element; }} type="file" className="hidden" accept={DOCUMENTS[type].accept} onChange={(event) => { const file = event.target.files?.[0]; if (file) void upload(type, file); }} />
           <div className="flex gap-2 mt-5">
             <Button size="sm" className="flex-1" disabled={uploading === type || update.isPending} onClick={() => refs.current[type]?.click()}><Upload className="w-4 h-4 mr-2" />{document ? "Substituir" : "Anexar"}</Button>
-            {document && <><Button size="icon" variant="outline" asChild><a href={document.url} target="_blank" rel="noreferrer"><ExternalLink className="w-4 h-4" /></a></Button><Button size="icon" variant="outline" className="text-destructive" onClick={() => { const next = { ...documents }; delete next[type]; void persist(next, `${DOCUMENTS[type].label} removido`); }}><Trash2 className="w-4 h-4" /></Button></>}
+            {document && <><Button size="icon" variant="outline" asChild><a href={documentViewUrls[type] || document.url} target="_blank" rel="noreferrer"><ExternalLink className="w-4 h-4" /></a></Button><Button size="icon" variant="outline" className="text-destructive" onClick={() => { const next = { ...documents }; delete next[type]; void persist(next, `${DOCUMENTS[type].label} removido`); }}><Trash2 className="w-4 h-4" /></Button></>}
           </div>
         </section>;
       })}

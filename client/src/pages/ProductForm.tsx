@@ -406,6 +406,15 @@ function parseProductDocuments(raw: unknown): ProductDocuments {
   }
 }
 
+function getProductDocumentViewUrls(raw: unknown): Partial<Record<ProductDocumentType, string>> {
+  const documents = parseProductDocuments(raw);
+  return Object.fromEntries(
+    (Object.keys(documents) as ProductDocumentType[])
+      .map((tipo) => [tipo, documents[tipo]?.url] as const)
+      .filter((entry): entry is [ProductDocumentType, string] => Boolean(entry[1])),
+  );
+}
+
 const emptyModuloLedExtra = (): ModuloLedExtra => ({ cct: "", modelo: "", qtd: 1 });
 
 function parseModulosLedExtra(raw: unknown): ModuloLedExtra[] {
@@ -767,6 +776,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
   const [touched, setTouched] = useState<Partial<Record<keyof FormData, boolean>>>({});
   const [uploading, setUploading] = useState(false);
   const [documents, setDocuments] = useState<ProductDocuments>({});
+  const [documentViewUrls, setDocumentViewUrls] = useState<Partial<Record<ProductDocumentType, string>>>({});
   const [uploadingDocument, setUploadingDocument] = useState<ProductDocumentType | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [produtoOriginalNome, setProdutoOriginalNome] = useState<string | null>(null);
@@ -806,6 +816,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       })();
       const p = existingProduct as any;
       setDocuments(parseProductDocuments(p.documentos));
+      setDocumentViewUrls(getProductDocumentViewUrls(p.documentosVisualizacao));
       const baseForm = {
         categoria: existingProduct.categoria || "",
         instalacao: existingProduct.instalacao || "",
@@ -1185,6 +1196,10 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       const data = await res.json();
       if (!res.ok || !data.documento) throw new Error(data.error || "Erro ao enviar documento");
       setDocuments((prev) => ({ ...prev, [tipo]: data.documento as ProductDocument }));
+      setDocumentViewUrls((prev) => ({
+        ...prev,
+        [tipo]: data.documentoVisualizacao?.url || data.documento.url,
+      }));
       toast.success(`${DOCUMENT_CONFIG[tipo].label} enviado com sucesso!`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Erro ao enviar documento");
@@ -1195,6 +1210,11 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
 
   const removeDocument = (tipo: ProductDocumentType) => {
     setDocuments((prev) => {
+      const next = { ...prev };
+      delete next[tipo];
+      return next;
+    });
+    setDocumentViewUrls((prev) => {
       const next = { ...prev };
       delete next[tipo];
       return next;
@@ -1546,7 +1566,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                   <div className="flex items-center gap-1.5 mt-2">
                     {document && (
                       <a
-                        href={document.url}
+                        href={documentViewUrls[tipo] || document.url}
                         target="_blank"
                         rel="noreferrer"
                         className="h-7 px-2 rounded border border-border text-[10px] font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/30 inline-flex items-center gap-1"

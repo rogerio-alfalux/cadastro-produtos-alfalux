@@ -523,7 +523,7 @@ export default function ProductList() {
               <tbody>
                 {items.map((product, idx) => {
                   const temps = getAvailableCcts(product);
-                  const productDocuments = getProductDocuments((product as any).documentos);
+                  const productDocuments = getProductDocuments((product as any).documentosVisualizacao ?? (product as any).documentos);
                   const isAtivo = (product as any).ativo !== false;
                   const productImageUrl = (product as any).fotoPublicUrl || product.fotoUrl;
 
