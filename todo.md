@@ -874,4 +874,11 @@
 - [x] Confirmar as referências canônicas de cada grupo de conteúdo idêntico e seu acesso por URL assinada
 - [x] Consolidar os vínculos comprovadamente iguais sem alterar os conteúdos distintos
 - [x] Validar quantidade de produtos, referências privadas, URL assinada e API publicada
-- [ ] Confirmar se os manuais LUNA R, LUNA Q de embutir e LUNA Q de sobrepor devem permanecer distintos
+- [x] Confirmar que os manuais LUNA R, LUNA Q de embutir e LUNA Q de sobrepor devem permanecer distintos
+
+## Otimização v62.5 — Consolidação por Conteúdo Idêntico
+
+- [x] Reauditar referências atuais para captar os documentos enviados após a primeira análise
+- [x] Comparar somente arquivos com o mesmo conteúdo verificável e formar grupos de consolidação
+- [x] Unificar cada grupo idêntico sem substituir documentos de conteúdo diferente
+- [x] Confirmar referências, URLs assinadas e retorno da API publicada antes do checkpoint
