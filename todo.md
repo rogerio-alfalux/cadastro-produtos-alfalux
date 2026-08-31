@@ -844,3 +844,11 @@
 - [x] Incluir upload, remoção, visualização e indicador MI nas telas internas
 - [x] Incluir Manual de Instalação na aplicação e substituição de documentos em lote
 - [x] Criar regressões do novo tipo e validar interface, API, TypeScript e build antes do checkpoint
+
+## Aplicação v62.1 — Manual de Instalação da Família LUME
+
+- [x] Identificar todos os produtos cadastrados na família LUME e seu estado atual de manual
+- [x] Enviar o PDF recebido uma única vez ao armazenamento privado
+- [x] Vincular a mesma referência do manual a todas as variações da família LUME
+- [ ] Confirmar integridade dos vínculos, URL assinada e retorno pela API pública
+- [ ] Versionar a aplicação e registrar as contagens auditadas
