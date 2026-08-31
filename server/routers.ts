@@ -47,7 +47,7 @@ function parseModuloLedExtra(raw: string | null | undefined): Array<{ cct: strin
 }
 
 type ProductDocument = { url: string; key: string; nome: string; mimeType: string };
-type ProductDocuments = Partial<Record<"datasheet" | "fotometria" | "desenhoTecnico", ProductDocument>>;
+type ProductDocuments = Partial<Record<"datasheet" | "fotometria" | "desenhoTecnico" | "manualInstalacao", ProductDocument>>;
 
 function parseProductDocuments(raw: string | null | undefined): ProductDocuments | null {
   if (!raw) return null;
@@ -55,7 +55,7 @@ function parseProductDocuments(raw: string | null | undefined): ProductDocuments
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
     const result: ProductDocuments = {};
-    for (const tipo of ["datasheet", "fotometria", "desenhoTecnico"] as const) {
+    for (const tipo of ["datasheet", "fotometria", "desenhoTecnico", "manualInstalacao"] as const) {
       const value = parsed[tipo];
       if (!value || typeof value !== "object" || Array.isArray(value)) continue;
       const document = value as Record<string, unknown>;

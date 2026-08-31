@@ -166,6 +166,7 @@ export async function buildProductReportWorkbook(
       "DATASHEET": documents.datasheet?.nome ?? "",
       "FOTOMETRIA IES": documents.fotometria?.nome ?? "",
       "DESENHO TÉCNICO": documents.desenhoTecnico?.nome ?? "",
+      "MANUAL DE INSTALAÇÃO": documents.manualInstalacao?.nome ?? "",
     });
     return row;
   });

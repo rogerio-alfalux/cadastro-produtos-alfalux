@@ -76,7 +76,7 @@ function getExtraCcts(product: Record<string, unknown>): string[] {
 }
 
 type ProductDocumentBadge = { url: string; nome: string };
-type ProductDocumentBadges = Partial<Record<"datasheet" | "fotometria" | "desenhoTecnico", ProductDocumentBadge>>;
+type ProductDocumentBadges = Partial<Record<"datasheet" | "fotometria" | "desenhoTecnico" | "manualInstalacao", ProductDocumentBadge>>;
 
 function getProductDocuments(raw: unknown): ProductDocumentBadges {
   if (!raw) return {};
@@ -84,7 +84,7 @@ function getProductDocuments(raw: unknown): ProductDocumentBadges {
     const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
     const result: ProductDocumentBadges = {};
-    for (const tipo of ["datasheet", "fotometria", "desenhoTecnico"] as const) {
+    for (const tipo of ["datasheet", "fotometria", "desenhoTecnico", "manualInstalacao"] as const) {
       const value = (parsed as Record<string, unknown>)[tipo];
       if (!value || typeof value !== "object" || Array.isArray(value)) continue;
       const document = value as Record<string, unknown>;
@@ -625,11 +625,12 @@ export default function ProductList() {
 
                       {/* Documentos */}
                       <td className="px-3 py-3 hidden md:table-cell">
-                        <div className="flex items-center gap-1.5 min-w-[104px]">
+                        <div className="flex items-center gap-1.5 min-w-[136px]">
                           {([
                             { tipo: "datasheet", sigla: "DS", className: "border-cyan-500/35 bg-cyan-500/10 text-cyan-300" },
                             { tipo: "fotometria", sigla: "IES", className: "border-violet-500/35 bg-violet-500/10 text-violet-300" },
                             { tipo: "desenhoTecnico", sigla: "DT", className: "border-amber-500/35 bg-amber-500/10 text-amber-300" },
+                            { tipo: "manualInstalacao", sigla: "MI", className: "border-emerald-500/35 bg-emerald-500/10 text-emerald-300" },
                           ] as const).map(({ tipo, sigla, className }) => {
                             const document = productDocuments[tipo];
                             return document ? (

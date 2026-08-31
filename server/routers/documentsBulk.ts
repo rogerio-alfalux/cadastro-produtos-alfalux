@@ -4,7 +4,7 @@ import { products } from "../../drizzle/schema";
 import { getDb, getProductById } from "../db";
 import { entityAdminProcedure, router } from "../_core/trpc";
 
-export const documentTypes = ["datasheet", "fotometria", "desenhoTecnico"] as const;
+export const documentTypes = ["datasheet", "fotometria", "desenhoTecnico", "manualInstalacao"] as const;
 export type ProductDocumentType = (typeof documentTypes)[number];
 
 export type ProductDocument = {
@@ -66,6 +66,7 @@ const targetSchema = z.object({
     datasheet: z.object({ url: z.string().min(1), key: z.string().min(1), nome: z.string().min(1), mimeType: z.string().min(1) }).optional(),
     fotometria: z.object({ url: z.string().min(1), key: z.string().min(1), nome: z.string().min(1), mimeType: z.string().min(1) }).optional(),
     desenhoTecnico: z.object({ url: z.string().min(1), key: z.string().min(1), nome: z.string().min(1), mimeType: z.string().min(1) }).optional(),
+    manualInstalacao: z.object({ url: z.string().min(1), key: z.string().min(1), nome: z.string().min(1), mimeType: z.string().min(1) }).optional(),
   }).optional(),
   tipos: z.array(z.enum(documentTypes)).min(1, "Selecione ao menos um documento"),
   substituirExistentes: z.boolean().default(false),
@@ -83,7 +84,7 @@ async function resolveSourceDocuments(sourceProductId: number, types: ProductDoc
   const sourceDocuments = parseDocuments((sourceProduct as { documentos?: unknown }).documentos);
   const missing = types.filter((type) => !sourceDocuments[type]);
   if (missing.length) {
-    const labels: Record<ProductDocumentType, string> = { datasheet: "Datasheet", fotometria: "Fotometria IES", desenhoTecnico: "Desenho Técnico" };
+    const labels: Record<ProductDocumentType, string> = { datasheet: "Datasheet", fotometria: "Fotometria IES", desenhoTecnico: "Desenho Técnico", manualInstalacao: "Manual de Instalação" };
     throw new Error(`O produto de referência não possui: ${missing.map((type) => labels[type]).join(", ")}.`);
   }
   return { sourceProduct, sourceDocuments };

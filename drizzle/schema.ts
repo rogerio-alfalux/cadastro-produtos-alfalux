@@ -110,7 +110,7 @@ export const products = mysqlTable("products", {
   fotoUrl: text("fotoUrl"),
   fotoKey: text("fotoKey"),
 
-  // Documentos opcionais: datasheet, fotometria IES e desenho técnico
+  // Documentos opcionais: datasheet, fotometria IES, desenho técnico e manual de instalação
   documentos: json("documentos"),
 
   // Custo da luminária (corpo)

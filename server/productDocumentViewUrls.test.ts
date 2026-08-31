@@ -36,4 +36,21 @@ describe("URLs de visualização de documentos internos", () => {
       url: "https://files.example/desenho.pdf?signature=valida",
     });
   });
+
+  it("assina o Manual de Instalação como os demais documentos", async () => {
+    vi.mocked(storageGetSignedUrl).mockResolvedValueOnce("https://files.example/manual.pdf?signature=valida");
+    const documentos = JSON.stringify({
+      manualInstalacao: {
+        key: "products/documents/manualInstalacao/manual.pdf",
+        url: "/manus-storage/products/documents/manualInstalacao/manual_9a8b7c6d.pdf",
+        nome: "manual.pdf",
+        mimeType: "application/pdf",
+      },
+    });
+
+    const result = await resolveProductDocumentViewUrls({ documentos });
+
+    expect(storageGetSignedUrl).toHaveBeenCalledWith("products/documents/manualInstalacao/manual_9a8b7c6d.pdf");
+    expect(result.documentosVisualizacao?.manualInstalacao?.url).toBe("https://files.example/manual.pdf?signature=valida");
+  });
 });

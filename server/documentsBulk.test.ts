@@ -4,6 +4,7 @@ import { mergeSharedDocuments, type ProductDocuments } from "./routers/documents
 const datasheet = { url: "/manus-storage/products/documents/datasheet/original.pdf", key: "products/documents/datasheet/original.pdf", nome: "datasheet.pdf", mimeType: "application/pdf" };
 const ies = { url: "/manus-storage/products/documents/fotometria/original.ies", key: "products/documents/fotometria/original.ies", nome: "fotometria.ies", mimeType: "application/octet-stream" };
 const technical = { url: "/manus-storage/products/documents/desenho/original.pdf", key: "products/documents/desenho/original.pdf", nome: "desenho.pdf", mimeType: "application/pdf" };
+const manual = { url: "/manus-storage/products/documents/manualInstalacao/original.pdf", key: "products/documents/manualInstalacao/original.pdf", nome: "manual.pdf", mimeType: "application/pdf" };
 
 describe("mergeSharedDocuments", () => {
   it("reutiliza as mesmas chaves de storage sem criar cópias dos arquivos", () => {
@@ -48,5 +49,12 @@ describe("mergeSharedDocuments", () => {
     const result = mergeSharedDocuments(current, { datasheet }, ["datasheet"], true);
     expect(result.changed).toBe(false);
     expect(result.documents).toEqual(current);
+  });
+
+  it("aplica o Manual de Instalação sem substituir os demais documentos", () => {
+    const current: ProductDocuments = { datasheet, desenhoTecnico: technical };
+    const result = mergeSharedDocuments(current, { manualInstalacao: manual }, ["manualInstalacao"], false);
+    expect(result.changed).toBe(true);
+    expect(result.documents).toEqual({ datasheet, desenhoTecnico: technical, manualInstalacao: manual });
   });
 });

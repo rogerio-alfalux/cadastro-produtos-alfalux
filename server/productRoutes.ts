@@ -49,6 +49,7 @@ const documentRules = {
   datasheet: { extensions: ["pdf"], label: "Datasheet" },
   fotometria: { extensions: ["ies"], label: "Fotometria IES" },
   desenhoTecnico: { extensions: ["pdf", "dwg", "dxf", "png", "jpg", "jpeg"], label: "Desenho Técnico" },
+  manualInstalacao: { extensions: ["pdf"], label: "Manual de Instalação" },
 } as const;
 
 export function extractStorageKey(urlOrKey: string | null | undefined): string | null {
@@ -80,6 +81,59 @@ export function resolveStoredDocumentKey(document: { url?: string | null; key?: 
   // O storage acrescenta um hash ao nome no upload. Registros antigos salvaram
   // por engano a chave anterior ao hash, enquanto a URL local contém a chave real.
   return extractStorageKey(document.url) || extractStorageKey(document.key);
+}
+
+export const productDocumentTypes = ["datasheet", "fotometria", "desenhoTecnico", "manualInstalacao"] as const;
+type ProductDocumentType = (typeof productDocumentTypes)[number];
+type StoredDocument = { url: string; key: string; nome: string; mimeType: string };
+type StoredDocuments = Partial<Record<ProductDocumentType, StoredDocument>>;
+
+export function parseStoredProductDocuments(raw: unknown): StoredDocuments {
+  if (!raw) return {};
+  try {
+    const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+    const result: StoredDocuments = {};
+    for (const tipo of productDocumentTypes) {
+      const value = (parsed as Record<string, unknown>)[tipo];
+      if (!value || typeof value !== "object" || Array.isArray(value)) continue;
+      const document = value as Record<string, unknown>;
+      const url = String(document.url ?? "").trim();
+      const key = String(document.key ?? "").trim();
+      const nome = String(document.nome ?? "").trim();
+      const mimeType = String(document.mimeType ?? "application/octet-stream").trim();
+      if (url && key && nome) result[tipo] = { url, key, nome, mimeType };
+    }
+    return result;
+  } catch {
+    return {};
+  }
+}
+
+export function buildPublicProductDocuments(raw: unknown, signedUrlMap: ReadonlyMap<string, string>) {
+  const storedDocuments = parseStoredProductDocuments(raw);
+  const resolveDocument = (document: StoredDocument | undefined) => {
+    if (!document) return null;
+    const key = resolveStoredDocumentKey(document);
+    return {
+      nome: document.nome,
+      mimeType: document.mimeType,
+      url: key ? (signedUrlMap.get(key) ?? document.url) : document.url,
+    };
+  };
+  const documentos = {
+    datasheet: resolveDocument(storedDocuments.datasheet),
+    fotometria: resolveDocument(storedDocuments.fotometria),
+    desenhoTecnico: resolveDocument(storedDocuments.desenhoTecnico),
+    manualInstalacao: resolveDocument(storedDocuments.manualInstalacao),
+  };
+  return {
+    documentos,
+    datasheetUrl: documentos.datasheet?.url ?? null,
+    fotometriaIesUrl: documentos.fotometria?.url ?? null,
+    desenhoTecnicoUrl: documentos.desenhoTecnico?.url ?? null,
+    manualInstalacaoUrl: documentos.manualInstalacao?.url ?? null,
+  };
 }
 
 // ─── Upload de imagem ─────────────────────────────────────────────────────────
@@ -631,34 +685,10 @@ router.get("/all", async (_req, res) => {
       // Não bloqueia o endpoint — makeDriver usará extractEqCode como fallback
     }
 
-    type StoredDocument = { url: string; key: string; nome: string; mimeType: string };
-    type StoredDocuments = Partial<Record<"datasheet" | "fotometria" | "desenhoTecnico", StoredDocument>>;
-    const parseStoredDocuments = (raw: unknown): StoredDocuments => {
-      if (!raw) return {};
-      try {
-        const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
-        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
-        const result: StoredDocuments = {};
-        for (const tipo of ["datasheet", "fotometria", "desenhoTecnico"] as const) {
-          const value = (parsed as Record<string, unknown>)[tipo];
-          if (!value || typeof value !== "object" || Array.isArray(value)) continue;
-          const document = value as Record<string, unknown>;
-          const url = String(document.url ?? "").trim();
-          const key = String(document.key ?? "").trim();
-          const nome = String(document.nome ?? "").trim();
-          const mimeType = String(document.mimeType ?? "application/octet-stream").trim();
-          if (url && key && nome) result[tipo] = { url, key, nome, mimeType };
-        }
-        return result;
-      } catch {
-        return {};
-      }
-    };
-
     const signedUrlMap = new Map<string, string>();
     const keysToSign = activeItems
       .flatMap((p: any) => {
-        const documents = parseStoredDocuments(p.documentos);
+        const documents = parseStoredProductDocuments(p.documentos);
         return [
           extractStorageKey(p.fotoUrl),
           ...Object.values(documents).map((document) => resolveStoredDocumentKey(document)),
@@ -684,21 +714,7 @@ router.get("/all", async (_req, res) => {
     const formatted = activeItems.map((p) => {
       const rawKey = extractStorageKey(p.fotoUrl);
       const resolvedFotoUrl = rawKey ? (signedUrlMap.get(rawKey) ?? null) : null;
-      const storedDocuments = parseStoredDocuments((p as any).documentos);
-      const resolveDocument = (document: StoredDocument | undefined) => {
-        if (!document) return null;
-        const key = resolveStoredDocumentKey(document);
-        return {
-          nome: document.nome,
-          mimeType: document.mimeType,
-          url: key ? (signedUrlMap.get(key) ?? document.url) : document.url,
-        };
-      };
-      const publicDocuments = {
-        datasheet: resolveDocument(storedDocuments.datasheet),
-        fotometria: resolveDocument(storedDocuments.fotometria),
-        desenhoTecnico: resolveDocument(storedDocuments.desenhoTecnico),
-      };
+      const publicDocumentContract = buildPublicProductDocuments((p as any).documentos, signedUrlMap);
       const temps: string[] = [];
       try {
         const parsed = JSON.parse(p.temperaturasCor || "[]");
@@ -794,10 +810,7 @@ router.get("/all", async (_req, res) => {
         dissipador: dissipadorVal,
         ledModule: ledModuleVal,
         fotoUrl: resolvedFotoUrl,
-        documentos: publicDocuments,
-        datasheetUrl: publicDocuments.datasheet?.url ?? null,
-        fotometriaIesUrl: publicDocuments.fotometria?.url ?? null,
-        desenhoTecnicoUrl: publicDocuments.desenhoTecnico?.url ?? null,
+        ...publicDocumentContract,
         temperaturasCor: temps,
         driver220: isValidDriver(p.driverOnoff220) ? makeDriver(p.driverOnoff220) : null,
         driverBivolt: (p.driverOnoffBivoltNaoAplicavel || !isValidDriver(p.driverOnoffBivolt))

@@ -835,3 +835,12 @@
 - [x] Criar rotina idempotente e testável para atualizar somente CCTs efetivamente disponíveis
 - [x] Aplicar a atualização em massa e conferir contagens, exceções e amostras de todas as potências
 - [x] Validar API, testes, TypeScript e build antes do checkpoint
+
+## Feature v62 — Manual de Instalação por Produto
+
+- [x] Mapear todos os tipos, validadores, links e contratos atuais de documentos de produto
+- [x] Adicionar Manual de Instalação ao upload privado e à geração de URL assinada
+- [x] Expor o manual no objeto `documentos` e em alias próprio na API pública
+- [x] Incluir upload, remoção, visualização e indicador MI nas telas internas
+- [x] Incluir Manual de Instalação na aplicação e substituição de documentos em lote
+- [x] Criar regressões do novo tipo e validar interface, API, TypeScript e build antes do checkpoint

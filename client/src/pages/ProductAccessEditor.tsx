@@ -7,14 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
-type DocumentType = "datasheet" | "fotometria" | "desenhoTecnico";
+type DocumentType = "datasheet" | "fotometria" | "desenhoTecnico" | "manualInstalacao";
 type StoredDocument = { url: string; key: string; nome: string; mimeType: string };
 type ProductDocuments = Partial<Record<DocumentType, StoredDocument>>;
 
-const DOCUMENTS: Record<DocumentType, { label: string; accept: string; hint: string }> = {
-  datasheet: { label: "Datasheet", accept: ".pdf,application/pdf", hint: "PDF" },
-  fotometria: { label: "Fotometria (IES)", accept: ".ies", hint: "IES" },
-  desenhoTecnico: { label: "Desenho Técnico", accept: ".pdf,.dwg,.dxf,.png,.jpg,.jpeg", hint: "PDF, DWG, DXF ou imagem" },
+const DOCUMENTS: Record<DocumentType, { badge: string; label: string; accept: string; hint: string }> = {
+  datasheet: { badge: "DS", label: "Datasheet", accept: ".pdf,application/pdf", hint: "PDF" },
+  fotometria: { badge: "IES", label: "Fotometria (IES)", accept: ".ies", hint: "IES" },
+  desenhoTecnico: { badge: "DT", label: "Desenho Técnico", accept: ".pdf,.dwg,.dxf,.png,.jpg,.jpeg", hint: "PDF, DWG, DXF ou imagem" },
+  manualInstalacao: { badge: "MI", label: "Manual de Instalação", accept: ".pdf,application/pdf", hint: "PDF" },
 };
 
 const COST_GROUPS = [
@@ -126,11 +127,11 @@ export function ProductDocumentsEditor() {
   return <div className="space-y-6 max-w-5xl mx-auto">
     <Button variant="ghost" onClick={() => navigate("/")}><ArrowLeft className="w-4 h-4 mr-2" />Voltar aos produtos</Button>
     <div><div className="flex items-center gap-3"><FileText className="w-6 h-6 text-primary" /><h1 className="text-2xl font-bold">DOCUMENTOS DO PRODUTO</h1></div><p className="text-sm text-muted-foreground mt-2">{product.produto} · {product.sku}</p></div>
-    <div className="grid md:grid-cols-3 gap-4">
+    <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
       {(Object.keys(DOCUMENTS) as DocumentType[]).map((type) => {
         const document = documents[type];
         return <section key={type} className="alfalux-card p-5 flex flex-col min-h-56">
-          <div className="flex items-start justify-between gap-3"><div><p className="font-semibold">{DOCUMENTS[type].label}</p><p className="text-xs text-muted-foreground mt-1">{DOCUMENTS[type].hint} · até 25 MB</p></div><span className="text-[10px] font-bold tracking-wider text-primary border border-primary/30 rounded px-2 py-1">{type === "datasheet" ? "DS" : type === "fotometria" ? "IES" : "DT"}</span></div>
+          <div className="flex items-start justify-between gap-3"><div><p className="font-semibold">{DOCUMENTS[type].label}</p><p className="text-xs text-muted-foreground mt-1">{DOCUMENTS[type].hint} · até 25 MB</p></div><span className="text-[10px] font-bold tracking-wider text-primary border border-primary/30 rounded px-2 py-1">{DOCUMENTS[type].badge}</span></div>
           <div className="mt-5 flex-1"><p className="text-sm break-all">{document?.nome || "Nenhum arquivo anexado"}</p></div>
           <input ref={(element) => { refs.current[type] = element; }} type="file" className="hidden" accept={DOCUMENTS[type].accept} onChange={(event) => { const file = event.target.files?.[0]; if (file) void upload(type, file); }} />
           <div className="flex gap-2 mt-5">

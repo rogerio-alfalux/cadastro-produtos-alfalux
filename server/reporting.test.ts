@@ -46,6 +46,21 @@ describe("relatórios gerenciais", () => {
     expect(workbook.getWorksheet("Resumo")!.getCell("A1").value).toBe("RELATÓRIO GERENCIAL — ALFALUX");
   });
 
+  it("inclui o Manual de Instalação na seção de documentos", async () => {
+    const withDocuments = {
+      ...product,
+      documentos: JSON.stringify({
+        manualInstalacao: { nome: "manual-instalacao.pdf" },
+      }),
+    };
+    const workbook = await buildProductReportWorkbook([withDocuments], ["documents"], {});
+    const sheet = workbook.getWorksheet("Produtos")!;
+    const headers = sheet.getRow(1).values.slice(1).map((value) => String(value));
+    const manualIndex = headers.indexOf("MANUAL DE INSTALAÇÃO");
+    expect(manualIndex).toBeGreaterThanOrEqual(0);
+    expect(sheet.getRow(2).getCell(manualIndex + 1).value).toBe("manual-instalacao.pdf");
+  });
+
   it("aceita apenas seções conhecidas e usa todas quando não há seleção", () => {
     expect(parseReportSections("financial,documents,invalida")).toEqual(["financial", "documents"]);
     expect(parseReportSections()).toHaveLength(4);

@@ -264,13 +264,14 @@ describe("products.create", () => {
     expect(callArgs?.moduloLedExtra).toEqual(extras);
   });
 
-  it("persists datasheet, IES and technical drawing metadata", async () => {
+  it("persists datasheet, IES, technical drawing and installation manual metadata", async () => {
     const { createProduct } = await import("./db");
     const caller = appRouter.createCaller(createCtx());
     const documentos = {
       datasheet: { url: "/manus-storage/products/documents/datasheet/test.pdf", key: "products/documents/datasheet/test.pdf", nome: "datasheet.pdf", mimeType: "application/pdf" },
       fotometria: { url: "/manus-storage/products/documents/fotometria/test.ies", key: "products/documents/fotometria/test.ies", nome: "fotometria.ies", mimeType: "application/octet-stream" },
       desenhoTecnico: { url: "/manus-storage/products/documents/desenhoTecnico/test.dwg", key: "products/documents/desenhoTecnico/test.dwg", nome: "desenho.dwg", mimeType: "application/acad" },
+      manualInstalacao: { url: "/manus-storage/products/documents/manualInstalacao/test.pdf", key: "products/documents/manualInstalacao/test.pdf", nome: "manual.pdf", mimeType: "application/pdf" },
     };
     await caller.products.create({
       categoria: "DOWNLIGHTS",

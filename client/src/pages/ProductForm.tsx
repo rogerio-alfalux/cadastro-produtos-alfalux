@@ -37,6 +37,7 @@ import {
   FileText,
   FileCode2,
   Ruler,
+  BookOpen,
   ExternalLink,
   Loader2,
 } from "lucide-react";
@@ -367,7 +368,7 @@ interface ModuloLedExtra {
   qtd: number;
 }
 
-type ProductDocumentType = "datasheet" | "fotometria" | "desenhoTecnico";
+type ProductDocumentType = "datasheet" | "fotometria" | "desenhoTecnico" | "manualInstalacao";
 
 interface ProductDocument {
   url: string;
@@ -382,6 +383,7 @@ const DOCUMENT_CONFIG: Record<ProductDocumentType, { sigla: string; label: strin
   datasheet: { sigla: "DS", label: "Datasheet", accept: ".pdf,application/pdf", hint: "PDF" },
   fotometria: { sigla: "IES", label: "Fotometria", accept: ".ies", hint: "arquivo IES" },
   desenhoTecnico: { sigla: "DT", label: "Desenho Técnico", accept: ".pdf,.dwg,.dxf,.png,.jpg,.jpeg", hint: "PDF, DWG, DXF ou imagem" },
+  manualInstalacao: { sigla: "MI", label: "Manual de Instalação", accept: ".pdf,application/pdf", hint: "PDF" },
 };
 
 function parseProductDocuments(raw: unknown): ProductDocuments {
@@ -1177,6 +1179,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       datasheet: ["pdf"],
       fotometria: ["ies"],
       desenhoTecnico: ["pdf", "dwg", "dxf", "png", "jpg", "jpeg"],
+      manualInstalacao: ["pdf"],
     };
     if (!allowed[tipo].includes(ext)) {
       toast.error(`Formato inválido para ${DOCUMENT_CONFIG[tipo].label}. Use ${DOCUMENT_CONFIG[tipo].hint}.`);
@@ -1533,12 +1536,12 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
             <span className="text-[10px] text-muted-foreground">Opcionais · máximo 25 MB por arquivo</span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
             {(Object.keys(DOCUMENT_CONFIG) as ProductDocumentType[]).map((tipo) => {
               const config = DOCUMENT_CONFIG[tipo];
               const document = documents[tipo];
               const isUploading = uploadingDocument === tipo;
-              const Icon = tipo === "datasheet" ? FileText : tipo === "fotometria" ? FileCode2 : Ruler;
+              const Icon = tipo === "datasheet" ? FileText : tipo === "fotometria" ? FileCode2 : tipo === "desenhoTecnico" ? Ruler : BookOpen;
 
               return (
                 <div key={tipo} className={cn(

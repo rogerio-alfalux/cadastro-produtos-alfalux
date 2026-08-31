@@ -27,7 +27,7 @@ export const PERMISSION_DEFINITIONS: ReadonlyArray<{
   { key: "manageUsers", label: "Gerenciar Usuários", description: "Criar, editar, ativar e excluir acessos, perfis e permissões." },
   { key: "viewReports", label: "Acessar Relatórios", description: "Consultar indicadores gerenciais e exportar relatórios financeiros em Excel." },
   { key: "manageEntities", label: "Gerenciar Cadastros", description: "Criar, editar, ativar, desativar e excluir produtos, componentes, acessórios e revenda." },
-  { key: "manageDocuments", label: "Gerenciar Documentos", description: "Enviar, substituir e remover Datasheets, fotometrias IES e desenhos técnicos." },
+  { key: "manageDocuments", label: "Gerenciar Documentos", description: "Enviar, substituir e remover Datasheets, fotometrias IES, desenhos técnicos e manuais de instalação." },
   { key: "viewCosts", label: "Ver Custos e Preços", description: "Visualizar custos, preços de venda e markups." },
   { key: "editCosts", label: "Editar Custos e Markups", description: "Alterar custos, preços de venda e markups autorizados." },
 ];
