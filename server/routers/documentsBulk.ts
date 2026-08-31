@@ -1,11 +1,25 @@
-import { and, asc, eq, like } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { products } from "../../drizzle/schema";
 import { getDb, getProductById } from "../db";
 import { entityAdminProcedure, router } from "../_core/trpc";
+import { getReportFilterOptions } from "../reporting";
 
 export const documentTypes = ["datasheet", "fotometria", "desenhoTecnico", "manualInstalacao"] as const;
 export type ProductDocumentType = (typeof documentTypes)[number];
+export type BulkDocumentFilterScope = {
+  familia?: string;
+  categoria?: string;
+  instalacao?: string;
+  potencia?: string;
+};
+
+export function getBulkDocumentFilterOptions(
+  items: Array<{ familia?: unknown; categoria?: unknown; instalacao?: unknown; potencia?: unknown }>,
+  scope: BulkDocumentFilterScope,
+) {
+  return getReportFilterOptions(items, scope);
+}
 
 export type ProductDocument = {
   url: string;
@@ -56,11 +70,14 @@ export function mergeSharedDocuments(
   return { documents, changed };
 }
 
-const targetSchema = z.object({
+const audienceSchema = z.object({
   familia: z.string().min(1, "Selecione a família do cadastro"),
   categoria: z.string().optional(),
+  instalacao: z.string().optional(),
   potencia: z.enum(["18W", "26W", "36W-SF", "36W-SL"]).optional(),
-  produtoContem: z.string().max(120).optional(),
+});
+
+export const bulkDocumentsInputSchema = audienceSchema.extend({
   sourceProductId: z.number().int().positive().optional(),
   documentos: z.object({
     datasheet: z.object({ url: z.string().min(1), key: z.string().min(1), nome: z.string().min(1), mimeType: z.string().min(1) }).optional(),
@@ -70,11 +87,16 @@ const targetSchema = z.object({
   }).optional(),
   tipos: z.array(z.enum(documentTypes)).min(1, "Selecione ao menos um documento"),
   substituirExistentes: z.boolean().default(false),
+  modoSelecao: z.enum(["todos", "selecionados"]).default("todos"),
+  produtosSelecionados: z.array(z.number().int().positive()).max(5000).default([]),
 }).superRefine((input, ctx) => {
   const documents = parseDocuments(input.documentos);
   const hasUploadedDocuments = input.tipos.every((type) => !!documents[type]);
   if (!input.sourceProductId && !hasUploadedDocuments) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Selecione um produto de referência ou envie todos os documentos selecionados." });
+  }
+  if (input.modoSelecao === "selecionados" && input.produtosSelecionados.length === 0) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Selecione ao menos um produto para a aplicação individual." });
   }
 });
 
@@ -90,7 +112,7 @@ async function resolveSourceDocuments(sourceProductId: number, types: ProductDoc
   return { sourceProduct, sourceDocuments };
 }
 
-async function resolveDocuments(input: z.infer<typeof targetSchema>) {
+async function resolveDocuments(input: z.infer<typeof bulkDocumentsInputSchema>) {
   const uploadedDocuments = parseDocuments(input.documentos);
   const missingTypes = input.tipos.filter((type) => !uploadedDocuments[type]);
   if (missingTypes.length === 0) {
@@ -106,24 +128,44 @@ async function resolveDocuments(input: z.infer<typeof targetSchema>) {
   };
 }
 
-async function listTargets(input: z.infer<typeof targetSchema>) {
+type TargetFilters = z.infer<typeof audienceSchema> & Partial<Pick<z.infer<typeof bulkDocumentsInputSchema>, "modoSelecao" | "produtosSelecionados">>;
+
+async function listTargets(input: TargetFilters) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
   const conditions = [eq(products.familia, input.familia)];
   if (input.categoria?.trim()) conditions.push(eq(products.categoria, input.categoria.trim()));
+  if (input.instalacao?.trim()) conditions.push(eq(products.instalacao, input.instalacao.trim()));
   if (input.potencia) conditions.push(eq(products.potencia, input.potencia));
-  if (input.produtoContem?.trim()) conditions.push(like(products.produto, `%${input.produtoContem.trim()}%`));
+  if (input.modoSelecao === "selecionados" && input.produtosSelecionados?.length) {
+    conditions.push(inArray(products.id, input.produtosSelecionados));
+  }
 
   return db
-    .select({ id: products.id, sku: products.sku, produto: products.produto, familia: products.familia, categoria: products.categoria, potencia: products.potencia, documentos: products.documentos })
+    .select({ id: products.id, sku: products.sku, produto: products.produto, familia: products.familia, categoria: products.categoria, instalacao: products.instalacao, potencia: products.potencia, documentos: products.documentos })
     .from(products)
     .where(and(...conditions))
     .orderBy(asc(products.produto), asc(products.sku));
 }
 
 export const documentsBulkRouter = router({
+  filterOptions: entityAdminProcedure
+    .input(audienceSchema.partial().optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Banco de dados indisponível");
+      const items = await db
+        .select({ familia: products.familia, categoria: products.categoria, instalacao: products.instalacao, potencia: products.potencia })
+        .from(products);
+      return getBulkDocumentFilterOptions(items, input ?? {});
+    }),
+
+  targets: entityAdminProcedure
+    .input(audienceSchema)
+    .query(async ({ input }) => listTargets(input)),
+
   preview: entityAdminProcedure
-    .input(targetSchema)
+    .input(bulkDocumentsInputSchema)
     .query(async ({ input }) => {
       const [source, targets] = await Promise.all([
         resolveDocuments(input),
@@ -160,7 +202,7 @@ export const documentsBulkRouter = router({
     }),
 
   applyDocuments: entityAdminProcedure
-    .input(targetSchema)
+    .input(bulkDocumentsInputSchema)
     .mutation(async ({ input }) => {
       const [source, targets, db] = await Promise.all([
         resolveDocuments(input),

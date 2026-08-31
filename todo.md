@@ -859,3 +859,11 @@
 - [x] Reorganizar cartões de documentos e filtros com grade responsiva e larguras equilibradas
 - [x] Garantir quebra de texto, áreas clicáveis e rótulos legíveis sem transbordamento
 - [x] Validar visualmente em desktop, tablet e celular, além de TypeScript e testes antes do checkpoint
+
+## Correção v62.3 — Filtros e Seleção em Documentos em Lote
+
+- [x] Auditar a categoria fixa e os critérios atuais usados para montar o público
+- [x] Implementar filtros condicionais por família, categoria, instalação e potência reais
+- [x] Remover o filtro textual por nome de produto e carregar os produtos filtrados
+- [x] Permitir optar entre aplicar a todos os resultados ou somente aos produtos selecionados
+- [x] Validar prévia, aplicação, permissões, interface e regressões antes do checkpoint

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mergeSharedDocuments, type ProductDocuments } from "./routers/documentsBulk";
+import { bulkDocumentsInputSchema, getBulkDocumentFilterOptions, mergeSharedDocuments, type ProductDocuments } from "./routers/documentsBulk";
 
 const datasheet = { url: "/manus-storage/products/documents/datasheet/original.pdf", key: "products/documents/datasheet/original.pdf", nome: "datasheet.pdf", mimeType: "application/pdf" };
 const ies = { url: "/manus-storage/products/documents/fotometria/original.ies", key: "products/documents/fotometria/original.ies", nome: "fotometria.ies", mimeType: "application/octet-stream" };
@@ -56,5 +56,27 @@ describe("mergeSharedDocuments", () => {
     const result = mergeSharedDocuments(current, { manualInstalacao: manual }, ["manualInstalacao"], false);
     expect(result.changed).toBe(true);
     expect(result.documents).toEqual({ datasheet, desenhoTecnico: technical, manualInstalacao: manual });
+  });
+
+  it("oferece somente a categoria e a instalação reais da família LUNA", () => {
+    const options = getBulkDocumentFilterOptions([
+      { familia: "LUNA", categoria: "DOWNLIGHTS", instalacao: "EMBUTIR", potencia: null },
+      { familia: "LUNA", categoria: "DOWNLIGHTS", instalacao: "SOBREPOR", potencia: null },
+      { familia: "BLAZE H", categoria: "PERFIS", instalacao: "PENDENTE", potencia: "18W" },
+    ], { familia: "LUNA" });
+    expect(options.categorias).toEqual(["DOWNLIGHTS"]);
+    expect(options.instalacoes).toEqual(["EMBUTIR", "SOBREPOR"]);
+    expect(options.potencias).toEqual([]);
+  });
+
+  it("exige produtos marcados quando a aplicação individual é selecionada", () => {
+    const base = {
+      familia: "LUNA",
+      tipos: ["datasheet"] as const,
+      documentos: { datasheet },
+    };
+    expect(bulkDocumentsInputSchema.safeParse({ ...base, modoSelecao: "selecionados", produtosSelecionados: [] }).success).toBe(false);
+    expect(bulkDocumentsInputSchema.safeParse({ ...base, modoSelecao: "selecionados", produtosSelecionados: [101, 102] }).success).toBe(true);
+    expect(bulkDocumentsInputSchema.safeParse({ ...base, modoSelecao: "todos", produtosSelecionados: [] }).success).toBe(true);
   });
 });

@@ -27,26 +27,44 @@ export default function BulkDocumentsPage() {
   const [sourceSearch, setSourceSearch] = useState("");
   const [sourceId, setSourceId] = useState<number | null>(null);
   const [targetFamily, setTargetFamily] = useState("");
-  const [targetCategory, setTargetCategory] = useState("PERFIS");
+  const [targetCategory, setTargetCategory] = useState("_all");
+  const [targetInstallation, setTargetInstallation] = useState("_all");
   const [targetPower, setTargetPower] = useState("");
-  const [productTerm, setProductTerm] = useState("");
+  const [targetMode, setTargetMode] = useState<"todos" | "selecionados">("todos");
+  const [selectedTargetIds, setSelectedTargetIds] = useState<number[]>([]);
   const [selectedTypes, setSelectedTypes] = useState<DocumentType[]>(["datasheet", "fotometria"]);
   const [replaceExisting, setReplaceExisting] = useState(false);
   const [uploadedDocuments, setUploadedDocuments] = useState<Partial<Record<DocumentType, ProductDocument>>>({});
   const [uploadingType, setUploadingType] = useState<DocumentType | null>(null);
 
   const { data: matchingProducts } = trpc.products.list.useQuery({ search: sourceSearch || undefined, limit: 30, offset: 0 }, { enabled: sourceSearch.trim().length >= 3 });
-  const { data: families = [] } = trpc.bulkOps.families.useQuery();
+  const audienceFilters = useMemo(() => ({
+    familia: targetFamily || undefined,
+    categoria: targetCategory === "_all" ? undefined : targetCategory,
+    instalacao: targetInstallation === "_all" ? undefined : targetInstallation,
+    potencia: targetCategory === "PERFIS" && targetPower ? targetPower as (typeof powers)[number] : undefined,
+  }), [targetFamily, targetCategory, targetInstallation, targetPower]);
+  const { data: audienceOptions } = trpc.documentosEmMassa.filterOptions.useQuery(audienceFilters);
+  const audienceQuery = useMemo(() => ({
+    familia: targetFamily || "_pending_",
+    categoria: audienceFilters.categoria,
+    instalacao: audienceFilters.instalacao,
+    potencia: audienceFilters.potencia,
+  }), [targetFamily, audienceFilters]);
+  const { data: audienceTargets = [], isFetching: isLoadingTargets } = trpc.documentosEmMassa.targets.useQuery(audienceQuery, { enabled: Boolean(targetFamily) });
+  const families = audienceOptions?.familias ?? [];
   const input = useMemo(() => ({
     sourceProductId: sourceId ?? undefined,
     documentos: uploadedDocuments,
     familia: targetFamily,
-    categoria: targetCategory === "_all" ? undefined : targetCategory,
-    potencia: targetCategory === "PERFIS" && targetPower ? targetPower as (typeof powers)[number] : undefined,
-    produtoContem: productTerm.trim() || undefined,
+    categoria: audienceFilters.categoria,
+    instalacao: audienceFilters.instalacao,
+    potencia: audienceFilters.potencia,
+    modoSelecao: targetMode,
+    produtosSelecionados: targetMode === "selecionados" ? selectedTargetIds : [],
     tipos: selectedTypes,
     substituirExistentes: replaceExisting,
-  }), [sourceId, uploadedDocuments, targetFamily, targetCategory, targetPower, productTerm, selectedTypes, replaceExisting]);
+  }), [sourceId, uploadedDocuments, targetFamily, audienceFilters, targetMode, selectedTargetIds, selectedTypes, replaceExisting]);
   const preview = trpc.documentosEmMassa.preview.useQuery(input, { enabled: false, retry: false });
   const apply = trpc.documentosEmMassa.applyDocuments.useMutation({
     onSuccess: async (result) => {
@@ -57,16 +75,27 @@ export default function BulkDocumentsPage() {
   });
 
   const hasUploadedSelection = selectedTypes.every((type) => !!uploadedDocuments[type]);
-  const canPreview = Boolean(targetFamily && selectedTypes.length && (sourceId || hasUploadedSelection));
-  const chooseSource = (product: { id: number; produto: string; familia: string; categoria: string | null; potencia: string | null }) => {
+  const hasTargetSelection = targetMode === "todos" ? audienceTargets.length > 0 : selectedTargetIds.length > 0;
+  const canPreview = Boolean(targetFamily && selectedTypes.length && !isLoadingTargets && hasTargetSelection && (sourceId || hasUploadedSelection));
+  const chooseSource = (product: { id: number; produto: string; familia: string; categoria: string | null; instalacao: string | null; potencia: string | null }) => {
     setSourceId(product.id);
     setSourceSearch(product.produto);
     setTargetFamily(product.familia);
     setTargetCategory(product.categoria || "_all");
+    setTargetInstallation(product.instalacao || "_all");
     setTargetPower(product.categoria === "PERFIS" ? (product.potencia || "") : "");
-    setProductTerm(product.produto.split(/\s+/).slice(0, 3).join(" "));
+    setTargetMode("todos");
+    setSelectedTargetIds([]);
     toast.success("Produto de referência selecionado. Revise o público antes de gerar a prévia.");
   };
+  const resetTargetSelection = () => {
+    setTargetMode("todos");
+    setSelectedTargetIds([]);
+  };
+  const toggleTarget = (id: number, checked: boolean) => {
+    setSelectedTargetIds((current) => checked ? Array.from(new Set([...current, id])) : current.filter((currentId) => currentId !== id));
+  };
+  const allTargetsSelected = audienceTargets.length > 0 && audienceTargets.every((target) => selectedTargetIds.includes(target.id));
   const uploadDocument = async (type: DocumentType, file: File | null) => {
     if (!file) return;
     setUploadingType(type);
@@ -158,11 +187,12 @@ export default function BulkDocumentsPage() {
         <div className="min-w-0 rounded-xl border border-border/60 bg-muted/[0.025] p-4 sm:p-5">
           <p className="mb-4 text-sm font-semibold">Público da aplicação</p>
           <div className="grid grid-cols-1 gap-x-4 gap-y-5 min-[500px]:grid-cols-2">
-            <div className="min-w-0 space-y-2"><Label>Família</Label><Select value={targetFamily || "_none"} onValueChange={(value) => setTargetFamily(value === "_none" ? "" : value)}><SelectTrigger className="w-full"><SelectValue placeholder="Selecione a família" /></SelectTrigger><SelectContent><SelectItem value="_none">Selecione a família</SelectItem>{families.map((family) => <SelectItem key={family} value={family}>{family}</SelectItem>)}</SelectContent></Select></div>
-            <div className="min-w-0 space-y-2"><Label>Categoria</Label><Select value={targetCategory} onValueChange={(value) => { setTargetCategory(value); if (value !== "PERFIS") setTargetPower(""); }}><SelectTrigger className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="_all">Todas</SelectItem><SelectItem value="PERFIS">Perfis</SelectItem></SelectContent></Select></div>
-            {targetCategory === "PERFIS" && <div className="min-w-0 space-y-2"><Label>Potência</Label><Select value={targetPower || "_all"} onValueChange={(value) => setTargetPower(value === "_all" ? "" : value)}><SelectTrigger className="w-full"><SelectValue placeholder="Todas as potências" /></SelectTrigger><SelectContent><SelectItem value="_all">Todas as potências</SelectItem>{powers.map((power) => <SelectItem key={power} value={power}>{power.replace("-", " ")}</SelectItem>)}</SelectContent></Select></div>}
-            <div className="min-w-0 space-y-2"><Label>Nome do produto contém</Label><Input className="w-full" value={productTerm} onChange={(event) => setProductTerm(event.target.value)} placeholder="Ex.: BLAZE H P" /></div>
+            <div className="min-w-0 space-y-2"><Label>Família</Label><Select value={targetFamily || "_none"} onValueChange={(value) => { setTargetFamily(value === "_none" ? "" : value); setTargetCategory("_all"); setTargetInstallation("_all"); setTargetPower(""); resetTargetSelection(); }}><SelectTrigger className="w-full"><SelectValue placeholder="Selecione a família" /></SelectTrigger><SelectContent><SelectItem value="_none">Selecione a família</SelectItem>{families.map((family) => <SelectItem key={family} value={family}>{family}</SelectItem>)}</SelectContent></Select></div>
+            <div className="min-w-0 space-y-2"><Label>Categoria</Label><Select value={targetCategory} onValueChange={(value) => { setTargetCategory(value); if (value !== "PERFIS") setTargetPower(""); resetTargetSelection(); }}><SelectTrigger className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="_all">Todas as categorias</SelectItem>{(audienceOptions?.categorias ?? []).map((category) => <SelectItem key={category} value={category}>{category}</SelectItem>)}</SelectContent></Select></div>
+            <div className="min-w-0 space-y-2"><Label>Instalação</Label><Select value={targetInstallation} onValueChange={(value) => { setTargetInstallation(value); resetTargetSelection(); }}><SelectTrigger className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="_all">Todas as instalações</SelectItem>{(audienceOptions?.instalacoes ?? []).map((installation) => <SelectItem key={installation} value={installation}>{installation}</SelectItem>)}</SelectContent></Select></div>
+            {targetCategory === "PERFIS" && <div className="min-w-0 space-y-2"><Label>Potência</Label><Select value={targetPower || "_all"} onValueChange={(value) => { setTargetPower(value === "_all" ? "" : value); resetTargetSelection(); }}><SelectTrigger className="w-full"><SelectValue placeholder="Todas as potências" /></SelectTrigger><SelectContent><SelectItem value="_all">Todas as potências</SelectItem>{(audienceOptions?.potencias ?? []).map((power) => <SelectItem key={power} value={power}>{power.replace("-", " ")}</SelectItem>)}</SelectContent></Select></div>}
           </div>
+          {targetFamily && <div className="mt-5 border-t border-border/60 pt-4"><div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><div><p className="text-sm font-semibold">Produtos encontrados</p><p className="mt-1 text-xs text-muted-foreground">{isLoadingTargets ? "Atualizando resultados..." : `${audienceTargets.length} produto(s) conforme os filtros escolhidos.`}</p></div><div className="flex rounded-lg border border-border/60 p-1"><Button type="button" size="sm" variant={targetMode === "todos" ? "default" : "ghost"} onClick={() => { setTargetMode("todos"); setSelectedTargetIds([]); }}>Todos</Button><Button type="button" size="sm" variant={targetMode === "selecionados" ? "default" : "ghost"} onClick={() => setTargetMode("selecionados")}>Selecionar</Button></div></div>{targetMode === "selecionados" && <div className="mt-4"><div className="mb-2 flex items-center justify-between gap-3"><p className="text-xs text-muted-foreground">{selectedTargetIds.length} produto(s) selecionado(s)</p><Button type="button" size="sm" variant="outline" disabled={!audienceTargets.length} onClick={() => setSelectedTargetIds(allTargetsSelected ? [] : audienceTargets.map((target) => target.id))}>{allTargetsSelected ? "Limpar seleção" : "Selecionar todos"}</Button></div><div className="max-h-64 space-y-1 overflow-y-auto rounded-lg border border-border/60 bg-background/20 p-2">{isLoadingTargets ? <p className="p-3 text-xs text-muted-foreground">Carregando produtos...</p> : audienceTargets.length ? audienceTargets.map((target) => <label key={target.id} className="flex cursor-pointer items-start gap-2.5 rounded-md px-2 py-2 text-xs transition-colors hover:bg-muted/30"><Checkbox className="mt-0.5 shrink-0" checked={selectedTargetIds.includes(target.id)} onCheckedChange={(checked) => toggleTarget(target.id, checked === true)} /><span className="min-w-0"><span className="block break-words font-medium text-foreground">{target.produto}</span><span className="mt-0.5 block text-muted-foreground">{target.sku} · {target.instalacao || "sem instalação"}</span></span></label>) : <p className="p-3 text-xs text-muted-foreground">Nenhum produto corresponde aos filtros.</p>}</div></div>}</div>}
         </div>
       </div>
 
