@@ -826,3 +826,12 @@
 - [x] Corrigir a entrega autorizada de desenhos técnicos sem expor o storage
 - [x] Validar upload e abertura do documento por Engenharia, além de Datasheet e IES
 - [x] Criar regressões, validar TypeScript, Vitest e build antes do checkpoint
+
+## Atualização v61 — Quantidade de Módulos LED por CCT em Perfis
+
+- [x] Mapear campos de módulo e quantidade por CCT e formalizar a regra de cálculo pela nomenclatura do produto
+- [x] Auditar todos os Perfis com Stripflex ou Stripline, excluindo produtos com Fita LED
+- [x] Simular e revisar quantidades normais e quantidades dobradas para 36W SF antes da escrita
+- [x] Criar rotina idempotente e testável para atualizar somente CCTs efetivamente disponíveis
+- [x] Aplicar a atualização em massa e conferir contagens, exceções e amostras de todas as potências
+- [x] Validar API, testes, TypeScript e build antes do checkpoint
