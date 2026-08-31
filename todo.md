@@ -867,3 +867,11 @@
 - [x] Remover o filtro textual por nome de produto e carregar os produtos filtrados
 - [x] Permitir optar entre aplicar a todos os resultados ou somente aos produtos selecionados
 - [x] Validar prévia, aplicação, permissões, interface e regressões antes do checkpoint
+
+## Otimização v62.4 — Manual LUNA de Embutir Compartilhado
+
+- [x] Auditar produtos LUNA de embutir, manuais anexados e referências atualmente usadas
+- [x] Confirmar as referências canônicas de cada grupo de conteúdo idêntico e seu acesso por URL assinada
+- [x] Consolidar os vínculos comprovadamente iguais sem alterar os conteúdos distintos
+- [x] Validar quantidade de produtos, referências privadas, URL assinada e API publicada
+- [ ] Confirmar se os manuais LUNA R, LUNA Q de embutir e LUNA Q de sobrepor devem permanecer distintos
