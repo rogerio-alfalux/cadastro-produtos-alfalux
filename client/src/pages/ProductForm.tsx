@@ -2664,12 +2664,22 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
           </section>
         )}
 
-        <section className={cn("alfalux-card p-6", form.moduloLampada && "opacity-50 pointer-events-none select-none")}>
+        <section
+          aria-disabled={form.moduloLampada || form.moduloTunableWhite || form.semModuloLed}
+          className={cn(
+            "alfalux-card p-6",
+            (form.moduloLampada || form.moduloTunableWhite || form.semModuloLed) && "opacity-50 pointer-events-none select-none",
+          )}
+        >
           <div className="flex items-center gap-2 mb-5">
             <Thermometer className="w-4 h-4 text-primary" />
             <h2 className="section-header mb-0">TEMPERATURA DE COR</h2>
-            {form.moduloLampada ? (
+            {form.semModuloLed ? (
+              <span className="text-[10px] text-slate-300 ml-auto">Não aplicável — produto sem módulo LED</span>
+            ) : form.moduloLampada ? (
               <span className="text-[10px] text-amber-400 ml-auto">Não aplicável — luminária com lâmpada</span>
+            ) : form.moduloTunableWhite ? (
+              <span className="text-[10px] text-cyan-300 ml-auto">Não aplicável — módulo Tunable White</span>
             ) : (form.moduloLed2700 || form.moduloLed3000 || form.moduloLed3500 || form.moduloLed4000 || form.moduloLed5000 || modulosLedExtra.some((item) => item.cct && item.modelo)) ? (
               <span className="text-[10px] text-muted-foreground ml-auto">Derivado automaticamente dos módulos LED</span>
             ) : (
@@ -2677,7 +2687,11 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
             )}
           </div>
 
-          {form.moduloRgbw ? (
+          {form.semModuloLed || form.moduloLampada || form.moduloTunableWhite ? (
+            <div className="rounded-lg border border-dashed border-border bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
+              A seleção de temperatura de cor fica desabilitada para esta modalidade de iluminação.
+            </div>
+          ) : form.moduloRgbw ? (
             // Modo RGBW: mostrar apenas badge RGBW
             <div className="flex flex-wrap gap-3">
               <div

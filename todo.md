@@ -894,3 +894,8 @@
 - [x] Preservar CCT, RGBW, D1+D2, custos, documentos e demais contratos existentes
 - [x] Aplicar migração segura e validar casos representativos, incluindo família SHIFT
 - [x] Criar regressões, validar interface, TypeScript, API e build antes do checkpoint
+
+## Correção v63.1 — Temperatura de Cor sem Módulo LED
+
+- [x] Desabilitar a seleção de CCT e exibir estado não aplicável quando Sem módulo LED estiver marcado
+- [x] Validar interface, TypeScript, testes e build antes do checkpoint
