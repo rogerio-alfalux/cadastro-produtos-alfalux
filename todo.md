@@ -899,3 +899,9 @@
 
 - [x] Desabilitar a seleção de CCT e exibir estado não aplicável quando Sem módulo LED estiver marcado
 - [x] Validar interface, TypeScript, testes e build antes do checkpoint
+
+## Correção v63.2 — Reabertura de Outros Equipamentos
+
+- [x] Reproduzir a perda da seleção de componente ao reabrir um produto com Outros Equipamentos
+- [x] Corrigir a normalização e o carregamento dos identificadores de componentes associados
+- [x] Validar salvamento, reabertura, API, TypeScript, testes e build antes do checkpoint

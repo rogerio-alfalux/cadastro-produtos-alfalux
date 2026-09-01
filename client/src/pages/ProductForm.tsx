@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AutocompleteInput } from "@/components/AutocompleteInput";
 import { ComponentSelect } from "@/components/ComponentSelect";
 import { AccessorySelect } from "@/components/AccessorySelect";
+import { emptyOtherEquipment, hydrateOtherEquipmentRecords, parseStoredOtherEquipment, type OtherEquipmentRecord } from "@shared/otherEquipment";
 import {
   Select,
   SelectContent,
@@ -373,12 +374,7 @@ interface ModuloLedExtra {
   qtd: number;
 }
 
-interface OutroEquipamento {
-  componentId: number | null;
-  modelo: string;
-  tipo: string;
-  qtd: number;
-}
+type OutroEquipamento = OtherEquipmentRecord;
 
 type ProductDocumentType = "datasheet" | "fotometria" | "desenhoTecnico" | "manualInstalacao";
 
@@ -449,27 +445,7 @@ function parseModulosLedExtra(raw: unknown): ModuloLedExtra[] {
   }
 }
 
-const emptyOutroEquipamento = (): OutroEquipamento => ({ componentId: null, modelo: "", tipo: "", qtd: 1 });
-
-function parseOutrosEquipamentos(raw: unknown): OutroEquipamento[] {
-  if (!raw) return [];
-  try {
-    const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
-    if (!Array.isArray(parsed)) return [];
-    return parsed.map((item) => {
-      const row = (item ?? {}) as Record<string, unknown>;
-      const componentId = Number(row.componentId);
-      return {
-        componentId: Number.isInteger(componentId) && componentId > 0 ? componentId : null,
-        modelo: String(row.modelo ?? "").trim(),
-        tipo: String(row.tipo ?? "").trim(),
-        qtd: Math.max(0.01, Number(row.qtd) || 1),
-      };
-    }).filter((item) => item.componentId !== null);
-  } catch {
-    return [];
-  }
-}
+const emptyOutroEquipamento = emptyOtherEquipment;
 
 interface FormData {
   categoria: string;
@@ -852,10 +828,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
 
   useEffect(() => {
     if (allComponents.length === 0) return;
-    setOutrosEquipamentos((current) => current.map((item) => {
-      const component = item.componentId ? allComponents.find((candidate) => candidate.id === item.componentId) : null;
-      return component ? { ...item, modelo: component.modelo, tipo: component.tipo } : item;
-    }));
+    setOutrosEquipamentos((current) => hydrateOtherEquipmentRecords(current, allComponents));
   }, [allComponents]);
 
   // Load existing product for edit OR for duplication
@@ -1018,7 +991,10 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       };
       setOticasExtra(parseOticaExtra((p as any).oticaExtra));
       setModulosLedExtra(parseModulosLedExtra((p as any).moduloLedExtra));
-      setOutrosEquipamentos(parseOutrosEquipamentos((p as any).outrosEquipamentos));
+      setOutrosEquipamentos(hydrateOtherEquipmentRecords(
+        parseStoredOtherEquipment((p as any).outrosEquipamentos),
+        allComponents,
+      ));
 
       // Carregar composição D1+D2 se existir
       const parseComposicaoD1D2 = (raw: any): D1D2DriversState => {
