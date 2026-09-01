@@ -100,6 +100,8 @@ function getProductDocuments(raw: unknown): ProductDocumentBadges {
 
 function getAvailableCcts(product: unknown): string[] {
   const item = product as Record<string, unknown>;
+  if (Boolean(item.semModuloLed) || Boolean(item.moduloLampada) || Boolean(item.moduloTunableWhite)) return [];
+  if (Boolean(item.moduloRgbw)) return hasModuleValue(item.moduloLedRgbw) ? ["RGBW"] : [];
   let selectedCcts: string[] = [];
   try {
     const parsed = JSON.parse(String(item.temperaturasCor ?? "[]"));

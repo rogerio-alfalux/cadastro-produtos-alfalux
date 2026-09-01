@@ -377,6 +377,92 @@ describe("products.update", () => {
   });
 });
 
+describe("products special lighting modes", () => {
+  const requiredFields = {
+    categoria: "PERFIS",
+    instalacao: "SOBREPOR",
+    familia: "SHIFT",
+    sku: "SHIFT-TEST",
+    produto: "SHIFT TESTE",
+    moduloLed: "MÓDULO ANTIGO",
+    moduloLed3000: "MÓDULO 3000K",
+    otica: "NÃO APLICÁVEL",
+    oticaNaoAplicavel: true,
+    holder: "NÃO APLICÁVEL",
+    holderNaoAplicavel: true,
+    dissipador: "NÃO APLICÁVEL",
+    dissipadorNaoAplicavel: true,
+    driverOnoff220: "DRIVER 220V",
+    driverOnoffBivolt: "DRIVER BIVOLT",
+  } as const;
+
+  it("persists Tunable White and clears incompatible CCT modules", async () => {
+    const { createProduct } = await import("./db");
+    const caller = appRouter.createCaller(createCtx());
+    await caller.products.create({
+      ...requiredFields,
+      moduloTunableWhite: true,
+      moduloLedTunableWhite: "módulo tunable white",
+      qtdModuloLedTunableWhite: 2,
+      outrosEquipamentos: JSON.stringify([{ componentId: 15, qtd: 1.5 }]),
+    });
+
+    const callArgs = (createProduct as any).mock.calls.at(-1)?.[0];
+    expect(callArgs).toMatchObject({
+      moduloLed: "",
+      moduloTunableWhite: true,
+      moduloLedTunableWhite: "MÓDULO TUNABLE WHITE",
+      qtdModuloLedTunableWhite: "2",
+      moduloLed3000: null,
+      temperaturasCor: "[]",
+      outrosEquipamentos: [{ componentId: 15, qtd: 1.5 }],
+    });
+  });
+
+  it("rejects more than one lighting mode", async () => {
+    const caller = appRouter.createCaller(createCtx());
+    await expect(caller.products.create({
+      ...requiredFields,
+      moduloRgbw: 1,
+      moduloTunableWhite: true,
+    })).rejects.toThrow("Selecione somente uma modalidade");
+  });
+
+  it("stores an optional accessory lamp only in lamp mode", async () => {
+    const { createProduct } = await import("./db");
+    const caller = appRouter.createCaller(createCtx());
+    await caller.products.create({
+      ...requiredFields,
+      moduloLampada: 1,
+      lampadaAcessorioId: 780009,
+    });
+
+    const callArgs = (createProduct as any).mock.calls.at(-1)?.[0];
+    expect(callArgs.moduloLampada).toBe(1);
+    expect(callArgs.lampadaAcessorioId).toBe(780009);
+    expect(callArgs.moduloLed3000).toBeNull();
+  });
+
+  it("clears legacy module fields when a product is marked without LED module", async () => {
+    const { updateProduct } = await import("./db");
+    const caller = appRouter.createCaller(createCtx());
+    await caller.products.update({ id: 1, data: { semModuloLed: true } });
+
+    const callArgs = (updateProduct as any).mock.calls.at(-1)?.[1];
+    expect(callArgs).toMatchObject({
+      semModuloLed: true,
+      moduloLed: "",
+      moduloLed2700: null,
+      moduloLed3000: null,
+      moduloLed3500: null,
+      moduloLed4000: null,
+      moduloLed5000: null,
+      moduloLedExtra: null,
+      temperaturasCor: "[]",
+    });
+  });
+});
+
 describe("products.delete", () => {
   it("deletes a product", async () => {
     const caller = appRouter.createCaller(createCtx());

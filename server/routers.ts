@@ -33,6 +33,7 @@ import { backups } from "../drizzle/schema";
 import { desc, eq } from "drizzle-orm";
 import { products as productsTable } from "../drizzle/schema";
 import { storageGetSignedUrl, storageGet } from "./storage";
+import { normalizeOtherEquipmentReferences } from "./productLighting";
 
 // ─── Validation schema ────────────────────────────────────────────────────────
 
@@ -187,6 +188,12 @@ const productSchema = z.object({
   moduloLampada: z.number().int().min(0).max(1).default(0),
   moduloLedRgbw: z.string().nullish(),
   qtdModuloLedRgbw: z.number().min(0.01).nullish(),
+  moduloTunableWhite: z.boolean().default(false),
+  moduloLedTunableWhite: z.string().nullish(),
+  qtdModuloLedTunableWhite: z.number().min(0.01).nullish(),
+  semModuloLed: z.boolean().default(false),
+  lampadaAcessorioId: z.number().int().positive().nullish(),
+  outrosEquipamentos: z.string().nullish(),
   // Módulo LED por CCT
   moduloLed2700: z.string().nullish(),
   moduloLed3000: z.string().nullish(),
@@ -305,6 +312,19 @@ const productSchema = z.object({
   correnteDriver: z.string().nullish(),
   composicaoD1D2: z.string().nullish(),
 }).superRefine((data, ctx) => {
+  const modosEspeciais = [
+    Boolean(data.moduloRgbw),
+    Boolean(data.moduloLampada),
+    Boolean(data.moduloTunableWhite),
+    Boolean(data.semModuloLed),
+  ].filter(Boolean).length;
+  if (modosEspeciais > 1) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["moduloRgbw"],
+      message: "Selecione somente uma modalidade de iluminação por produto",
+    });
+  }
   // Validar Ótica: obrigatório se não for NaoAplicavel
   if (!data.oticaNaoAplicavel && (!data.otica || data.otica.trim() === "")) {
     ctx.addIssue({ code: "custom", path: ["otica"], message: "ÓTICA é obrigatório" });
@@ -335,6 +355,12 @@ const bulkProductSchema = z.object({
   moduloLampada: z.number().int().min(0).max(1).default(0),
   moduloLedRgbw: z.string().optional(),
   qtdModuloLedRgbw: z.number().min(0.01).optional(),
+  moduloTunableWhite: z.boolean().default(false),
+  moduloLedTunableWhite: z.string().optional(),
+  qtdModuloLedTunableWhite: z.number().min(0.01).optional(),
+  semModuloLed: z.boolean().default(false),
+  lampadaAcessorioId: z.number().int().positive().optional(),
+  outrosEquipamentos: z.string().optional(),
   // Módulo LED por CCT
   moduloLed2700: z.string().optional(),
   moduloLed3000: z.string().optional(),
@@ -529,28 +555,37 @@ export const appRouter = router({
     create: entityAdminProcedure
       .input(productSchema)
       .mutation(async ({ input }) => {
+        const usesStandardCct = !input.moduloRgbw && !input.moduloLampada && !input.moduloTunableWhite && !input.semModuloLed;
         const data = {
           ...input,
           familia: input.familia.toUpperCase(),
           sku: input.sku.toUpperCase(),
           produto: input.produto.toUpperCase(),
-          moduloLed: input.moduloLed.toUpperCase(),
+          moduloLed: usesStandardCct ? input.moduloLed.toUpperCase() : "",
           qtdModuloLed: String(input.qtdModuloLed ?? 1),
           moduloRgbw: input.moduloRgbw ?? 0,
           moduloLampada: input.moduloLampada ?? 0,
-          moduloLedRgbw: input.moduloLedRgbw?.toUpperCase() || null,
-          qtdModuloLedRgbw: input.qtdModuloLedRgbw ? String(input.qtdModuloLedRgbw) : null,
-          moduloLed2700: input.moduloLed2700?.toUpperCase() || null,
-          moduloLed3000: input.moduloLed3000?.toUpperCase() || null,
-          moduloLed3500: input.moduloLed3500?.toUpperCase() || null,
-          moduloLed4000: input.moduloLed4000?.toUpperCase() || null,
-          moduloLed5000: input.moduloLed5000?.toUpperCase() || null,
-          qtdModuloLed2700: input.qtdModuloLed2700 ? String(input.qtdModuloLed2700) : null,
-          qtdModuloLed3000: input.qtdModuloLed3000 ? String(input.qtdModuloLed3000) : null,
-          qtdModuloLed3500: input.qtdModuloLed3500 ? String(input.qtdModuloLed3500) : null,
-          qtdModuloLed4000: input.qtdModuloLed4000 ? String(input.qtdModuloLed4000) : null,
-          qtdModuloLed5000: input.qtdModuloLed5000 ? String(input.qtdModuloLed5000) : null,
-          moduloLedExtra: parseModuloLedExtra(input.moduloLedExtra),
+          moduloLedRgbw: input.moduloRgbw ? input.moduloLedRgbw?.toUpperCase() || null : null,
+          qtdModuloLedRgbw: input.moduloRgbw && input.moduloLedRgbw ? String(input.qtdModuloLedRgbw ?? 1) : null,
+          moduloTunableWhite: input.moduloTunableWhite ?? false,
+          moduloLedTunableWhite: input.moduloTunableWhite ? input.moduloLedTunableWhite?.toUpperCase() || null : null,
+          qtdModuloLedTunableWhite: input.moduloTunableWhite && input.moduloLedTunableWhite
+            ? String(input.qtdModuloLedTunableWhite ?? 1)
+            : null,
+          semModuloLed: input.semModuloLed ?? false,
+          lampadaAcessorioId: input.moduloLampada ? input.lampadaAcessorioId ?? null : null,
+          outrosEquipamentos: normalizeOtherEquipmentReferences(input.outrosEquipamentos),
+          moduloLed2700: usesStandardCct ? input.moduloLed2700?.toUpperCase() || null : null,
+          moduloLed3000: usesStandardCct ? input.moduloLed3000?.toUpperCase() || null : null,
+          moduloLed3500: usesStandardCct ? input.moduloLed3500?.toUpperCase() || null : null,
+          moduloLed4000: usesStandardCct ? input.moduloLed4000?.toUpperCase() || null : null,
+          moduloLed5000: usesStandardCct ? input.moduloLed5000?.toUpperCase() || null : null,
+          qtdModuloLed2700: usesStandardCct && input.moduloLed2700 ? String(input.qtdModuloLed2700 ?? 1) : null,
+          qtdModuloLed3000: usesStandardCct && input.moduloLed3000 ? String(input.qtdModuloLed3000 ?? 1) : null,
+          qtdModuloLed3500: usesStandardCct && input.moduloLed3500 ? String(input.qtdModuloLed3500 ?? 1) : null,
+          qtdModuloLed4000: usesStandardCct && input.moduloLed4000 ? String(input.qtdModuloLed4000 ?? 1) : null,
+          qtdModuloLed5000: usesStandardCct && input.moduloLed5000 ? String(input.qtdModuloLed5000 ?? 1) : null,
+          moduloLedExtra: usesStandardCct ? parseModuloLedExtra(input.moduloLedExtra) : null,
           otica: input.oticaNaoAplicavel ? "NÃO APLICÁVEL" : input.otica.toUpperCase(),
           qtdOtica: input.qtdOtica ?? 1,
           holder: input.holderNaoAplicavel ? "NÃO APLICÁVEL" : input.holder.toUpperCase(),
@@ -575,7 +610,11 @@ export const appRouter = router({
           driverDimTriac220v: input.driverDimTriac220v?.toUpperCase() || null,
           driverDimTriac220vNaoAplicavel: !input.driverDimTriac220v || input.driverDimTriac220vNaoAplicavel === true,
           qtdDriverDimTriac220v: input.qtdDriverDimTriac220v ?? 1,
-          temperaturasCor: input.temperaturasCor || '["2700","3000","3500","4000","5000"]',
+          temperaturasCor: input.moduloRgbw
+            ? '["RGBW"]'
+            : usesStandardCct
+              ? input.temperaturasCor || '["2700","3000","3500","4000","5000"]'
+              : '[]',
           custoLuminaria: input.custoLuminaria || null,
           custoDriverOnoff220: input.custoDriverOnoff220 || null,
           custoDriverOnoffBivolt: input.custoDriverOnoffBivolt || null,
@@ -660,6 +699,17 @@ export const appRouter = router({
         assertProductUpdatePermission(ctx.user.role, ctx.user.permissionOverrides, d as Record<string, unknown>);
         const canEditCosts = can(ctx.user.role, "editCosts", ctx.user.permissionOverrides);
 
+        const effectiveLighting = { ...existing, ...d } as Record<string, unknown>;
+        const activeLightingModes = [
+          Boolean(effectiveLighting.moduloRgbw),
+          Boolean(effectiveLighting.moduloLampada),
+          Boolean(effectiveLighting.moduloTunableWhite),
+          Boolean(effectiveLighting.semModuloLed),
+        ].filter(Boolean).length;
+        if (activeLightingModes > 1) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Selecione somente uma modalidade de iluminação por produto." });
+        }
+
         // Bloquear alteração de markup mínimo fora dos perfis financeiros autorizados
         const MKP_MINIMO_FIELDS = [
           'mkpMinimoOnoff220v', 'mkpMinimoOnoffBivolt',
@@ -694,6 +744,12 @@ export const appRouter = router({
         if (d.moduloLampada !== undefined) update.moduloLampada = d.moduloLampada;
         if (d.moduloLedRgbw !== undefined) update.moduloLedRgbw = d.moduloLedRgbw?.toUpperCase() || null;
         if (d.qtdModuloLedRgbw !== undefined) update.qtdModuloLedRgbw = d.qtdModuloLedRgbw ? String(d.qtdModuloLedRgbw) : null;
+        if (d.moduloTunableWhite !== undefined) update.moduloTunableWhite = d.moduloTunableWhite;
+        if (d.moduloLedTunableWhite !== undefined) update.moduloLedTunableWhite = d.moduloLedTunableWhite?.toUpperCase() || null;
+        if (d.qtdModuloLedTunableWhite !== undefined) update.qtdModuloLedTunableWhite = d.qtdModuloLedTunableWhite ? String(d.qtdModuloLedTunableWhite) : null;
+        if (d.semModuloLed !== undefined) update.semModuloLed = d.semModuloLed;
+        if (d.lampadaAcessorioId !== undefined) update.lampadaAcessorioId = d.lampadaAcessorioId ?? null;
+        if (d.outrosEquipamentos !== undefined) update.outrosEquipamentos = normalizeOtherEquipmentReferences(d.outrosEquipamentos);
         if (d.moduloLed2700 !== undefined) update.moduloLed2700 = d.moduloLed2700?.toUpperCase() || null;
         if (d.moduloLed3000 !== undefined) update.moduloLed3000 = d.moduloLed3000?.toUpperCase() || null;
         if (d.moduloLed3500 !== undefined) update.moduloLed3500 = d.moduloLed3500?.toUpperCase() || null;
@@ -704,6 +760,34 @@ export const appRouter = router({
         if (d.qtdModuloLed3500 !== undefined) update.qtdModuloLed3500 = d.qtdModuloLed3500 ? String(d.qtdModuloLed3500) : null;
         if (d.qtdModuloLed4000 !== undefined) update.qtdModuloLed4000 = d.qtdModuloLed4000 ? String(d.qtdModuloLed4000) : null;
         if (d.qtdModuloLed5000 !== undefined) update.qtdModuloLed5000 = d.qtdModuloLed5000 ? String(d.qtdModuloLed5000) : null;
+        const effectiveUsesStandardCct = !effectiveLighting.moduloRgbw
+          && !effectiveLighting.moduloLampada
+          && !effectiveLighting.moduloTunableWhite
+          && !effectiveLighting.semModuloLed;
+        if (!effectiveUsesStandardCct) {
+          update.moduloLed = "";
+          update.moduloLed2700 = null;
+          update.moduloLed3000 = null;
+          update.moduloLed3500 = null;
+          update.moduloLed4000 = null;
+          update.moduloLed5000 = null;
+          update.qtdModuloLed2700 = null;
+          update.qtdModuloLed3000 = null;
+          update.qtdModuloLed3500 = null;
+          update.qtdModuloLed4000 = null;
+          update.qtdModuloLed5000 = null;
+          update.moduloLedExtra = null;
+          update.temperaturasCor = effectiveLighting.moduloRgbw ? '["RGBW"]' : '[]';
+        }
+        if (!effectiveLighting.moduloRgbw) {
+          update.moduloLedRgbw = null;
+          update.qtdModuloLedRgbw = null;
+        }
+        if (!effectiveLighting.moduloTunableWhite) {
+          update.moduloLedTunableWhite = null;
+          update.qtdModuloLedTunableWhite = null;
+        }
+        if (!effectiveLighting.moduloLampada) update.lampadaAcessorioId = null;
         if (d.otica !== undefined) update.otica = d.oticaNaoAplicavel ? "NÃO APLICÁVEL" : d.otica.toUpperCase();
         if (d.qtdOtica !== undefined) update.qtdOtica = d.qtdOtica;
         if (d.oticaNaoAplicavel !== undefined) update.oticaNaoAplicavel = d.oticaNaoAplicavel;
@@ -856,6 +940,12 @@ export const appRouter = router({
           moduloLampada: p.moduloLampada ?? 0,
           moduloLedRgbw: p.moduloLedRgbw?.toUpperCase() || null,
           qtdModuloLedRgbw: p.qtdModuloLedRgbw ? String(p.qtdModuloLedRgbw) : null,
+          moduloTunableWhite: p.moduloTunableWhite ?? false,
+          moduloLedTunableWhite: p.moduloTunableWhite ? p.moduloLedTunableWhite?.toUpperCase() || null : null,
+          qtdModuloLedTunableWhite: p.moduloTunableWhite && p.moduloLedTunableWhite ? String(p.qtdModuloLedTunableWhite ?? 1) : null,
+          semModuloLed: p.semModuloLed ?? false,
+          lampadaAcessorioId: p.moduloLampada ? p.lampadaAcessorioId ?? null : null,
+          outrosEquipamentos: normalizeOtherEquipmentReferences(p.outrosEquipamentos),
           moduloLed2700: p.moduloLed2700?.toUpperCase() || null,
           moduloLed3000: p.moduloLed3000?.toUpperCase() || null,
           moduloLed3500: p.moduloLed3500?.toUpperCase() || null,

@@ -882,3 +882,15 @@
 - [x] Comparar somente arquivos com o mesmo conteúdo verificável e formar grupos de consolidação
 - [x] Unificar cada grupo idêntico sem substituir documentos de conteúdo diferente
 - [x] Confirmar referências, URLs assinadas e retorno da API publicada antes do checkpoint
+
+## Feature v63 — Modalidades de Iluminação e Outros Equipamentos
+
+- [x] Mapear RGBW, CCT, luminária com lâmpada, módulos e componentes nos formulários, banco e API
+- [x] Definir modelo compatível para Tunable White, produto sem módulo, lâmpada opcional e Outros Equipamentos
+- [x] Adicionar Tunable White como modalidade exclusiva de módulo LED, sem CCT e sem RGBW
+- [x] Ao selecionar Luminária com lâmpada, desabilitar CCT e permitir escolher opcionalmente um item de Acessórios
+- [x] Permitir marcar produto sem módulo LED e omitir módulos da API nesse caso
+- [x] Criar Outros Equipamentos com seleção de qualquer componente cadastrado e transmissão pela API
+- [x] Preservar CCT, RGBW, D1+D2, custos, documentos e demais contratos existentes
+- [x] Aplicar migração segura e validar casos representativos, incluindo família SHIFT
+- [x] Criar regressões, validar interface, TypeScript, API e build antes do checkpoint

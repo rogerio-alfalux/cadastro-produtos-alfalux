@@ -16,15 +16,23 @@ type ComponentType =
   | "MODULO_LED";
 
 interface ComponentSelectProps {
-  tipo: ComponentType;
+  tipo?: ComponentType;
   value: string | null | undefined;
   onChange: (value: string) => void;
-  onSelectComponent?: (component: { modelo: string; mkpPadraoDriver: string | null; custoDriver: string | null }) => void;
+  onSelectComponent?: (component: {
+    id: number;
+    tipo: ComponentType;
+    modelo: string;
+    codigo: string | null;
+    mkpPadraoDriver: string | null;
+    custoDriver: string | null;
+  }) => void;
   onBlur?: () => void;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
   hasError?: boolean;
+  onlyActive?: boolean;
 }
 
 export function ComponentSelect({
@@ -37,6 +45,7 @@ export function ComponentSelect({
   disabled,
   className,
   hasError,
+  onlyActive = false,
 }: ComponentSelectProps) {
   // `inputValue` é o que aparece no input enquanto o usuário digita.
   // É inicializado com `value` e sincronizado quando `value` muda externamente.
@@ -58,12 +67,13 @@ export function ComponentSelect({
 
   // Filtra localmente pelo que o usuário digitou
   const query = inputValue.trim().toUpperCase();
+  const visibleComponents = onlyActive ? allComponents.filter((c) => c.ativo !== false) : allComponents;
   const filtered = query
-    ? allComponents.filter((c) =>
+    ? visibleComponents.filter((c) =>
         c.modelo.toUpperCase().includes(query) ||
         (c.codigo && c.codigo.toUpperCase().includes(query))
       )
-    : allComponents;
+    : visibleComponents;
 
   const handleSelect = useCallback((modelo: string) => {
     suppressBlurRef.current = true;
@@ -75,7 +85,10 @@ export function ComponentSelect({
       const found = allComponents.find((c) => c.modelo === modelo);
       if (found) {
         onSelectComponent({
+          id: found.id,
+          tipo: found.tipo as ComponentType,
           modelo: found.modelo,
+          codigo: found.codigo ?? null,
           mkpPadraoDriver: (found as any).mkpPadraoDriver ?? null,
           custoDriver: (found as any).custoDriver ?? null,
         });
@@ -186,7 +199,7 @@ export function ComponentSelect({
         >
           {filtered.length === 0 ? (
             <li className="px-3 py-2 text-sm text-muted-foreground italic">
-              {allComponents.length === 0
+              {visibleComponents.length === 0
                 ? "Nenhum componente cadastrado para este tipo"
                 : "Nenhum resultado encontrado"}
             </li>

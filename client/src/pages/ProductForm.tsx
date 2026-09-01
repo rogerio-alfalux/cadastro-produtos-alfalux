@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AutocompleteInput } from "@/components/AutocompleteInput";
 import { ComponentSelect } from "@/components/ComponentSelect";
+import { AccessorySelect } from "@/components/AccessorySelect";
 import {
   Select,
   SelectContent,
@@ -40,6 +41,10 @@ import {
   BookOpen,
   ExternalLink,
   Loader2,
+  Lightbulb,
+  SlidersHorizontal,
+  Ban,
+  Boxes,
 } from "lucide-react";
 
 // ─── Sub-components (defined OUTSIDE ProductForm to prevent remount on every render) ───
@@ -368,6 +373,13 @@ interface ModuloLedExtra {
   qtd: number;
 }
 
+interface OutroEquipamento {
+  componentId: number | null;
+  modelo: string;
+  tipo: string;
+  qtd: number;
+}
+
 type ProductDocumentType = "datasheet" | "fotometria" | "desenhoTecnico" | "manualInstalacao";
 
 interface ProductDocument {
@@ -437,6 +449,28 @@ function parseModulosLedExtra(raw: unknown): ModuloLedExtra[] {
   }
 }
 
+const emptyOutroEquipamento = (): OutroEquipamento => ({ componentId: null, modelo: "", tipo: "", qtd: 1 });
+
+function parseOutrosEquipamentos(raw: unknown): OutroEquipamento[] {
+  if (!raw) return [];
+  try {
+    const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((item) => {
+      const row = (item ?? {}) as Record<string, unknown>;
+      const componentId = Number(row.componentId);
+      return {
+        componentId: Number.isInteger(componentId) && componentId > 0 ? componentId : null,
+        modelo: String(row.modelo ?? "").trim(),
+        tipo: String(row.tipo ?? "").trim(),
+        qtd: Math.max(0.01, Number(row.qtd) || 1),
+      };
+    }).filter((item) => item.componentId !== null);
+  } catch {
+    return [];
+  }
+}
+
 interface FormData {
   categoria: string;
   instalacao: string;
@@ -449,6 +483,11 @@ interface FormData {
   moduloLampada: boolean;
   moduloLedRgbw: string;
   qtdModuloLedRgbw: number;
+  moduloTunableWhite: boolean;
+  moduloLedTunableWhite: string;
+  qtdModuloLedTunableWhite: number;
+  semModuloLed: boolean;
+  lampadaAcessorioId: number | null;
   // Módulo LED por CCT
   moduloLed2700: string;
   moduloLed3000: string;
@@ -565,6 +604,11 @@ const defaultForm: FormData = {
   moduloLampada: false,
   moduloLedRgbw: "",
   qtdModuloLedRgbw: 1,
+  moduloTunableWhite: false,
+  moduloLedTunableWhite: "",
+  qtdModuloLedTunableWhite: 1,
+  semModuloLed: false,
+  lampadaAcessorioId: null,
   // Módulo LED por CCT
   moduloLed2700: "",
   moduloLed3000: "",
@@ -785,6 +829,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
   const [driversExtra, setDriversExtra] = useState<DriversExtraState>(defaultDriversExtra);
   const [oticasExtra, setOticasExtra] = useState<OticaExtra[]>([]);
   const [modulosLedExtra, setModulosLedExtra] = useState<ModuloLedExtra[]>([]);
+  const [outrosEquipamentos, setOutrosEquipamentos] = useState<OutroEquipamento[]>([]);
   const [showSemDriverDialog, setShowSemDriverDialog] = useState(false);
   const [d1d2Drivers, setD1d2Drivers] = useState<D1D2DriversState>(emptyD1D2DriversState());
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -801,6 +846,17 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
   const correnteEditadaManualmenteRef = useRef(false);
   const isEdit = !!editId;
   const isDuplicate = !!duplicarDeId;
+  const cctDisabled = form.moduloRgbw || form.moduloLampada || form.moduloTunableWhite || form.semModuloLed;
+
+  const { data: allComponents = [] } = trpc.components.list.useQuery(undefined, { staleTime: 60_000 });
+
+  useEffect(() => {
+    if (allComponents.length === 0) return;
+    setOutrosEquipamentos((current) => current.map((item) => {
+      const component = item.componentId ? allComponents.find((candidate) => candidate.id === item.componentId) : null;
+      return component ? { ...item, modelo: component.modelo, tipo: component.tipo } : item;
+    }));
+  }, [allComponents]);
 
   // Load existing product for edit OR for duplication
   const loadId = editId ?? duplicarDeId;
@@ -924,6 +980,11 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
         moduloLampada: !!(p as any).moduloLampada,
         moduloLedRgbw: (p as any).moduloLedRgbw || "",
         qtdModuloLedRgbw: (p as any).qtdModuloLedRgbw ? Number((p as any).qtdModuloLedRgbw) : 1,
+        moduloTunableWhite: Boolean((p as any).moduloTunableWhite),
+        moduloLedTunableWhite: (p as any).moduloLedTunableWhite || "",
+        qtdModuloLedTunableWhite: (p as any).qtdModuloLedTunableWhite ? Number((p as any).qtdModuloLedTunableWhite) : 1,
+        semModuloLed: Boolean((p as any).semModuloLed),
+        lampadaAcessorioId: (p as any).lampadaAcessorioId ? Number((p as any).lampadaAcessorioId) : null,
         // Markup do driver por tipo (salvo no banco)
         mkpPadraoDriverOnoff220v:    (p as any).mkpPadraoDriverOnoff220v    ? String((p as any).mkpPadraoDriverOnoff220v)    : "",
         mkpPadraoDriverOnoffBivolt:  (p as any).mkpPadraoDriverOnoffBivolt  ? String((p as any).mkpPadraoDriverOnoffBivolt)  : "",
@@ -957,6 +1018,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       };
       setOticasExtra(parseOticaExtra((p as any).oticaExtra));
       setModulosLedExtra(parseModulosLedExtra((p as any).moduloLedExtra));
+      setOutrosEquipamentos(parseOutrosEquipamentos((p as any).outrosEquipamentos));
 
       // Carregar composição D1+D2 se existir
       const parseComposicaoD1D2 = (raw: any): D1D2DriversState => {
@@ -1134,6 +1196,21 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
   };
 
+  const toggleLightingMode = (field: "moduloRgbw" | "moduloLampada" | "moduloTunableWhite" | "semModuloLed") => {
+    setForm((previous) => {
+      const willActivate = !previous[field];
+      return {
+        ...previous,
+        moduloRgbw: false,
+        moduloLampada: false,
+        moduloTunableWhite: false,
+        semModuloLed: false,
+        [field]: willActivate,
+        lampadaAcessorioId: field === "moduloLampada" && willActivate ? previous.lampadaAcessorioId : null,
+      };
+    });
+  };
+
   const handleTextUpper = (field: keyof FormData, value: string) => {
     setField(field, value.toUpperCase());
     setTouched((prev) => ({ ...prev, [field]: true }));
@@ -1254,6 +1331,18 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       return;
     }
 
+    const equipamentosComConteudo = outrosEquipamentos.filter((item) => item.componentId || item.modelo.trim());
+    if (equipamentosComConteudo.some((item) => !item.componentId)) {
+      toast.error("Selecione um componente cadastrado para cada item de Outros Equipamentos");
+      return;
+    }
+    const equipamentosNormalizados = equipamentosComConteudo.map((item) => ({
+      componentId: item.componentId!,
+      qtd: Math.max(0.01, Number(item.qtd) || 1),
+    }));
+
+    const semCct = form.moduloRgbw || form.moduloLampada || form.moduloTunableWhite || form.semModuloLed;
+
     // Derivar temperaturasCor automaticamente dos módulos CCT preenchidos
     const hasCctModules = !!(form.moduloLed2700 || form.moduloLed3000 || form.moduloLed3500 || form.moduloLed4000 || form.moduloLed5000 || extrasNormalizados.length);
     const derivedTemps = hasCctModules
@@ -1275,18 +1364,25 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       moduloLampada: form.moduloLampada ? 1 : 0,
       moduloLedRgbw: form.moduloRgbw && form.moduloLedRgbw ? form.moduloLedRgbw : null,
       qtdModuloLedRgbw: form.moduloRgbw && form.moduloLedRgbw ? form.qtdModuloLedRgbw : undefined,
-      temperaturasCor: form.moduloRgbw ? JSON.stringify(["RGBW"]) : JSON.stringify(derivedTemps),
-      moduloLed2700: form.moduloLed2700 !== "" ? form.moduloLed2700 : null,
-      moduloLed3000: form.moduloLed3000 !== "" ? form.moduloLed3000 : null,
-      moduloLed3500: form.moduloLed3500 !== "" ? form.moduloLed3500 : null,
-      moduloLed4000: form.moduloLed4000 !== "" ? form.moduloLed4000 : null,
-      moduloLed5000: form.moduloLed5000 !== "" ? form.moduloLed5000 : null,
-      moduloLedExtra: form.moduloRgbw || form.moduloLampada || extrasNormalizados.length === 0 ? null : JSON.stringify(extrasNormalizados),
-      qtdModuloLed2700: form.moduloLed2700 ? form.qtdModuloLed2700 : undefined,
-      qtdModuloLed3000: form.moduloLed3000 ? form.qtdModuloLed3000 : undefined,
-      qtdModuloLed3500: form.moduloLed3500 ? form.qtdModuloLed3500 : undefined,
-      qtdModuloLed4000: form.moduloLed4000 ? form.qtdModuloLed4000 : undefined,
-      qtdModuloLed5000: form.moduloLed5000 ? form.qtdModuloLed5000 : undefined,
+      moduloTunableWhite: form.moduloTunableWhite,
+      moduloLedTunableWhite: form.moduloTunableWhite && form.moduloLedTunableWhite ? form.moduloLedTunableWhite : null,
+      qtdModuloLedTunableWhite: form.moduloTunableWhite && form.moduloLedTunableWhite ? form.qtdModuloLedTunableWhite : undefined,
+      semModuloLed: form.semModuloLed,
+      lampadaAcessorioId: form.moduloLampada ? form.lampadaAcessorioId : null,
+      outrosEquipamentos: equipamentosNormalizados.length > 0 ? JSON.stringify(equipamentosNormalizados) : null,
+      moduloLed: semCct ? "" : form.moduloLed,
+      temperaturasCor: form.moduloRgbw ? JSON.stringify(["RGBW"]) : semCct ? JSON.stringify([]) : JSON.stringify(derivedTemps),
+      moduloLed2700: !semCct && form.moduloLed2700 !== "" ? form.moduloLed2700 : null,
+      moduloLed3000: !semCct && form.moduloLed3000 !== "" ? form.moduloLed3000 : null,
+      moduloLed3500: !semCct && form.moduloLed3500 !== "" ? form.moduloLed3500 : null,
+      moduloLed4000: !semCct && form.moduloLed4000 !== "" ? form.moduloLed4000 : null,
+      moduloLed5000: !semCct && form.moduloLed5000 !== "" ? form.moduloLed5000 : null,
+      moduloLedExtra: semCct || extrasNormalizados.length === 0 ? null : JSON.stringify(extrasNormalizados),
+      qtdModuloLed2700: !semCct && form.moduloLed2700 ? form.qtdModuloLed2700 : undefined,
+      qtdModuloLed3000: !semCct && form.moduloLed3000 ? form.qtdModuloLed3000 : undefined,
+      qtdModuloLed3500: !semCct && form.moduloLed3500 ? form.qtdModuloLed3500 : undefined,
+      qtdModuloLed4000: !semCct && form.moduloLed4000 ? form.qtdModuloLed4000 : undefined,
+      qtdModuloLed5000: !semCct && form.moduloLed5000 ? form.qtdModuloLed5000 : undefined,
       custoLuminaria: form.custoLuminaria || undefined,
       // Custo do corpo por tipo de driver — envia null explicitamente para permitir zerar
       custoCorpoOnoff220v: form.custoCorpoOnoff220v !== "" ? form.custoCorpoOnoff220v : null,
@@ -1717,46 +1813,70 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
           <div className="flex flex-col gap-5">
             {/* Módulo LED por CCT */}
             <div>
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex flex-col gap-3 mb-3 xl:flex-row xl:items-center xl:justify-between">
                 <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">MÓDULO LED</span>
-                <div className="flex items-center gap-2">
-                  {/* Badge RGBW */}
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setForm((prev) => ({
-                      ...prev,
-                      moduloRgbw: !prev.moduloRgbw,
-                      moduloLampada: prev.moduloRgbw ? prev.moduloLampada : false,
-                    }))}
+                    onClick={() => toggleLightingMode("moduloRgbw")}
                     className={cn(
-                      "text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md border transition-all",
+                      "inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all",
                       form.moduloRgbw
                         ? "bg-purple-600/20 border-purple-500 text-purple-300"
                         : "border-border text-muted-foreground hover:border-purple-500/50 hover:text-purple-400"
                     )}
                     title="Placa RGBW — desabilita os campos de CCT"
                   >
+                    <SlidersHorizontal className="h-3.5 w-3.5" />
                     RGBW
                   </button>
-                  {/* Badge LUMINÁRIA COM LÂMPADA */}
                   <button
                     type="button"
-                    onClick={() => setForm((prev) => ({
-                      ...prev,
-                      moduloLampada: !prev.moduloLampada,
-                      moduloRgbw: prev.moduloLampada ? prev.moduloRgbw : false,
-                    }))}
+                    onClick={() => toggleLightingMode("moduloTunableWhite")}
                     className={cn(
-                      "text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md border transition-all whitespace-nowrap",
+                      "inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all whitespace-nowrap",
+                      form.moduloTunableWhite
+                        ? "bg-cyan-600/20 border-cyan-500 text-cyan-300"
+                        : "border-border text-muted-foreground hover:border-cyan-500/50 hover:text-cyan-400"
+                    )}
+                    title="Módulo Tunable White — modalidade específica sem CCT"
+                  >
+                    <Lightbulb className="h-3.5 w-3.5" />
+                    Tunable White
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => toggleLightingMode("moduloLampada")}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all whitespace-nowrap",
                       form.moduloLampada
                         ? "bg-amber-600/20 border-amber-500 text-amber-300"
                         : "border-border text-muted-foreground hover:border-amber-500/50 hover:text-amber-400"
                     )}
                     title="Luminária com lâmpada — desabilita os campos de CCT"
                   >
+                    <Lightbulb className="h-3.5 w-3.5" />
                     LUM. C/ LÂMPADA
                   </button>
-                  {!form.moduloRgbw && !form.moduloLampada && (
+                  <label
+                    htmlFor="sem-modulo-led"
+                    className={cn(
+                      "inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all whitespace-nowrap",
+                      form.semModuloLed
+                        ? "bg-slate-500/20 border-slate-400 text-slate-200"
+                        : "border-border text-muted-foreground hover:border-slate-400/60 hover:text-slate-300"
+                    )}
+                    title="Produto sem módulo LED — a API omitirá dados de módulo"
+                  >
+                    <Checkbox
+                      id="sem-modulo-led"
+                      checked={form.semModuloLed}
+                      onCheckedChange={() => toggleLightingMode("semModuloLed")}
+                      className="h-3.5 w-3.5 border-current data-[state=checked]:bg-slate-200 data-[state=checked]:text-slate-900"
+                    />
+                    Sem módulo LED
+                  </label>
+                  {!cctDisabled && (
                     <span className="text-[10px] text-muted-foreground">Preencha o módulo para cada CCT disponível — CCT sem módulo será desabilitado</span>
                   )}
                 </div>
@@ -1776,6 +1896,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                         onChange={(v) => setField("moduloLedRgbw", v)}
                         placeholder="Selecione o módulo RGBW..."
                         hasError={false}
+                        onlyActive
                       />
                     </div>
                     {form.moduloLedRgbw && (
@@ -1799,11 +1920,61 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                   </div>
                 </div>
               )}
-              {/* Aviso quando modo Luminária com Lâmpada ativo */}
+              {form.moduloTunableWhite && (
+                <div className="mb-3 rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-3">
+                  <div className="mb-2 flex items-center gap-2">
+                    <Lightbulb className="h-4 w-4 text-cyan-300" />
+                    <span className="text-xs font-semibold text-cyan-300">Módulo Tunable White</span>
+                    <span className="text-[10px] text-muted-foreground">CCT e RGBW não se aplicam</span>
+                  </div>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                    <div className="min-w-0 flex-1">
+                      <ComponentSelect
+                        tipo="MODULO_LED"
+                        value={form.moduloLedTunableWhite}
+                        onChange={(value) => setField("moduloLedTunableWhite", value)}
+                        placeholder="Selecione o módulo Tunable White..."
+                        onlyActive
+                      />
+                    </div>
+                    {form.moduloLedTunableWhite && (
+                      <div className="w-full sm:w-20">
+                        <Label className="mb-1 block text-[10px] uppercase tracking-wider text-muted-foreground">Qtd.</Label>
+                        <Input
+                          className="input-dark text-center"
+                          type="number"
+                          min="0.01"
+                          max="999"
+                          step="0.01"
+                          value={form.qtdModuloLedTunableWhite}
+                          onChange={(event) => setField("qtdModuloLedTunableWhite", Math.max(0.01, Number(event.target.value) || 1))}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
               {form.moduloLampada && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-amber-500/10 border border-amber-500/30 mb-3">
-                  <span className="text-xs font-semibold text-amber-300">💡 Luminária com Lâmpada</span>
-                  <span className="text-[10px] text-muted-foreground">— campos de CCT desabilitados</span>
+                <div className="mb-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
+                  <div className="mb-2 flex items-center gap-2">
+                    <Lightbulb className="h-4 w-4 text-amber-300" />
+                    <span className="text-xs font-semibold text-amber-300">Luminária com Lâmpada</span>
+                    <span className="text-[10px] text-muted-foreground">Seleção opcional em Acessórios</span>
+                  </div>
+                  <AccessorySelect
+                    value={form.lampadaAcessorioId}
+                    onChange={(value) => setField("lampadaAcessorioId", value)}
+                    placeholder="Selecione a lâmpada, se aplicável..."
+                  />
+                </div>
+              )}
+              {form.semModuloLed && (
+                <div className="mb-3 flex items-start gap-2 rounded-lg border border-slate-500/30 bg-slate-500/10 px-3 py-2.5">
+                  <Ban className="mt-0.5 h-4 w-4 shrink-0 text-slate-300" />
+                  <div>
+                    <p className="text-xs font-semibold text-slate-200">Produto sem módulo LED específico</p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">Os campos de módulo e CCT serão omitidos da API. Outros Equipamentos continuam disponíveis.</p>
+                  </div>
                 </div>
               )}
               <div className="flex flex-col gap-3">
@@ -1814,7 +1985,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                   { cct: "4000", field: "moduloLed4000" as const, qtdField: "qtdModuloLed4000" as const, color: "oklch(0.85 0.05 200)" },
                   { cct: "5000", field: "moduloLed5000" as const, qtdField: "qtdModuloLed5000" as const, color: "oklch(0.88 0.04 220)" },
                 ] as const).map(({ cct, field, qtdField, color }) => (
-                  <div key={cct} className={cn("flex gap-3 items-center", (form.moduloRgbw || form.moduloLampada) && "opacity-40 pointer-events-none")}>
+                  <div key={cct} className={cn("flex gap-3 items-center", cctDisabled && "opacity-40 pointer-events-none")}>
                     <div
                       className="flex-shrink-0 w-14 text-center text-xs font-bold rounded-md px-2 py-1.5 border"
                       style={{ borderColor: color, color, backgroundColor: `${color}15` }}
@@ -1822,7 +1993,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                       {cct}K
                     </div>
                     <div className="flex-1 min-w-0">
-                      {(form.moduloRgbw || form.moduloLampada) ? (
+                      {cctDisabled ? (
                         <Input className="input-dark opacity-50" value="NÃO APLICÁVEL" disabled readOnly />
                       ) : (
                         <ComponentSelect
@@ -1834,7 +2005,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                         />
                       )}
                     </div>
-                    {form[field] && !(form.moduloRgbw || form.moduloLampada) && (
+                    {form[field] && !cctDisabled && (
                       <div className="flex flex-col items-center gap-1 flex-shrink-0">
                         <span className="text-[10px] text-muted-foreground uppercase tracking-wider">QTD</span>
                         <Input
@@ -1854,7 +2025,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                     )}
                   </div>
                 ))}
-                {!form.moduloRgbw && !form.moduloLampada && (
+                {!cctDisabled && (
                   <div className="mt-1 rounded-lg border border-dashed border-primary/35 bg-primary/5 p-3 space-y-3">
                     {modulosLedExtra.map((item, index) => (
                       <div key={index} className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -1921,6 +2092,72 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                   </div>
                 )}
               </div>
+            </div>
+
+            <div className="rounded-xl border border-border/80 bg-muted/10 p-4">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-2">
+                  <Boxes className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-widest text-foreground">Outros Equipamentos</p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">Associe qualquer componente cadastrado. Estes itens serão enviados pela API mesmo quando não houver módulo LED.</p>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setOutrosEquipamentos((current) => [...current, emptyOutroEquipamento()])}
+                  className="shrink-0 border-primary/40 text-xs text-primary"
+                >
+                  <PlusCircle className="mr-1.5 h-3.5 w-3.5" />
+                  Adicionar equipamento
+                </Button>
+              </div>
+
+              {outrosEquipamentos.length === 0 ? (
+                <div className="mt-3 rounded-lg border border-dashed border-border px-4 py-5 text-center text-xs text-muted-foreground">
+                  Nenhum equipamento adicional associado.
+                </div>
+              ) : (
+                <div className="mt-4 space-y-3">
+                  {outrosEquipamentos.map((item, index) => (
+                    <div key={`${item.componentId ?? "novo"}-${index}`} className="grid gap-3 rounded-lg border border-border/70 bg-background/50 p-3 sm:grid-cols-[minmax(0,1fr)_80px_36px] sm:items-end">
+                      <div className="min-w-0">
+                        <Label className="mb-1.5 block text-[10px] uppercase tracking-wider text-muted-foreground">Componente {index + 1}</Label>
+                        <ComponentSelect
+                          value={item.modelo}
+                          onChange={(modelo) => setOutrosEquipamentos((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, componentId: null, modelo, tipo: "" } : row))}
+                          onSelectComponent={(component) => setOutrosEquipamentos((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, componentId: component.id, modelo: component.modelo, tipo: component.tipo } : row))}
+                          placeholder="Busque qualquer componente cadastrado..."
+                          onlyActive
+                        />
+                        {item.tipo && <p className="mt-1 text-[10px] text-muted-foreground">Tipo: {item.tipo.replaceAll("_", " ")}</p>}
+                      </div>
+                      <div>
+                        <Label className="mb-1.5 block text-[10px] uppercase tracking-wider text-muted-foreground">Qtd.</Label>
+                        <Input
+                          className="input-dark text-center"
+                          type="number"
+                          min="0.01"
+                          max="999"
+                          step="0.01"
+                          value={item.qtd}
+                          onChange={(event) => setOutrosEquipamentos((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, qtd: Math.max(0.01, Number(event.target.value) || 1) } : row))}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setOutrosEquipamentos((current) => current.filter((_, rowIndex) => rowIndex !== index))}
+                        className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                        aria-label={`Remover equipamento ${index + 1}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Ótica */}

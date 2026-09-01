@@ -3,8 +3,9 @@ import multer from "multer";
 import * as XLSX from "xlsx";
 import { storagePut, storageGetSignedUrl } from "./storage";
 import { bulkInsertProducts, listProducts, getDb } from "./db";
-import { components as componentsTable } from "../drizzle/schema";
+import { accessories as accessoriesTable, components as componentsTable } from "../drizzle/schema";
 import { parsePublicDriverExtras } from "./driverExtras";
+import { buildSpecialLightingContract, type AccessorySummary, type ComponentSummary } from "./productLighting";
 import { requireRestPermission } from "./authz";
 import { buildProductReportWorkbook, parseReportSections } from "./reporting";
 
@@ -670,14 +671,38 @@ router.get("/all", async (_req, res) => {
     // Buscar TODOS os componentes da tabela components para lookup do campo codigo (EQ/CP)
     // Inclui drivers, óticas, holders, dissipadores e módulos LED
     const driverCodigoMap = new Map<string, string | null>();
+    const componentsById = new Map<number, ComponentSummary>();
+    const accessoriesById = new Map<number, AccessorySummary>();
     try {
       const db = await getDb();
       if (db) {
         const allComponents = await db
-          .select({ modelo: componentsTable.modelo, codigo: componentsTable.codigo })
+          .select({ id: componentsTable.id, tipo: componentsTable.tipo, modelo: componentsTable.modelo, codigo: componentsTable.codigo })
           .from(componentsTable);
         for (const d of allComponents) {
-          if (d.modelo) driverCodigoMap.set(d.modelo.trim().toUpperCase(), d.codigo ?? null);
+          if (d.modelo) {
+            driverCodigoMap.set(d.modelo.trim().toUpperCase(), d.codigo ?? null);
+            componentsById.set(d.id, { id: d.id, tipo: d.tipo, modelo: d.modelo, codigo: d.codigo ?? null });
+          }
+        }
+
+        const allAccessories = await db
+          .select({
+            id: accessoriesTable.id,
+            codigo: accessoriesTable.codigo,
+            sku: accessoriesTable.sku,
+            produto: accessoriesTable.produto,
+            familia: accessoriesTable.familia,
+          })
+          .from(accessoriesTable);
+        for (const accessory of allAccessories) {
+          accessoriesById.set(accessory.id, {
+            id: accessory.id,
+            codigo: accessory.codigo ?? null,
+            sku: accessory.sku ?? null,
+            produto: accessory.produto ?? "",
+            familia: accessory.familia ?? null,
+          });
         }
       }
     } catch (err) {
@@ -715,6 +740,8 @@ router.get("/all", async (_req, res) => {
       const rawKey = extractStorageKey(p.fotoUrl);
       const resolvedFotoUrl = rawKey ? (signedUrlMap.get(rawKey) ?? null) : null;
       const publicDocumentContract = buildPublicProductDocuments((p as any).documentos, signedUrlMap);
+      const lightingContract = buildSpecialLightingContract(p as any, componentsById, accessoriesById);
+      const usesStandardCct = lightingContract.modoIluminacao === "CCT";
       const temps: string[] = [];
       try {
         const parsed = JSON.parse(p.temperaturasCor || "[]");
@@ -808,10 +835,10 @@ router.get("/all", async (_req, res) => {
         holder: holderVal,
         otica: oticaVal,
         dissipador: dissipadorVal,
-        ledModule: ledModuleVal,
+        ledModule: usesStandardCct ? ledModuleVal : null,
         fotoUrl: resolvedFotoUrl,
         ...publicDocumentContract,
-        temperaturasCor: temps,
+        temperaturasCor: lightingContract.modoIluminacao === "RGBW" ? ["RGBW"] : usesStandardCct ? temps : [],
         driver220: isValidDriver(p.driverOnoff220) ? makeDriver(p.driverOnoff220) : null,
         driverBivolt: (p.driverOnoffBivoltNaoAplicavel || !isValidDriver(p.driverOnoffBivolt))
           ? null
@@ -905,7 +932,7 @@ router.get("/all", async (_req, res) => {
       result.oticaSecundaria = oticaSecundaria;
 
       // Quantidades numéricas explícitas para ledModule e holder
-      result.ledModuleQtd = p.moduloLed ? qtdLed : null;
+      result.ledModuleQtd = usesStandardCct && p.moduloLed ? qtdLed : null;
       result.holderQtd = p.holderNaoAplicavel ? null : qtdHolder;
 
       // ── Códigos EQ/CP de ótica, holder e dissipador ───────────────────────────────────────────
@@ -919,7 +946,7 @@ router.get("/all", async (_req, res) => {
       result.oticaCode = p.oticaNaoAplicavel ? null : lookupCode(p.otica);
       result.holderCode = p.holderNaoAplicavel ? null : lookupCode(p.holder);
       result.dissipadorCode = p.dissipadorNaoAplicavel ? null : lookupCode(p.dissipador);
-      result.ledModuleCode = p.moduloLed ? lookupCode(p.moduloLed) : null;
+      result.ledModuleCode = usesStandardCct && p.moduloLed ? lookupCode(p.moduloLed) : null;
 
       // ── Módulo LED por CCT ────────────────────────────────────────────────────────────────────────────────────
       const ml2700 = (p as any).moduloLed2700 as string | null;
@@ -929,22 +956,22 @@ router.get("/all", async (_req, res) => {
       const ml5000 = (p as any).moduloLed5000 as string | null;
       const hasCctModules = !!(ml2700 || ml3000 || ml3500 || ml4000 || ml5000);
 
-      result.ledModule2700 = ml2700 ? withQty(ml2700, Number((p as any).qtdModuloLed2700) || 1) : null;
-      result.ledModule3000 = ml3000 ? withQty(ml3000, Number((p as any).qtdModuloLed3000) || 1) : null;
-      result.ledModule3500 = ml3500 ? withQty(ml3500, Number((p as any).qtdModuloLed3500) || 1) : null;
-      result.ledModule4000 = ml4000 ? withQty(ml4000, Number((p as any).qtdModuloLed4000) || 1) : null;
-      result.ledModule5000 = ml5000 ? withQty(ml5000, Number((p as any).qtdModuloLed5000) || 1) : null;
-      result.ledModuleQtd2700 = ml2700 ? (Number((p as any).qtdModuloLed2700) || 1) : null;
-      result.ledModuleQtd3000 = ml3000 ? (Number((p as any).qtdModuloLed3000) || 1) : null;
-      result.ledModuleQtd3500 = ml3500 ? (Number((p as any).qtdModuloLed3500) || 1) : null;
-      result.ledModuleQtd4000 = ml4000 ? (Number((p as any).qtdModuloLed4000) || 1) : null;
-      result.ledModuleQtd5000 = ml5000 ? (Number((p as any).qtdModuloLed5000) || 1) : null;
+      result.ledModule2700 = usesStandardCct && ml2700 ? withQty(ml2700, Number((p as any).qtdModuloLed2700) || 1) : null;
+      result.ledModule3000 = usesStandardCct && ml3000 ? withQty(ml3000, Number((p as any).qtdModuloLed3000) || 1) : null;
+      result.ledModule3500 = usesStandardCct && ml3500 ? withQty(ml3500, Number((p as any).qtdModuloLed3500) || 1) : null;
+      result.ledModule4000 = usesStandardCct && ml4000 ? withQty(ml4000, Number((p as any).qtdModuloLed4000) || 1) : null;
+      result.ledModule5000 = usesStandardCct && ml5000 ? withQty(ml5000, Number((p as any).qtdModuloLed5000) || 1) : null;
+      result.ledModuleQtd2700 = usesStandardCct && ml2700 ? (Number((p as any).qtdModuloLed2700) || 1) : null;
+      result.ledModuleQtd3000 = usesStandardCct && ml3000 ? (Number((p as any).qtdModuloLed3000) || 1) : null;
+      result.ledModuleQtd3500 = usesStandardCct && ml3500 ? (Number((p as any).qtdModuloLed3500) || 1) : null;
+      result.ledModuleQtd4000 = usesStandardCct && ml4000 ? (Number((p as any).qtdModuloLed4000) || 1) : null;
+      result.ledModuleQtd5000 = usesStandardCct && ml5000 ? (Number((p as any).qtdModuloLed5000) || 1) : null;
       // Códigos EQ/CP dos módulos LED por CCT
-      result.ledModuleCode2700 = ml2700 ? lookupCode(ml2700) : null;
-      result.ledModuleCode3000 = ml3000 ? lookupCode(ml3000) : null;
-      result.ledModuleCode3500 = ml3500 ? lookupCode(ml3500) : null;
-      result.ledModuleCode4000 = ml4000 ? lookupCode(ml4000) : null;
-      result.ledModuleCode5000 = ml5000 ? lookupCode(ml5000) : null;
+      result.ledModuleCode2700 = usesStandardCct && ml2700 ? lookupCode(ml2700) : null;
+      result.ledModuleCode3000 = usesStandardCct && ml3000 ? lookupCode(ml3000) : null;
+      result.ledModuleCode3500 = usesStandardCct && ml3500 ? lookupCode(ml3500) : null;
+      result.ledModuleCode4000 = usesStandardCct && ml4000 ? lookupCode(ml4000) : null;
+      result.ledModuleCode5000 = usesStandardCct && ml5000 ? lookupCode(ml5000) : null;
 
       // CCTs adicionais, específicos deste produto. Mantém os campos legados acima
       // intactos e envia uma coleção estruturada para o Configurador.
@@ -972,11 +999,11 @@ router.get("/all", async (_req, res) => {
           seenExtraCcts.add(item.cct);
           return true;
         });
-      result.ledModulesExtras = ledModulesExtras;
+      result.ledModulesExtras = usesStandardCct ? ledModulesExtras : [];
 
       // Derivar temperaturasCor automaticamente dos módulos preenchidos
       // Se o produto usa o novo modelo CCT, sobrescreve o campo temperaturasCor
-      if (hasCctModules || ledModulesExtras.length > 0) {
+      if (usesStandardCct && (hasCctModules || ledModulesExtras.length > 0)) {
         const derivedTemps: string[] = [];
         if (ml2700) derivedTemps.push("2700");
         if (ml3000) derivedTemps.push("3000");
@@ -993,6 +1020,7 @@ router.get("/all", async (_req, res) => {
       result.moduloLedRgbw = (p as any).moduloLedRgbw || null;
       result.moduloLedRgbwCode = (p as any).moduloLedRgbw ? lookupCode((p as any).moduloLedRgbw) : null;
       result.qtdModuloLedRgbw = (p as any).qtdModuloLedRgbw ? Number((p as any).qtdModuloLedRgbw) : null;
+      Object.assign(result, lightingContract);
 
       // Campos de preço por metro linear para categoria PERFIS
       // Retorna null quando o controle não está disponível para o produto

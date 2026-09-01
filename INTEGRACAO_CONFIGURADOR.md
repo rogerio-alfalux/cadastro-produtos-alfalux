@@ -125,6 +125,14 @@ O Configurador já usa exatamente estes campos nos objetos de produto:
 | `otica` | `otica` | `null` se Não Aplicável |
 | `dissipador` | `dissipador` | `null` se Não Aplicável |
 | `ledModule` | `ledModule` (= `moduloLed`) | Módulo LED |
+| `modoIluminacao` | `modoIluminacao` | `CCT`, `RGBW`, `TUNABLE_WHITE`, `LAMPADA` ou `SEM_MODULO_LED` |
+| `semModuloLed` | `semModuloLed` | Quando `true`, os campos de módulo LED e CCT são enviados vazios/nulos |
+| `moduloTunableWhite` | `moduloTunableWhite` | Indica a modalidade exclusiva Tunable White |
+| `moduloLedTunableWhite` | `moduloLedTunableWhite` | Modelo específico Tunable White ou `null` |
+| `moduloLedTunableWhiteCode` | `moduloLedTunableWhiteCode` | Código cadastrado do módulo Tunable White ou `null` |
+| `qtdModuloLedTunableWhite` | `qtdModuloLedTunableWhite` | Quantidade do módulo Tunable White ou `null` |
+| `lampada` | `lampada` | Acessório opcional selecionado: `{ id, codigo, sku, produto, familia }` ou `null` |
+| `outrosEquipamentos` | `outrosEquipamentos` | Componentes livres: `[{ componentId, modelo, codigo, tipo, qtd }]` |
 | `driver220` | `driver220` | `{ model, code }` ou `null` |
 | `driverBivolt` | `driverBivolt` | `{ model, code }` ou `null` |
 | `driverDim110v` | `driverDim110v` | `{ model, code }` ou `null` |
