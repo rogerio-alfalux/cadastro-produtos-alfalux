@@ -920,3 +920,12 @@
 - [x] Criar tela pública para validar o token e definir uma nova senha
 - [x] Garantir invalidação após uso e cobertura para token inválido ou expirado
 - [x] Validar a recuperação de acesso da Geysa, TypeScript, testes e build antes do checkpoint
+
+## Ajuste v64.1 — Perfil Custos com Consulta Ampla
+
+- [x] Auditar a matriz atual de permissões, rotas e ações visíveis para o perfil Custos
+- [x] Liberar acesso de consulta a produtos, componentes, acessórios, revenda, documentos e backups
+- [x] Limitar alterações do perfil Custos exclusivamente a custos e markups
+- [x] Bloquear no servidor qualquer alteração de cadastro, documentos, status ou usuários pelo perfil Custos
+- [x] Adaptar a interface para modo leitura fora dos campos de custo e markup
+- [x] Validar navegação, consultas, bloqueios e regressões antes do checkpoint

@@ -157,7 +157,7 @@ export default function UsersPage() {
 
       <div className="grid md:grid-cols-4 gap-3">
         {roles.map(({ value, label }) => (
-          <div key={value} className="alfalux-card p-4 border-primary/20"><p className="text-sm font-semibold">{label}</p><p className="text-xs text-muted-foreground mt-1">{value === "admin" ? "Acesso integral; permissões podem ser refinadas." : value === "engineering" ? "Documentos técnicos por padrão." : value === "costs" ? "Custos, preços e markups por padrão." : "Consulta de catálogo por padrão."}</p></div>
+          <div key={value} className="alfalux-card p-4 border-primary/20"><p className="text-sm font-semibold">{label}</p><p className="text-xs text-muted-foreground mt-1">{value === "admin" ? "Acesso integral; permissões podem ser refinadas." : value === "engineering" ? "Documentos técnicos por padrão." : value === "costs" ? "Consulta ampla do catálogo; alteração somente de custos, preços e markups." : "Consulta de catálogo por padrão."}</p></div>
         ))}
       </div>
 

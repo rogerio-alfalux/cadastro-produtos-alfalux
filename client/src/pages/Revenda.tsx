@@ -21,6 +21,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { can } from "@shared/permissions";
 import {
   Search,
   Plus,
@@ -86,7 +87,9 @@ const emptyForm = {
 
 export default function RevendaPage() {
   const { user } = useAuth();
-  const isLoggedIn = !!user;
+  const canManageEntities = user ? can(user.role, "manageEntities", user.permissionOverrides) : false;
+  const canEditCosts = user ? can(user.role, "editCosts", user.permissionOverrides) : false;
+  const canUseActions = canManageEntities || canEditCosts;
 
   const [search, setSearch] = useState("");
   const [fornecedorFilter, setFornecedorFilter] = useState<string>("__all__");
@@ -96,6 +99,7 @@ export default function RevendaPage() {
   const [editItem, setEditItem] = useState<RevendaItem | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [deleteConfirm, setDeleteConfirm] = useState<RevendaItem | null>(null);
+  const costOnly = !!editItem && !canManageEntities && canEditCosts;
 
   // Photo state
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -106,7 +110,7 @@ export default function RevendaPage() {
 
   // Queries
   const { data: fornecedores = [] } = trpc.revenda.listFornecedores.useQuery();
-  const { data: nextCodeData } = trpc.revenda.nextCode.useQuery();
+  const { data: nextCodeData } = trpc.revenda.nextCode.useQuery(undefined, { enabled: canManageEntities });
 
   const queryInput = useMemo(
     () => ({
@@ -139,6 +143,15 @@ export default function RevendaPage() {
       toast.success("Item atualizado com sucesso!");
       utils.revenda.list.invalidate();
       utils.revenda.listFornecedores.invalidate();
+      setDialogOpen(false);
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const updateCostsMutation = trpc.revenda.updateCosts.useMutation({
+    onSuccess: () => {
+      toast.success("Custos atualizados com sucesso!");
+      utils.revenda.list.invalidate();
       setDialogOpen(false);
     },
     onError: (err) => toast.error(err.message),
@@ -231,14 +244,16 @@ export default function RevendaPage() {
       fotoUrl: form.fotoUrl || null,
       fotoKey: form.fotoKey || null,
     };
-    if (editItem) {
+    if (editItem && canManageEntities) {
       updateMutation.mutate({ id: editItem.id, ...payload });
-    } else {
+    } else if (editItem && canEditCosts) {
+      updateCostsMutation.mutate({ id: editItem.id, custo: form.custo || null, precoVenda: form.precoVenda || null });
+    } else if (canManageEntities) {
       createMutation.mutate(payload);
     }
   }
 
-  const isSaving = createMutation.isPending || updateMutation.isPending;
+  const isSaving = createMutation.isPending || updateMutation.isPending || updateCostsMutation.isPending;
 
   function formatCurrency(val: string | null | undefined) {
     if (!val) return "—";
@@ -260,7 +275,7 @@ export default function RevendaPage() {
             {total} {total === 1 ? "item" : "itens"} cadastrados
           </p>
         </div>
-        {isLoggedIn && (
+        {canManageEntities && (
           <Button size="sm" onClick={openCreate} className="gap-2">
             <Plus className="w-4 h-4" />
             NOVO ITEM
@@ -311,7 +326,7 @@ export default function RevendaPage() {
                 <th className="text-left px-4 py-3 font-semibold text-muted-foreground tracking-wider hidden sm:table-cell">FORNECEDOR</th>
                 <th className="text-left px-4 py-3 font-semibold text-muted-foreground tracking-wider hidden lg:table-cell">CUSTO</th>
                 <th className="text-left px-4 py-3 font-semibold text-muted-foreground tracking-wider hidden lg:table-cell">PREÇO VENDA</th>
-                {isLoggedIn && (
+                {canUseActions && (
                   <th className="text-right px-4 py-3 font-semibold text-muted-foreground tracking-wider">AÇÕES</th>
                 )}
               </tr>
@@ -320,7 +335,7 @@ export default function RevendaPage() {
               {isLoading ? (
                 Array.from({ length: 8 }).map((_, i) => (
                   <tr key={i} className="border-b border-border/30">
-                    {[...Array(isLoggedIn ? 8 : 7)].map((_, j) => (
+                    {[...Array(canUseActions ? 8 : 7)].map((_, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-3 bg-muted/40 rounded animate-pulse" />
                       </td>
@@ -329,7 +344,7 @@ export default function RevendaPage() {
                 ))
               ) : items.length === 0 ? (
                 <tr>
-                  <td colSpan={isLoggedIn ? 8 : 7} className="px-4 py-12 text-center text-muted-foreground">
+                  <td colSpan={canUseActions ? 8 : 7} className="px-4 py-12 text-center text-muted-foreground">
                     <Package className="w-8 h-8 mx-auto mb-2 opacity-30" />
                     <p>Nenhum item encontrado</p>
                   </td>
@@ -382,7 +397,7 @@ export default function RevendaPage() {
                     <td className="px-4 py-3 font-medium hidden lg:table-cell">
                       {formatCurrency(item.precoVenda)}
                     </td>
-                    {isLoggedIn && (
+                    {canUseActions && (
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <Button
@@ -393,14 +408,14 @@ export default function RevendaPage() {
                           >
                             <Pencil className="w-3.5 h-3.5" />
                           </Button>
-                          <Button
+                          {canManageEntities && <Button
                             variant="ghost"
                             size="sm"
                             className="h-7 w-7 p-0 text-destructive hover:text-destructive"
                             onClick={() => setDeleteConfirm(item)}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
+                          </Button>}
                         </div>
                       </td>
                     )}
@@ -449,7 +464,7 @@ export default function RevendaPage() {
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-sm font-bold tracking-wider">
-              {editItem ? "EDITAR ITEM DE REVENDA" : "NOVO ITEM DE REVENDA"}
+              {costOnly ? "EDITAR CUSTOS DE REVENDA" : editItem ? "EDITAR ITEM DE REVENDA" : "NOVO ITEM DE REVENDA"}
             </DialogTitle>
           </DialogHeader>
 
@@ -460,6 +475,7 @@ export default function RevendaPage() {
                 <Input
                   value={form.codigo}
                   onChange={(e) => setForm({ ...form, codigo: e.target.value })}
+                  disabled={costOnly}
                   placeholder="RV00001"
                   className="text-sm font-mono"
                 />
@@ -469,6 +485,7 @@ export default function RevendaPage() {
                 <Input
                   value={form.referencia}
                   onChange={(e) => setForm({ ...form, referencia: e.target.value })}
+                  disabled={costOnly}
                   placeholder="Ref. do fabricante"
                   className="text-sm"
                 />
@@ -480,6 +497,7 @@ export default function RevendaPage() {
               <Input
                 value={form.descricao}
                 onChange={(e) => setForm({ ...form, descricao: e.target.value })}
+                disabled={costOnly}
                 placeholder="Descrição completa do produto"
                 className="text-sm"
               />
@@ -490,6 +508,7 @@ export default function RevendaPage() {
               <Input
                 value={form.fornecedor}
                 onChange={(e) => setForm({ ...form, fornecedor: e.target.value })}
+                disabled={costOnly}
                 placeholder="Nome do fornecedor"
                 className="text-sm"
                 list="fornecedores-list"
@@ -506,6 +525,7 @@ export default function RevendaPage() {
               <Input
                 value={form.familia}
                 onChange={(e) => setForm({ ...form, familia: e.target.value })}
+                disabled={costOnly}
                 placeholder="Ex: FITA LED, TRILHOS E ACESSÓRIOS..."
                 className="text-sm"
               />
@@ -550,6 +570,7 @@ export default function RevendaPage() {
               <Textarea
                 value={form.observacoes}
                 onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
+                disabled={costOnly}
                 placeholder="Informações adicionais..."
                 className="text-sm resize-none"
                 rows={3}
@@ -557,7 +578,7 @@ export default function RevendaPage() {
             </div>
 
             {/* ─── Foto ─────────────────────────────────────────────────────── */}
-            <div className="space-y-2">
+            {!costOnly && <div className="space-y-2">
               <Label className="text-xs font-semibold tracking-wider flex items-center gap-1.5">
                 <ImageIcon className="w-3.5 h-3.5" />
                 FOTO DO PRODUTO
@@ -628,7 +649,7 @@ export default function RevendaPage() {
                   if (file) handlePhotoUpload(file);
                 }}
               />
-            </div>
+            </div>}
           </div>
 
           <DialogFooter>
@@ -640,7 +661,7 @@ export default function RevendaPage() {
               onClick={handleSubmit}
               disabled={isSaving || !form.codigo.trim() || !form.descricao.trim() || uploading}
             >
-              {isSaving ? "SALVANDO..." : editItem ? "SALVAR ALTERAÇÕES" : "CRIAR ITEM"}
+              {isSaving ? "SALVANDO..." : costOnly ? "SALVAR CUSTOS" : editItem ? "SALVAR ALTERAÇÕES" : "CRIAR ITEM"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -86,6 +86,8 @@ describe("matriz de permissões", () => {
     expect(can("engineering", "manageDocuments")).toBe(true);
     expect(can("engineering", "viewCosts")).toBe(false);
     expect(can("costs", "editCosts")).toBe(true);
+    expect(can("costs", "viewCatalog")).toBe(true);
+    expect(can("costs", "manageEntities")).toBe(false);
     expect(can("costs", "manageDocuments")).toBe(false);
   });
 

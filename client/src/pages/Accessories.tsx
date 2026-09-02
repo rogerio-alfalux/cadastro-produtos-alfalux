@@ -43,6 +43,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { can } from "@shared/permissions";
 
 const PAGE_SIZE = 50;
 
@@ -78,7 +79,9 @@ const emptyForm = {
 
 export default function AccessoriesPage() {
   const { user } = useAuth();
-  const isLoggedIn = !!user;
+  const canManageEntities = user ? can(user.role, "manageEntities", user.permissionOverrides) : false;
+  const canEditCosts = user ? can(user.role, "editCosts", user.permissionOverrides) : false;
+  const canUseActions = canManageEntities || canEditCosts;
 
   const [search, setSearch] = useState("");
   const [familiaFilter, setFamiliaFilter] = useState<string>("__all__");
@@ -91,6 +94,7 @@ export default function AccessoriesPage() {
   const [form, setForm] = useState(emptyForm);
   const [deleteConfirm, setDeleteConfirm] = useState<AccessoryItem | null>(null);
   const [showImport, setShowImport] = useState(false);
+  const costOnly = !!editItem && !canManageEntities && canEditCosts;
 
   // Photo state
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -135,6 +139,15 @@ export default function AccessoriesPage() {
       toast.success("Acessório atualizado com sucesso!");
       utils.accessories.list.invalidate();
       utils.accessories.listFamilias.invalidate();
+      setDialogOpen(false);
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const updateCostsMutation = trpc.accessories.updateCosts.useMutation({
+    onSuccess: () => {
+      toast.success("Custos atualizados com sucesso!");
+      utils.accessories.list.invalidate();
       setDialogOpen(false);
     },
     onError: (err) => toast.error(err.message),
@@ -255,14 +268,16 @@ export default function AccessoriesPage() {
       fotoUrl: form.fotoUrl || null,
       fotoKey: form.fotoKey || null,
     };
-    if (editItem) {
+    if (editItem && canManageEntities) {
       updateMutation.mutate({ id: editItem.id, ...payload });
-    } else {
+    } else if (editItem && canEditCosts) {
+      updateCostsMutation.mutate({ id: editItem.id, custo: form.custo || null, precoVenda: form.precoVenda || null });
+    } else if (canManageEntities) {
       createMutation.mutate(payload);
     }
   }
 
-  const isSaving = createMutation.isPending || updateMutation.isPending;
+  const isSaving = createMutation.isPending || updateMutation.isPending || updateCostsMutation.isPending;
 
   function formatCurrency(val: string | null | undefined) {
     if (!val) return "—";
@@ -284,7 +299,7 @@ export default function AccessoriesPage() {
             {total} {total === 1 ? "item" : "itens"} cadastrados
           </p>
         </div>
-        {isLoggedIn && (
+        {canManageEntities && (
           <div className="flex gap-2 flex-wrap">
             <Button variant="outline" size="sm" onClick={() => setShowImport(true)} className="gap-2">
               <Upload className="w-4 h-4" />
@@ -351,7 +366,7 @@ export default function AccessoriesPage() {
                 <th className="text-left px-4 py-3 font-semibold text-muted-foreground tracking-wider hidden lg:table-cell">DIMENSÃO</th>
                 <th className="text-left px-4 py-3 font-semibold text-muted-foreground tracking-wider hidden lg:table-cell">CUSTO</th>
                 <th className="text-left px-4 py-3 font-semibold text-muted-foreground tracking-wider hidden lg:table-cell">PREÇO VENDA</th>
-                {isLoggedIn && (
+                {canUseActions && (
                   <th className="text-right px-4 py-3 font-semibold text-muted-foreground tracking-wider">AÇÕES</th>
                 )}
               </tr>
@@ -360,7 +375,7 @@ export default function AccessoriesPage() {
               {isLoading ? (
                 Array.from({ length: 8 }).map((_, i) => (
                   <tr key={i} className="border-b border-border/30">
-                    {[...Array(isLoggedIn ? 9 : 8)].map((_, j) => (
+                    {[...Array(canUseActions ? 9 : 8)].map((_, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-3 bg-muted/40 rounded animate-pulse" />
                       </td>
@@ -369,7 +384,7 @@ export default function AccessoriesPage() {
                 ))
               ) : items.length === 0 ? (
                 <tr>
-                  <td colSpan={isLoggedIn ? 9 : 8} className="px-4 py-12 text-center text-muted-foreground">
+                  <td colSpan={canUseActions ? 9 : 8} className="px-4 py-12 text-center text-muted-foreground">
                     <Package className="w-8 h-8 mx-auto mb-2 opacity-30" />
                     <p>Nenhum acessório encontrado</p>
                   </td>
@@ -423,10 +438,10 @@ export default function AccessoriesPage() {
                     <td className="px-4 py-3 font-medium hidden lg:table-cell">
                       {formatCurrency(item.precoVenda)}
                     </td>
-                    {isLoggedIn && (
+                    {canUseActions && (
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <TooltipProvider delayDuration={300}>
+                          {canManageEntities && <TooltipProvider delayDuration={300}>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <div className="flex items-center px-0.5">
@@ -448,8 +463,8 @@ export default function AccessoriesPage() {
                                 {item.ativo !== false ? "Ativo — clique para desativar" : "Inativo — clique para ativar"}
                               </TooltipContent>
                             </Tooltip>
-                          </TooltipProvider>
-                          <Button
+                          </TooltipProvider>}
+                          {canManageEntities && <Button
                             variant="ghost"
                             size="sm"
                             className="h-7 w-7 p-0 text-muted-foreground hover:text-primary"
@@ -457,17 +472,17 @@ export default function AccessoriesPage() {
                             onClick={() => openDuplicate(item)}
                           >
                             <Copy className="w-3.5 h-3.5" />
-                          </Button>
+                          </Button>}
                           <Button
                             variant="ghost"
                             size="sm"
                             className="h-7 w-7 p-0"
-                            title="Editar acessório"
+                            title={canEditCosts && !canManageEntities ? "Editar custos" : "Editar acessório"}
                             onClick={() => openEdit(item)}
                           >
                             <Pencil className="w-3.5 h-3.5" />
                           </Button>
-                          <Button
+                          {canManageEntities && <Button
                             variant="ghost"
                             size="sm"
                             className="h-7 w-7 p-0 text-destructive hover:text-destructive"
@@ -475,7 +490,7 @@ export default function AccessoriesPage() {
                             onClick={() => setDeleteConfirm(item)}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
+                          </Button>}
                         </div>
                       </td>
                     )}
@@ -524,7 +539,7 @@ export default function AccessoriesPage() {
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-sm font-bold tracking-wider">
-              {editItem ? "EDITAR ACESSÓRIO" : duplicateSource ? "DUPLICAR ACESSÓRIO" : "NOVO ACESSÓRIO"}
+              {costOnly ? "EDITAR CUSTOS DO ACESSÓRIO" : editItem ? "EDITAR ACESSÓRIO" : duplicateSource ? "DUPLICAR ACESSÓRIO" : "NOVO ACESSÓRIO"}
             </DialogTitle>
           </DialogHeader>
 
@@ -545,6 +560,7 @@ export default function AccessoriesPage() {
                 <Input
                   value={form.codigo}
                   onChange={(e) => setForm({ ...form, codigo: e.target.value })}
+                  disabled={costOnly}
                   placeholder="AC00001"
                   className="text-sm font-mono"
                 />
@@ -554,6 +570,7 @@ export default function AccessoriesPage() {
                 <Input
                   value={form.sku}
                   onChange={(e) => setForm({ ...form, sku: e.target.value })}
+                  disabled={costOnly}
                   placeholder="Código do fabricante"
                   className="text-sm font-mono"
                 />
@@ -565,6 +582,7 @@ export default function AccessoriesPage() {
               <Input
                 value={form.produto}
                 onChange={(e) => setForm({ ...form, produto: e.target.value })}
+                disabled={costOnly}
                 placeholder="Nome/descrição do produto"
                 className="text-sm"
               />
@@ -576,6 +594,7 @@ export default function AccessoriesPage() {
                 <Input
                   value={form.familia}
                   onChange={(e) => setForm({ ...form, familia: e.target.value })}
+                  disabled={costOnly}
                   placeholder="Ex: PERFIS, CONECTORES..."
                   className="text-sm"
                   list="familias-list"
@@ -591,6 +610,7 @@ export default function AccessoriesPage() {
                 <Input
                   value={form.dimensao}
                   onChange={(e) => setForm({ ...form, dimensao: e.target.value })}
+                  disabled={costOnly}
                   placeholder="Ex: 1000mm, 500x300mm..."
                   className="text-sm"
                 />
@@ -630,6 +650,7 @@ export default function AccessoriesPage() {
               <textarea
                 value={form.observacoes}
                 onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
+                disabled={costOnly}
                 placeholder="Observações adicionais..."
                 rows={2}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
@@ -637,7 +658,7 @@ export default function AccessoriesPage() {
             </div>
 
             {/* ─── Foto ─────────────────────────────────────────────────────── */}
-            <div className="space-y-2">
+            {!costOnly && <div className="space-y-2">
               <Label className="text-xs font-semibold tracking-wider flex items-center gap-1.5">
                 <ImageIcon className="w-3.5 h-3.5" />
                 FOTO DO PRODUTO
@@ -708,7 +729,7 @@ export default function AccessoriesPage() {
                   if (file) handlePhotoUpload(file);
                 }}
               />
-            </div>
+            </div>}
           </div>
 
           <DialogFooter>
@@ -720,7 +741,7 @@ export default function AccessoriesPage() {
               onClick={handleSubmit}
               disabled={isSaving || uploading}
             >
-              {isSaving ? "SALVANDO..." : editItem ? "SALVAR ALTERAÇÕES" : "CRIAR ACESSÓRIO"}
+              {isSaving ? "SALVANDO..." : costOnly ? "SALVAR CUSTOS" : editItem ? "SALVAR ALTERAÇÕES" : "CRIAR ACESSÓRIO"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -32,9 +32,9 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: "PRODUTOS", href: "/", icon: Database, permission: "viewCatalog" },
   { label: "CADASTRAR", href: "/cadastrar", icon: PlusCircle, permission: "manageEntities" },
-  { label: "REVENDA", href: "/revenda", icon: ShoppingCart, permission: "manageEntities" },
-  { label: "ACESSÓRIOS", href: "/acessorios", icon: Wrench, permission: "manageEntities" },
-  { label: "COMPONENTES", href: "/componentes", icon: Cpu, permission: "manageEntities" },
+  { label: "REVENDA", href: "/revenda", icon: ShoppingCart, permission: "viewCatalog" },
+  { label: "ACESSÓRIOS", href: "/acessorios", icon: Wrench, permission: "viewCatalog" },
+  { label: "COMPONENTES", href: "/componentes", icon: Cpu, permission: "viewCatalog" },
   { label: "SUBSTITUIÇÃO", href: "/substituicao-em-massa", icon: ArrowLeftRight, permission: "manageEntities" },
   { label: "DOCS EM LOTE", href: "/documentos-em-massa", icon: FileStack, permission: "manageDocuments" },
   { label: "BACKUPS", href: "/backups", icon: HardDrive, permission: "manageUsers" },

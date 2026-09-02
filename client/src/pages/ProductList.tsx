@@ -839,7 +839,7 @@ export default function ProductList() {
           </DialogHeader>
           {viewId && <ProductDetail id={viewId} />}
           <DialogFooter className="mt-4 pt-4 border-t border-border/40">
-            <Button
+            {canManageEntities && <Button
               variant="outline"
               size="sm"
               onClick={() => { setDuplicarId(viewId); setViewId(null); }}
@@ -847,7 +847,7 @@ export default function ProductList() {
             >
               <Copy className="w-3.5 h-3.5 mr-1.5" />
               DUPLICAR ESTE PRODUTO
-            </Button>
+            </Button>}
           </DialogFooter>
         </DialogContent>
       </Dialog>

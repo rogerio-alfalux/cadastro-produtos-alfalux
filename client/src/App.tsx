@@ -36,6 +36,7 @@ function Router() {
   const canUse = (permission: Parameters<typeof can>[1]) => can(user.role, permission, user.permissionOverrides);
   const canDocuments = canUse("manageDocuments");
   const canCosts = canUse("editCosts");
+  const canViewCatalog = canUse("viewCatalog");
   const canManageUsers = canUse("manageUsers");
   const canManageEntities = canUse("manageEntities");
   const canViewReports = canUse("viewReports");
@@ -51,9 +52,9 @@ function Router() {
         <Route path="/relatorios">{canViewReports ? <ReportsPage /> : <NotFound />}</Route>
         <Route path="/documentos-em-massa">{canDocuments ? <BulkDocumentsPage /> : <NotFound />}</Route>
         <Route path="/cadastrar">{canManageEntities ? <CadastrarPage /> : <NotFound />}</Route>
-        <Route path="/componentes">{canManageEntities ? <ComponentsPage /> : <NotFound />}</Route>
-        <Route path="/revenda">{canManageEntities ? <RevendaPage /> : <NotFound />}</Route>
-        <Route path="/acessorios">{canManageEntities ? <AccessoriesPage /> : <NotFound />}</Route>
+        <Route path="/componentes">{canViewCatalog ? <ComponentsPage /> : <NotFound />}</Route>
+        <Route path="/revenda">{canViewCatalog ? <RevendaPage /> : <NotFound />}</Route>
+        <Route path="/acessorios">{canViewCatalog ? <AccessoriesPage /> : <NotFound />}</Route>
         <Route path="/backups">{canManageUsers ? <BackupsPage /> : <NotFound />}</Route>
         <Route path="/substituicao-em-massa">{canManageEntities ? <BulkReplacePage /> : <NotFound />}</Route>
         <Route path="/404" component={NotFound} />

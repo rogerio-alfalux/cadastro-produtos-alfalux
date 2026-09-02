@@ -32,6 +32,8 @@ import { Plus, Pencil, Trash2, RefreshCw, Search, ChevronDown, ChevronUp, Packag
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { can } from "@shared/permissions";
 
 type ComponentType =
   | "DRIVER_ONOFF_220"
@@ -366,6 +368,9 @@ function BulkReplaceModal({
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function Components() {
   const utils = trpc.useUtils();
+  const { user } = useAuth();
+  const canManageEntities = user ? can(user.role, "manageEntities", user.permissionOverrides) : false;
+  const canEditCosts = user ? can(user.role, "editCosts", user.permissionOverrides) : false;
 
   // ─── Filters ─────────────────────────────────────────────────────────────
   const [filterTipo, setFilterTipo] = useState<ComponentType | "ALL">("ALL");
@@ -420,6 +425,7 @@ export default function Components() {
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState<ComponentRow | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const costOnly = !!editTarget && !canManageEntities && canEditCosts;
 
   // Verificação de código duplicado em tempo real
   const codigoParaVerificar = form.codigo.trim().length >= 2 ? form.codigo.trim().toUpperCase() : null;
@@ -477,9 +483,11 @@ export default function Components() {
       toast.error(`Código "${form.codigo.trim().toUpperCase()}" já está em uso pelo componente: ${codigoConflito?.modelo}`);
       return;
     }
-    if (editTarget) {
+    if (editTarget && canManageEntities) {
       updateMut.mutate({ id: editTarget.id, modelo: form.modelo, codigo: form.codigo, observacao: form.observacao, custo: form.custo, custoDriver: form.custoDriver || undefined, mkpPadraoDriver: form.mkpPadraoDriver || undefined, fotoUrl: form.fotoUrl || undefined, fotoKey: form.fotoKey || undefined });
-    } else {
+    } else if (editTarget && canEditCosts) {
+      updateMut.mutate({ id: editTarget.id, custo: form.custo, custoDriver: form.custoDriver || undefined, mkpPadraoDriver: form.mkpPadraoDriver || undefined });
+    } else if (canManageEntities) {
       createMut.mutate({ tipo: form.tipo as ComponentType, modelo: form.modelo, codigo: form.codigo, observacao: form.observacao, custo: form.custo, custoDriver: form.custoDriver || undefined, mkpPadraoDriver: form.mkpPadraoDriver || undefined, fotoUrl: form.fotoUrl || undefined, fotoKey: form.fotoKey || undefined });
     }
   };
@@ -642,20 +650,22 @@ export default function Components() {
               Gerencie drivers, óticas, holders, dissipadores e módulos LED
             </p>
           </div>
-          <div className="flex gap-2 flex-wrap">
-            <Button variant="outline" onClick={() => setShowBulk(true)} className="gap-2">
-              <RefreshCw className="w-4 h-4" />
-              Alteração em Massa
-            </Button>
-            <Button variant="outline" onClick={() => setShowImport(true)} className="gap-2">
-              <Upload className="w-4 h-4" />
-              Importar Excel
-            </Button>
-            <Button onClick={openCreate} className="gap-2">
-              <Plus className="w-4 h-4" />
-              Novo Componente
-            </Button>
-          </div>
+          {canManageEntities && (
+            <div className="flex gap-2 flex-wrap">
+              <Button variant="outline" onClick={() => setShowBulk(true)} className="gap-2">
+                <RefreshCw className="w-4 h-4" />
+                Alteração em Massa
+              </Button>
+              <Button variant="outline" onClick={() => setShowImport(true)} className="gap-2">
+                <Upload className="w-4 h-4" />
+                Importar Excel
+              </Button>
+              <Button onClick={openCreate} className="gap-2">
+                <Plus className="w-4 h-4" />
+                Novo Componente
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Filters */}
@@ -696,7 +706,7 @@ export default function Components() {
           <div className="text-center py-12 text-muted-foreground">Carregando...</div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
-            Nenhum componente encontrado. Clique em "Novo Componente" para começar.
+            {canManageEntities ? 'Nenhum componente encontrado. Clique em "Novo Componente" para começar.' : "Nenhum componente encontrado."}
           </div>
         ) : (
           <div className="space-y-4">
@@ -729,6 +739,7 @@ export default function Components() {
                         <Checkbox
                           checked={items.every((c) => selectedIds.has(c.id))}
                           onCheckedChange={() => toggleSelectGroup(items)}
+                          disabled={!canManageEntities}
                           aria-label="Selecionar todos do grupo"
                           className="w-3.5 h-3.5"
                         />
@@ -754,6 +765,7 @@ export default function Components() {
                           <Checkbox
                             checked={selectedIds.has(c.id)}
                             onCheckedChange={() => toggleSelect(c.id)}
+                            disabled={!canManageEntities}
                             aria-label={`Selecionar ${c.modelo}`}
                             className="w-3.5 h-3.5"
                           />
@@ -761,14 +773,15 @@ export default function Components() {
                         {/* Foto — lado esquerdo, como nos produtos */}
                         <div className="flex items-center">
                           <button
-                            onClick={() => setFotoTarget(c)}
+                            onClick={() => canManageEntities && setFotoTarget(c)}
+                            disabled={!canManageEntities}
                             className={cn(
                               "w-10 h-10 rounded-lg overflow-hidden border flex items-center justify-center flex-shrink-0 transition-colors",
                               c.fotoUrl
                                 ? "border-violet-500/40 hover:border-violet-400 bg-muted/20"
                                 : "border-dashed border-border hover:border-violet-500/50 bg-muted/20 hover:bg-violet-500/5"
                             )}
-                            title={c.fotoUrl ? "Ver/alterar foto" : "Adicionar foto"}
+                            title={canManageEntities ? (c.fotoUrl ? "Ver/alterar foto" : "Adicionar foto") : "Foto disponível apenas para visualização"}
                           >
                             {c.fotoUrl ? (
                               <img
@@ -798,20 +811,20 @@ export default function Components() {
                           >
                             <Package className="w-3.5 h-3.5" />
                           </button>
-                          <button
+                          {(canManageEntities || canEditCosts) && <button
                             onClick={() => openEdit(c)}
                             className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
-                            title="Editar"
+                            title={canEditCosts && !canManageEntities ? "Editar custos e markups" : "Editar"}
                           >
                             <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                          <button
+                          </button>}
+                          {canManageEntities && <button
                             onClick={() => openDuplicate(c)}
                             className="p-1.5 rounded text-muted-foreground hover:text-cyan-400 hover:bg-cyan-400/10 transition-colors"
                             title="Duplicar componente"
                           >
                             <Copy className="w-3.5 h-3.5" />
-                          </button>
+                          </button>}
                           <TooltipProvider delayDuration={300}>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -821,6 +834,7 @@ export default function Components() {
                                     onCheckedChange={(checked) => {
                                       toggleAtivoMut.mutate({ id: c.id, ativo: !!checked });
                                     }}
+                                    disabled={!canManageEntities}
                                     className={cn(
                                       "w-3.5 h-3.5 transition-colors",
                                       (c as any).ativo !== false
@@ -835,13 +849,13 @@ export default function Components() {
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
-                          <button
+                          {canManageEntities && <button
                             onClick={() => setDeleteTarget(c)}
                             className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                             title="Excluir"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          </button>}
                         </div>
                       </div>
                     ))}
@@ -853,7 +867,7 @@ export default function Components() {
         )}
       </div>
       {/* ─── Barra flutuante de exclusão em massa ─────────────────────────────── */}
-      {selectedIds.size > 0 && (
+      {canManageEntities && selectedIds.size > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-2xl border border-destructive/40 bg-card shadow-2xl px-5 py-3 animate-in slide-in-from-bottom-4 duration-200">
           <CheckSquare2 className="w-4 h-4 text-destructive" />
           <span className="text-sm font-medium text-foreground">
@@ -1073,7 +1087,7 @@ export default function Components() {
       <Dialog open={showForm} onOpenChange={setShowForm}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editTarget ? "Editar Componente" : "Novo Componente"}</DialogTitle>
+            <DialogTitle>{costOnly ? "Editar Custos e Markups" : editTarget ? "Editar Componente" : "Novo Componente"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             {/* Tipo */}
@@ -1082,6 +1096,7 @@ export default function Components() {
               <Select
                 value={form.tipo}
                 onValueChange={(v) => setForm((p) => ({ ...p, tipo: v as ComponentType, modelo: "" }))}
+                disabled={costOnly}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o tipo..." />
@@ -1102,7 +1117,7 @@ export default function Components() {
                 tipo={form.tipo}
                 onChange={(v) => setForm((p) => ({ ...p, modelo: v }))}
                 placeholder="Ex: PHILIPS CERTADRIVE 20W 500MA"
-                disabled={!form.tipo}
+                disabled={!form.tipo || costOnly}
               />
             </div>
 
@@ -1112,6 +1127,7 @@ export default function Components() {
               <Input
                 value={form.codigo}
                 onChange={(e) => setForm((p) => ({ ...p, codigo: e.target.value.toUpperCase() }))}
+                disabled={costOnly}
                 placeholder="Ex: 929001905506"
                 className={codigoEmUso ? "border-destructive focus-visible:ring-destructive" : ""}
               />
@@ -1128,6 +1144,7 @@ export default function Components() {
               <Input
                 value={form.observacao}
                 onChange={(e) => setForm((p) => ({ ...p, observacao: e.target.value }))}
+                disabled={costOnly}
                 placeholder="Ex: Compatível com módulos 500mA"
               />
             </div>
@@ -1182,7 +1199,7 @@ export default function Components() {
             )}
 
             {/* Foto */}
-            <div className="space-y-1.5">
+            {!costOnly && <div className="space-y-1.5">
               <Label>Foto <span className="text-muted-foreground text-xs">(opcional)</span></Label>
               {form.fotoUrl ? (
                 <div className="flex items-start gap-3">
@@ -1244,12 +1261,12 @@ export default function Components() {
                   e.target.value = "";
                 }}
               />
-            </div>
+            </div>}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowForm(false)}>Cancelar</Button>
             <Button onClick={handleSave} disabled={createMut.isPending || updateMut.isPending || codigoEmUso}>
-              {createMut.isPending || updateMut.isPending ? "Salvando..." : "Salvar"}
+              {createMut.isPending || updateMut.isPending ? "Salvando..." : costOnly ? "Salvar custos" : "Salvar"}
             </Button>
           </DialogFooter>
         </DialogContent>
