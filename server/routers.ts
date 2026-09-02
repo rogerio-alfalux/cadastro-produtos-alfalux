@@ -6,8 +6,8 @@ import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, entityAdminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { usersRouter } from "./routers/users";
 import { sdk } from "./_core/sdk";
-import { DUMMY_PASSWORD_HASH, verifyPassword } from "./passwords";
-import { getLocalUserByEmail, updateUsersByEmail } from "./db";
+import { DUMMY_PASSWORD_HASH, hashPassword, hashPasswordResetToken, validatePasswordStrength, verifyPassword } from "./passwords";
+import { getLocalUserByEmail, getUserByValidPasswordResetTokenHash, updateUsersByEmail } from "./db";
 import { can, isAllowedUserEmail, normalizeEmail, type AppRole } from "../shared/permissions";
 import { componentsRouter } from "./routers/components";
 import { bulkOpsRouter } from "./routers/bulkOps";
@@ -453,10 +453,40 @@ export const appRouter = router({
         passwordHash: _passwordHash,
         failedLoginAttempts: _failedLoginAttempts,
         lockedUntil: _lockedUntil,
+        passwordResetTokenHash: _passwordResetTokenHash,
+        passwordResetExpiresAt: _passwordResetExpiresAt,
         ...safeUser
       } = opts.ctx.user;
       return safeUser;
     }),
+    passwordResetStatus: publicProcedure
+      .input(z.object({ token: z.string().min(20).max(200) }))
+      .query(async ({ input }) => {
+        const user = await getUserByValidPasswordResetTokenHash(hashPasswordResetToken(input.token));
+        if (!user) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "Link de redefinição inválido ou expirado." });
+        }
+        return { valid: true } as const;
+      }),
+    resetPassword: publicProcedure
+      .input(z.object({ token: z.string().min(20).max(200), password: z.string() }))
+      .mutation(async ({ input }) => {
+        const user = await getUserByValidPasswordResetTokenHash(hashPasswordResetToken(input.token));
+        if (!user?.email) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "Link de redefinição inválido ou expirado." });
+        }
+        const passwordError = validatePasswordStrength(input.password);
+        if (passwordError) throw new TRPCError({ code: "BAD_REQUEST", message: passwordError });
+
+        await updateUsersByEmail(user.email, {
+          passwordHash: hashPassword(input.password),
+          failedLoginAttempts: 0,
+          lockedUntil: null,
+          passwordResetTokenHash: null,
+          passwordResetExpiresAt: null,
+        });
+        return { success: true } as const;
+      }),
     login: publicProcedure
       .input(z.object({ email: z.string().email(), password: z.string().min(1).max(128) }))
       .mutation(async ({ input, ctx }) => {
@@ -494,6 +524,8 @@ export const appRouter = router({
           passwordHash: _passwordHash,
           failedLoginAttempts: _failedLoginAttempts,
           lockedUntil: _lockedUntil,
+          passwordResetTokenHash: _passwordResetTokenHash,
+          passwordResetExpiresAt: _passwordResetExpiresAt,
           ...safeUser
         } = user;
         return { success: true, user: safeUser } as const;

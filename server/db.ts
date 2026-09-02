@@ -1,4 +1,4 @@
-import { and, asc, eq, like, or, sql } from "drizzle-orm";
+import { and, asc, eq, gt, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertProduct, InsertUser, components, products, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
@@ -73,6 +73,21 @@ export async function getLocalUserByEmail(email: string) {
   return matches.find((user) => user.active && !!user.passwordHash) ?? undefined;
 }
 
+export async function getUserByValidPasswordResetTokenHash(tokenHash: string, now = new Date()) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db
+    .select()
+    .from(users)
+    .where(and(
+      eq(users.passwordResetTokenHash, tokenHash),
+      eq(users.active, true),
+      gt(users.passwordResetExpiresAt, now),
+    ))
+    .limit(1);
+  return result[0];
+}
+
 export async function listManagedUsers() {
   const db = await getDb();
   if (!db) return [];
@@ -86,7 +101,14 @@ export async function listManagedUsers() {
       grouped.set(email, row);
     }
   }
-  return Array.from(grouped.values()).map(({ passwordHash: _passwordHash, failedLoginAttempts: _failedLoginAttempts, lockedUntil: _lockedUntil, ...user }) => ({
+  return Array.from(grouped.values()).map(({
+    passwordHash: _passwordHash,
+    failedLoginAttempts: _failedLoginAttempts,
+    lockedUntil: _lockedUntil,
+    passwordResetTokenHash: _passwordResetTokenHash,
+    passwordResetExpiresAt: _passwordResetExpiresAt,
+    ...user
+  }) => ({
     ...user,
     hasPassword: rows.some(
       (row) => row.email?.trim().toLowerCase() === user.email?.trim().toLowerCase() && !!row.passwordHash,

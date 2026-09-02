@@ -18,7 +18,7 @@ import {
   listManagedUsers,
   updateUsersByEmail,
 } from "../db";
-import { hashPassword, validatePasswordStrength } from "../passwords";
+import { createPasswordResetToken, hashPassword, hashPasswordResetToken, validatePasswordStrength } from "../passwords";
 import { adminProcedure, router } from "../_core/trpc";
 
 const appRoleSchema = z.enum(APP_ROLES);
@@ -69,6 +69,26 @@ async function ensureAccessContinuity(
 
 export const usersRouter = router({
   list: adminProcedure.query(() => listManagedUsers()),
+
+  issuePasswordResetLink: adminProcedure
+    .input(z.object({ email: z.string().email() }))
+    .mutation(async ({ input }) => {
+      const email = normalizeEmail(input.email);
+      validateManagedIdentity(email);
+      const existing = await getUsersByEmail(email);
+      const currentUser = existing.find((user) => user.active) ?? existing[0];
+      if (!currentUser?.active) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Usuário ativo não encontrado." });
+      }
+
+      const token = createPasswordResetToken();
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      await updateUsersByEmail(email, {
+        passwordResetTokenHash: hashPasswordResetToken(token),
+        passwordResetExpiresAt: expiresAt,
+      });
+      return { token, expiresAt };
+    }),
 
   create: adminProcedure
     .input(z.object({

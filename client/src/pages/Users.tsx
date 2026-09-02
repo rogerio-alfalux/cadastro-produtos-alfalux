@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { KeyRound, Pencil, Plus, Shield, SlidersHorizontal, Trash2, UserCheck, UserX, Users } from "lucide-react";
+import { Copy, KeyRound, Link2, Pencil, Plus, Shield, SlidersHorizontal, Trash2, UserCheck, UserX, Users } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,6 +57,8 @@ export default function UsersPage() {
   const [editActive, setEditActive] = useState(true);
   const [editPassword, setEditPassword] = useState("");
   const [permissionOverrides, setPermissionOverrides] = useState<PermissionOverrides>({});
+  const [resetLink, setResetLink] = useState<string | null>(null);
+  const [resetTarget, setResetTarget] = useState<UserRow | null>(null);
 
   const refresh = async () => {
     await Promise.all([utils.users.list.invalidate(), utils.auth.me.invalidate()]);
@@ -85,6 +87,17 @@ export default function UsersPage() {
       toast.success("Usuário excluído");
     },
     onError: (error) => toast.error(error.message),
+  });
+  const issuePasswordReset = trpc.users.issuePasswordResetLink.useMutation({
+    onSuccess: (result) => {
+      const link = `${window.location.origin}/redefinir-senha?token=${encodeURIComponent(result.token)}`;
+      setResetLink(link);
+      toast.success("Link temporário de redefinição gerado.");
+    },
+    onError: (error) => {
+      setResetTarget(null);
+      toast.error(error.message);
+    },
   });
 
   const openEdit = (user: UserRow) => {
@@ -127,6 +140,7 @@ export default function UsersPage() {
     <div className="flex justify-end gap-1">
       <Button size="icon" variant="ghost" onClick={() => openEdit(user)} aria-label="Editar usuário" title="Editar usuário"><Pencil className="w-4 h-4" /></Button>
       <Button size="icon" variant="ghost" onClick={() => openPermissions(user)} aria-label="Ajustar permissões" title="Ajustar permissões"><SlidersHorizontal className="w-4 h-4" /></Button>
+      <Button size="icon" variant="ghost" disabled={!user.active || issuePasswordReset.isPending} onClick={() => { if (user.email) { setResetTarget(user); issuePasswordReset.mutate({ email: user.email }); } }} aria-label="Gerar link de redefinição de senha" title="Gerar link de redefinição de senha"><Link2 className="w-4 h-4" /></Button>
       <Button size="icon" variant="ghost" className="text-destructive" disabled={removeUser.isPending} onClick={() => { if (user.email && window.confirm(`Excluir o acesso de ${user.email}?`)) removeUser.mutate({ email: user.email }); }} aria-label="Excluir usuário" title="Excluir usuário"><Trash2 className="w-4 h-4" /></Button>
     </div>
   );
@@ -192,6 +206,13 @@ export default function UsersPage() {
           return <div key={permission.key} className="rounded-lg border border-border/60 p-3.5 transition-colors hover:bg-muted/20"><div className="flex items-start gap-3"><input id={`permission-${permission.key}`} type="checkbox" className="mt-1 h-4 w-4 accent-primary disabled:opacity-40" checked={checked} disabled={disabled} onChange={(event) => setPermission(permission.key, event.target.checked)} /><div className="min-w-0 flex-1"><label htmlFor={`permission-${permission.key}`} className={`text-sm font-semibold ${disabled ? "cursor-not-allowed text-muted-foreground" : "cursor-pointer"}`}>{permission.label}</label><p className="text-xs text-muted-foreground mt-1 leading-relaxed">{permission.description}</p><div className="flex items-center gap-2 mt-2">{disabled ? <Badge variant="outline">Exclusiva de Administrador</Badge> : isOverridden ? <><Badge variant="secondary">Atribuição individual</Badge><button type="button" className="text-[11px] text-primary hover:underline" onClick={() => resetPermission(permission.key)}>Restaurar perfil</button></> : <Badge variant="outline">Padrão do perfil</Badge>}</div></div></div></div>;
         })}</div>
         <DialogFooter><Button type="button" variant="outline" onClick={() => setPermissionsUser(null)}>Cancelar</Button><Button onClick={savePermissions} disabled={updateUser.isPending}>{updateUser.isPending ? "SALVANDO..." : "SALVAR PERMISSÕES"}</Button></DialogFooter>
+      </DialogContent></Dialog>
+
+      <Dialog open={!!resetLink} onOpenChange={(open) => { if (!open) { setResetLink(null); setResetTarget(null); } }}><DialogContent className="sm:max-w-xl"><DialogHeader><DialogTitle>Link de redefinição de senha</DialogTitle><DialogDescription>Envie este link somente para {resetTarget?.name || "o usuário"}. Ele expira em uma hora, substitui qualquer link anterior e deixa de funcionar após a nova senha ser definida.</DialogDescription></DialogHeader>
+        <div className="space-y-3"><Label htmlFor="password-reset-link">Link temporário</Label><Input id="password-reset-link" value={resetLink || ""} readOnly className="text-xs" />
+          <Button type="button" className="w-full" onClick={async () => { if (!resetLink) return; try { await navigator.clipboard.writeText(resetLink); toast.success("Link copiado para a área de transferência."); } catch { toast.error("Não foi possível copiar automaticamente. Copie o link exibido."); } }}><Copy className="w-4 h-4 mr-2" />COPIAR LINK</Button>
+        </div>
+        <DialogFooter><Button type="button" variant="outline" onClick={() => { setResetLink(null); setResetTarget(null); }}>Fechar</Button></DialogFooter>
       </DialogContent></Dialog>
     </div>
   );

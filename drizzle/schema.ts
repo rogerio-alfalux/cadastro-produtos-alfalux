@@ -23,6 +23,8 @@ export const users = mysqlTable("users", {
   active: boolean("active").default(true).notNull(),
   failedLoginAttempts: int("failedLoginAttempts").default(0).notNull(),
   lockedUntil: timestamp("lockedUntil"),
+  passwordResetTokenHash: varchar("passwordResetTokenHash", { length: 128 }),
+  passwordResetExpiresAt: timestamp("passwordResetExpiresAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),

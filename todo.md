@@ -905,3 +905,18 @@
 - [x] Reproduzir a perda da seleção de componente ao reabrir um produto com Outros Equipamentos
 - [x] Corrigir a normalização e o carregamento dos identificadores de componentes associados
 - [x] Validar salvamento, reabertura, API, TypeScript, testes e build antes do checkpoint
+
+## Correção v63.3 — Acesso da Geysa ao Link Publicado
+
+- [x] Verificar a disponibilidade do domínio publicado e o comportamento do link compartilhado
+- [x] Auditar o status ativo, perfil e estado de bloqueio da conta da Geysa
+- [x] Corrigir a causa de acesso identificada sem enfraquecer a autenticação
+- [x] Validar o fluxo seguro de recuperação de acesso antes do checkpoint
+
+## Feature v64 — Redefinição Segura de Senha
+
+- [x] Persistir token de redefinição apenas em hash, com expiração e uso único
+- [x] Permitir que administradores gerem um link temporário pelo painel de Usuários
+- [x] Criar tela pública para validar o token e definir uma nova senha
+- [x] Garantir invalidação após uso e cobertura para token inválido ou expirado
+- [x] Validar a recuperação de acesso da Geysa, TypeScript, testes e build antes do checkpoint

@@ -11,6 +11,7 @@ const dbMocks = vi.hoisted(() => ({
   deleteProduct: vi.fn(),
   listProducts: vi.fn(),
   getLocalUserByEmail: vi.fn(),
+  getUserByValidPasswordResetTokenHash: vi.fn(),
   updateUsersByEmail: vi.fn(),
   getUsersByEmail: vi.fn(),
   listManagedUsers: vi.fn(),
@@ -157,6 +158,8 @@ describe("matriz de permissões", () => {
     expect(result).not.toHaveProperty("passwordHash");
     expect(result).not.toHaveProperty("failedLoginAttempts");
     expect(result).not.toHaveProperty("lockedUntil");
+    expect(result).not.toHaveProperty("passwordResetTokenHash");
+    expect(result).not.toHaveProperty("passwordResetExpiresAt");
   });
 });
 
@@ -188,6 +191,54 @@ describe("login e gestão administrativa", () => {
   it("recusa domínio externo e senha incorreta", async () => {
     const caller = appRouter.createCaller(context(null).ctx);
     await expect(caller.auth.login({ email: "externo@gmail.com", password: "SenhaForte!2026" })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  });
+
+  it("gera link temporário de redefinição sem armazenar o token puro", async () => {
+    dbMocks.getUsersByEmail.mockResolvedValue([{
+      id: 7650003,
+      openId: "local:geysa",
+      name: "Geysa Thannyely",
+      email: "geysa@grupoalfalux.com.br",
+      role: "admin",
+      active: true,
+    }]);
+    dbMocks.updateUsersByEmail.mockResolvedValue(undefined);
+
+    const result = await appRouter.createCaller(context("admin", "admin@grupoalfalux.com.br").ctx)
+      .users.issuePasswordResetLink({ email: "geysa@grupoalfalux.com.br" });
+
+    expect(result.token).toHaveLength(43);
+    expect(result.expiresAt.getTime()).toBeGreaterThan(Date.now());
+    expect(dbMocks.updateUsersByEmail).toHaveBeenCalledWith("geysa@grupoalfalux.com.br", expect.objectContaining({
+      passwordResetTokenHash: expect.not.stringContaining(result.token),
+      passwordResetExpiresAt: expect.any(Date),
+    }));
+  });
+
+  it("aceita token válido uma única vez e invalida-o ao definir nova senha", async () => {
+    dbMocks.getUserByValidPasswordResetTokenHash.mockResolvedValue({
+      id: 7650003,
+      email: "geysa@grupoalfalux.com.br",
+      active: true,
+    });
+    dbMocks.updateUsersByEmail.mockResolvedValue(undefined);
+    const caller = appRouter.createCaller(context(null).ctx);
+
+    await expect(caller.auth.passwordResetStatus({ token: "a".repeat(43) })).resolves.toEqual({ valid: true });
+    await expect(caller.auth.resetPassword({ token: "a".repeat(43), password: "SenhaNova!2026" })).resolves.toEqual({ success: true });
+    expect(dbMocks.updateUsersByEmail).toHaveBeenLastCalledWith("geysa@grupoalfalux.com.br", expect.objectContaining({
+      passwordHash: expect.stringMatching(/^scrypt\$/),
+      passwordResetTokenHash: null,
+      passwordResetExpiresAt: null,
+      failedLoginAttempts: 0,
+    }));
+  });
+
+  it("recusa token inválido ou expirado sem revelar dados do usuário", async () => {
+    dbMocks.getUserByValidPasswordResetTokenHash.mockResolvedValue(undefined);
+    const caller = appRouter.createCaller(context(null).ctx);
+    await expect(caller.auth.passwordResetStatus({ token: "b".repeat(43) })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    await expect(caller.auth.resetPassword({ token: "b".repeat(43), password: "SenhaNova!2026" })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
   });
 
   it("reserva o painel de usuários para administradores", async () => {

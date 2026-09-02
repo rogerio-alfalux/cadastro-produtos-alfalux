@@ -1,4 +1,4 @@
-import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 
 const KEY_LENGTH = 64;
 const SCRYPT_N = 16_384;
@@ -39,6 +39,14 @@ export function verifyPassword(password: string, encoded: string): boolean {
   } catch {
     return false;
   }
+}
+
+export function createPasswordResetToken(): string {
+  return randomBytes(32).toString("base64url");
+}
+
+export function hashPasswordResetToken(token: string): string {
+  return createHash("sha256").update(token).digest("base64url");
 }
 
 export const DUMMY_PASSWORD_HASH = hashPassword("InvalidPassword!123");

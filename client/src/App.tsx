@@ -13,6 +13,7 @@ import AccessoriesPage from "@/pages/Accessories";
 import BackupsPage from "@/pages/Backups";
 import BulkReplacePage from "@/pages/BulkReplace";
 import LoginPage from "@/pages/Login";
+import ResetPasswordPage from "@/pages/ResetPassword";
 import UsersPage from "@/pages/Users";
 import { ProductCostsEditor, ProductDocumentsEditor } from "@/pages/ProductAccessEditor";
 import BulkDocumentsPage from "@/pages/BulkDocuments";
@@ -20,13 +21,16 @@ import ReportsPage from "@/pages/Reports";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { can } from "@shared/permissions";
 import { Loader2 } from "lucide-react";
+import { useLocation } from "wouter";
 
 function CadastrarPage() {
   return <ProductForm />;
 }
 
 function Router() {
+  const [location] = useLocation();
   const { user, loading } = useAuth();
+  if (location === "/redefinir-senha") return <ResetPasswordPage />;
   if (loading) return <div className="min-h-screen grid place-items-center bg-background"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>;
   if (!user) return <LoginPage />;
   const canUse = (permission: Parameters<typeof can>[1]) => can(user.role, permission, user.permissionOverrides);
