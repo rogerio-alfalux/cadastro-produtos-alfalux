@@ -2,7 +2,7 @@ import express from "express";
 import multer from "multer";
 import * as XLSX from "xlsx";
 import { storagePut, storageGetSignedUrl } from "./storage";
-import { bulkInsertProducts, listProducts, getDb } from "./db";
+import { bulkInsertProducts, listProducts, getDb, getProductById } from "./db";
 import { accessories as accessoriesTable, components as componentsTable } from "../drizzle/schema";
 import { parsePublicDriverExtras } from "./driverExtras";
 import { buildSpecialLightingContract, type AccessorySummary, type ComponentSummary } from "./productLighting";
@@ -111,6 +111,14 @@ export function parseStoredProductDocuments(raw: unknown): StoredDocuments {
   }
 }
 
+export function resolveInternalProductDocument(raw: unknown, type: string): { document: StoredDocument; key: string } | null {
+  if (!(productDocumentTypes as readonly string[]).includes(type)) return null;
+  const document = parseStoredProductDocuments(raw)[type as ProductDocumentType];
+  if (!document) return null;
+  const key = resolveStoredDocumentKey(document);
+  return key ? { document, key } : null;
+}
+
 export function buildPublicProductDocuments(raw: unknown, signedUrlMap: ReadonlyMap<string, string>) {
   const storedDocuments = parseStoredProductDocuments(raw);
   const resolveDocument = (document: StoredDocument | undefined) => {
@@ -194,6 +202,31 @@ router.post("/upload-document", requireRestPermission("manageDocuments"), upload
   } catch (err) {
     console.error("[upload-document]", err);
     return res.status(500).json({ error: "Erro ao fazer upload do documento" });
+  }
+});
+
+// ─── Abertura interna de documento ──────────────────────────────────────────
+// A assinatura é renovada a cada clique, evitando URLs expiradas em abas ou
+// consultas já abertas, sem tornar nenhum arquivo público.
+router.get("/:id/document/:type", requireRestPermission("viewCatalog"), async (req, res) => {
+  try {
+    const productId = Number(req.params.id);
+    if (!Number.isSafeInteger(productId) || productId <= 0) {
+      return res.status(400).json({ error: "Produto inválido." });
+    }
+
+    const product = await getProductById(productId);
+    const resolvedDocument = resolveInternalProductDocument(product?.documentos, req.params.type);
+    if (!resolvedDocument) {
+      return res.status(404).json({ error: "Documento não encontrado." });
+    }
+
+    const signedUrl = await storageGetSignedUrl(resolvedDocument.key);
+    res.set("Cache-Control", "private, no-store");
+    return res.redirect(307, signedUrl);
+  } catch (error) {
+    console.error("[open-product-document]", error);
+    return res.status(502).json({ error: "Não foi possível preparar o documento para visualização." });
   }
 });
 

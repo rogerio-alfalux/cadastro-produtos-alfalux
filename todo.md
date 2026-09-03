@@ -929,3 +929,10 @@
 - [x] Bloquear no servidor qualquer alteração de cadastro, documentos, status ou usuários pelo perfil Custos
 - [x] Adaptar a interface para modo leitura fora dos campos de custo e markup
 - [x] Validar navegação, consultas, bloqueios e regressões antes do checkpoint
+
+## Correção v64.2 — Visualização de Documentos por Usuários Internos
+
+- [x] Reproduzir a falha de abertura de documentos para usuários internos cadastrados
+- [x] Corrigir a resolução de URLs autorizadas para Datasheet, IES, Desenho Técnico e Manual de Instalação
+- [x] Garantir que as telas internas sempre usem URLs válidas ao abrir documentos privados
+- [x] Validar acesso por sessão interna, URL assinada, API, testes e build antes do checkpoint

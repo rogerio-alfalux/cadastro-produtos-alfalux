@@ -638,7 +638,7 @@ export default function ProductList() {
                             return document ? (
                               <a
                                 key={tipo}
-                                href={document.url}
+                                href={`/api/products/${product.id}/document/${tipo}`}
                                 target="_blank"
                                 rel="noreferrer"
                                 title={document.nome || sigla}

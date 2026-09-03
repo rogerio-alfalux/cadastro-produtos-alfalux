@@ -1641,7 +1641,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                   <div className="flex items-center gap-1.5 mt-2">
                     {document && (
                       <a
-                        href={documentViewUrls[tipo] || document.url}
+                        href={isEdit && editId ? `/api/products/${editId}/document/${tipo}` : (documentViewUrls[tipo] || document.url)}
                         target="_blank"
                         rel="noreferrer"
                         className="h-7 px-2 rounded border border-border text-[10px] font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/30 inline-flex items-center gap-1"

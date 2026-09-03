@@ -136,7 +136,7 @@ export function ProductDocumentsEditor() {
           <input ref={(element) => { refs.current[type] = element; }} type="file" className="hidden" accept={DOCUMENTS[type].accept} onChange={(event) => { const file = event.target.files?.[0]; if (file) void upload(type, file); }} />
           <div className="flex gap-2 mt-5">
             <Button size="sm" className="flex-1" disabled={uploading === type || update.isPending} onClick={() => refs.current[type]?.click()}><Upload className="w-4 h-4 mr-2" />{document ? "Substituir" : "Anexar"}</Button>
-            {document && <><Button size="icon" variant="outline" asChild><a href={documentViewUrls[type] || document.url} target="_blank" rel="noreferrer"><ExternalLink className="w-4 h-4" /></a></Button><Button size="icon" variant="outline" className="text-destructive" onClick={() => { const next = { ...documents }; delete next[type]; void persist(next, `${DOCUMENTS[type].label} removido`); }}><Trash2 className="w-4 h-4" /></Button></>}
+            {document && <><Button size="icon" variant="outline" asChild><a href={`/api/products/${id}/document/${type}`} target="_blank" rel="noreferrer"><ExternalLink className="w-4 h-4" /></a></Button><Button size="icon" variant="outline" className="text-destructive" onClick={() => { const next = { ...documents }; delete next[type]; void persist(next, `${DOCUMENTS[type].label} removido`); }}><Trash2 className="w-4 h-4" /></Button></>}
           </div>
         </section>;
       })}
