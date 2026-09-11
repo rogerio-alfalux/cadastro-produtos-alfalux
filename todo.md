@@ -936,3 +936,33 @@
 - [x] Corrigir a resolução de URLs autorizadas para Datasheet, IES, Desenho Técnico e Manual de Instalação
 - [x] Garantir que as telas internas sempre usem URLs válidas ao abrir documentos privados
 - [x] Validar acesso por sessão interna, URL assinada, API, testes e build antes do checkpoint
+
+## Exportação v64.3 — Fotos de Produtos Deduplicadas
+
+- [x] Auditar produtos com foto e suas referências privadas de armazenamento
+- [x] Agrupar as fotos idênticas e escolher um nome comercial representativo para cada grupo
+- [x] Baixar uma cópia por grupo e gerar ZIP sem fotos duplicadas
+- [x] Validar quantidade, nomes, integridade dos arquivos e conteúdo do ZIP antes da entrega
+
+## Exportação v64.4 — Lista de Produtos Elegíveis
+
+- [x] Auditar categorias existentes e o critério de variantes 2B para Perfis
+- [x] Extrair os produtos elegíveis, excluindo Revenda, Acessórios, Customizados e Perfis sem 2B
+- [x] Gerar planilha Excel com SKU, Descrição, Família e Instalação em layout gerencial
+- [x] Validar as regras de exclusão, contagens, filtros e apresentação antes da entrega
+
+## Análise v64.5 — Desempenho da API Pública
+
+- [x] Medir tempo, tamanho e compressão da resposta atual de produtos
+- [x] Identificar campos e operações que concentram o custo de processamento e transferência
+- [x] Propor uma estratégia compatível de versão resumida, detalhe sob demanda, cache e sincronização incremental
+- [x] Apresentar recomendações priorizadas antes de alterar o contrato da API
+
+## Otimização v64.6 — API Pública Compatível
+
+- [x] Mapear montagem, rotas de alteração e dados que exigem invalidação do catálogo
+- [x] Implementar cache seguro do catálogo completo e invalidação após alterações relevantes
+- [x] Adicionar ETag, 304 e cabeçalhos de cache sem alterar o JSON legado
+- [x] Ativar compressão HTTP para respostas grandes da API
+- [x] Comparar profundamente payloads antes e depois, incluindo documentos, URLs e produtos ativos
+- [x] Criar regressões, medir resposta e validar TypeScript e build antes do checkpoint

@@ -3,6 +3,7 @@ import "dotenv/config";
 process.env.TZ = "America/Sao_Paulo";
 
 import express from "express";
+import compression from "compression";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
@@ -43,6 +44,9 @@ async function startServer() {
   // Express reconheça requisições HTTPS ao emitir cookies de sessão seguros.
   app.set("trust proxy", 1);
   const server = createServer(app);
+  // Compacta respostas textuais grandes sem alterar o corpo lógico da API.
+  // O JSON do catálogo permanece idêntico após a descompressão pelo cliente.
+  app.use(compression({ threshold: 1024 }));
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));

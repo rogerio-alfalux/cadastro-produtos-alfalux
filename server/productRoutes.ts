@@ -1,15 +1,52 @@
 import express from "express";
 import multer from "multer";
 import * as XLSX from "xlsx";
+import { count, max } from "drizzle-orm";
 import { storagePut, storageGetSignedUrl } from "./storage";
 import { bulkInsertProducts, listProducts, getDb, getProductById } from "./db";
-import { accessories as accessoriesTable, components as componentsTable } from "../drizzle/schema";
+import { accessories as accessoriesTable, components as componentsTable, products as productsTable } from "../drizzle/schema";
 import { parsePublicDriverExtras } from "./driverExtras";
 import { buildSpecialLightingContract, type AccessorySummary, type ComponentSummary } from "./productLighting";
 import { requireRestPermission } from "./authz";
 import { buildProductReportWorkbook, parseReportSections } from "./reporting";
+import { createPublicCatalogCacheEntry, isFreshPublicCatalogCache, matchesIfNoneMatch, type PublicCatalogCacheEntry } from "./publicCatalogCache";
 
 const router = express.Router();
+
+let publicProductsCatalogCache: PublicCatalogCacheEntry | null = null;
+
+function versionPart(value: unknown): string {
+  return value instanceof Date ? value.toISOString() : String(value ?? "");
+}
+
+async function getPublicProductsSourceVersion(): Promise<string | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [productSummary, componentSummary, accessorySummary] = await Promise.all([
+    db.select({ total: count(productsTable.id), latest: max(productsTable.updatedAt) }).from(productsTable),
+    db.select({ total: count(componentsTable.id), latest: max(componentsTable.updatedAt) }).from(componentsTable),
+    db.select({ total: count(accessoriesTable.id), latest: max(accessoriesTable.updatedAt) }).from(accessoriesTable),
+  ]);
+
+  return JSON.stringify({
+    products: { total: productSummary[0]?.total ?? 0, latest: versionPart(productSummary[0]?.latest) },
+    components: { total: componentSummary[0]?.total ?? 0, latest: versionPart(componentSummary[0]?.latest) },
+    accessories: { total: accessorySummary[0]?.total ?? 0, latest: versionPart(accessorySummary[0]?.latest) },
+  });
+}
+
+function sendPublicProductsCatalog(req: express.Request, res: express.Response, entry: PublicCatalogCacheEntry) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET");
+  res.setHeader("Cache-Control", "public, max-age=60, must-revalidate");
+  res.setHeader("ETag", entry.etag);
+  res.setHeader("Vary", "Accept-Encoding");
+  if (matchesIfNoneMatch(req.header("if-none-match"), entry.etag)) {
+    return res.status(304).end();
+  }
+  return res.type("application/json").send(entry.body);
+}
 
 // ─── Multer config ────────────────────────────────────────────────────────────
 // Multer para imagens (JPEG, JPG, PNG apenas)
@@ -691,11 +728,12 @@ const CATS_OTICA_EXTRA = new Set(["DOWNLIGHTS", "SPOTS"]);
 // ─── Endpoint público para o Configurador ───────────────────────────────────
 // Retorna todos os produtos no formato esperado pelo Configurador de Produtos
 // GET /api/products/all  (sem autenticação — consumido pelo Configurador)
-router.get("/all", async (_req, res) => {
+router.get("/all", async (req, res) => {
   try {
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET");
-    res.setHeader("Cache-Control", "no-cache");
+    const sourceVersion = await getPublicProductsSourceVersion();
+    if (isFreshPublicCatalogCache(publicProductsCatalogCache, sourceVersion)) {
+      return sendPublicProductsCatalog(req, res, publicProductsCatalogCache);
+    }
 
     const { items } = await listProducts({ limit: 10000, offset: 0 });
     // A API pública só transmite produtos ativos (ativo = true)
@@ -1143,12 +1181,16 @@ router.get("/all", async (_req, res) => {
       return result;
     });
 
-    return res.json({
+    const catalogPayload = {
       count: formatted.length,
       available: formatted.length,
       products: formatted,
       updatedAt: new Date().toISOString(),
-    });
+    };
+    const serializedPayload = JSON.stringify(catalogPayload);
+    const cacheEntry = createPublicCatalogCacheEntry(sourceVersion ?? `uncached-${Date.now()}`, serializedPayload);
+    if (sourceVersion) publicProductsCatalogCache = cacheEntry;
+    return sendPublicProductsCatalog(req, res, cacheEntry);
   } catch (err) {
     console.error("[products/all]", err);
     return res.status(500).json({ error: "Erro ao buscar produtos" });
