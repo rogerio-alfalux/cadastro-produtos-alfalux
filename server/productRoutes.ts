@@ -9,11 +9,24 @@ import { parsePublicDriverExtras } from "./driverExtras";
 import { buildSpecialLightingContract, type AccessorySummary, type ComponentSummary } from "./productLighting";
 import { requireRestPermission } from "./authz";
 import { buildProductReportWorkbook, parseReportSections } from "./reporting";
-import { createPublicCatalogCacheEntry, isFreshPublicCatalogCache, matchesIfNoneMatch, type PublicCatalogCacheEntry } from "./publicCatalogCache";
+import {
+  acceptsGzipEncoding,
+  canServePublicCatalogFallback,
+  createKeyedSingleFlight,
+  createPublicCatalogCacheEntry,
+  createPublicCatalogEtag,
+  createPublicCatalogRepresentationVersion,
+  isFreshPublicCatalogCache,
+  mapWithConcurrency,
+  matchesIfNoneMatch,
+  type PublicCatalogCacheEntry,
+} from "./publicCatalogCache";
 
 const router = express.Router();
 
 let publicProductsCatalogCache: PublicCatalogCacheEntry | null = null;
+const publicProductsCatalogBuilds = createKeyedSingleFlight<PublicCatalogCacheEntry>();
+const PUBLIC_CATALOG_PRESIGN_CONCURRENCY = 24;
 
 function versionPart(value: unknown): string {
   return value instanceof Date ? value.toISOString() : String(value ?? "");
@@ -36,16 +49,40 @@ async function getPublicProductsSourceVersion(): Promise<string | null> {
   });
 }
 
-function sendPublicProductsCatalog(req: express.Request, res: express.Response, entry: PublicCatalogCacheEntry) {
+function setPublicProductsCatalogHeaders(res: express.Response, etag: string, isFallback = false) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET");
-  res.setHeader("Cache-Control", "public, max-age=60, must-revalidate");
-  res.setHeader("ETag", entry.etag);
+  res.setHeader(
+    "Cache-Control",
+    isFallback ? "public, max-age=15, must-revalidate" : "public, max-age=60, must-revalidate",
+  );
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.setHeader("ETag", etag);
   res.setHeader("Vary", "Accept-Encoding");
+}
+
+function sendPublicProductsNotModified(res: express.Response, etag: string) {
+  setPublicProductsCatalogHeaders(res, etag);
+  return res.status(304).end();
+}
+
+function sendPublicProductsCatalog(
+  req: express.Request,
+  res: express.Response,
+  entry: PublicCatalogCacheEntry,
+  isFallback = false,
+) {
+  setPublicProductsCatalogHeaders(res, entry.etag, isFallback);
   if (matchesIfNoneMatch(req.header("if-none-match"), entry.etag)) {
     return res.status(304).end();
   }
-  return res.type("application/json").send(entry.body);
+  if (acceptsGzipEncoding(req.header("accept-encoding"))) {
+    res.setHeader("Content-Encoding", "gzip");
+    res.setHeader("Content-Length", entry.gzipBody.byteLength);
+    return res.status(200).end(entry.gzipBody);
+  }
+  res.setHeader("Content-Length", Buffer.byteLength(entry.body));
+  return res.status(200).end(entry.body);
 }
 
 // ─── Multer config ────────────────────────────────────────────────────────────
@@ -735,10 +772,36 @@ const CATS_OTICA_EXTRA = new Set(["DOWNLIGHTS", "SPOTS"]);
 // GET /api/products/all  (sem autenticação — consumido pelo Configurador)
 router.get("/all", async (req, res) => {
   try {
-    const sourceVersion = await getPublicProductsSourceVersion();
+    const rawSourceVersion = await getPublicProductsSourceVersion();
+    const sourceVersion = rawSourceVersion
+      ? createPublicCatalogRepresentationVersion(rawSourceVersion)
+      : null;
     if (isFreshPublicCatalogCache(publicProductsCatalogCache, sourceVersion)) {
       return sendPublicProductsCatalog(req, res, publicProductsCatalogCache);
     }
+
+    // Um cliente que já possui a mesma versão pode receber 304 mesmo em uma
+    // instância recém-iniciada, sem reconstruir nem assinar todo o catálogo.
+    if (sourceVersion) {
+      const sourceEtag = createPublicCatalogEtag(sourceVersion);
+      if (matchesIfNoneMatch(req.header("if-none-match"), sourceEtag)) {
+        return sendPublicProductsNotModified(res, sourceEtag);
+      }
+    }
+
+    const buildKey = sourceVersion ?? "catalog-without-source-version";
+    if (
+      publicProductsCatalogBuilds.has(buildKey)
+      && canServePublicCatalogFallback(publicProductsCatalogCache)
+    ) {
+      console.warn(`[products/all] serving safe fallback during rebuild pid=${process.pid}`);
+      return sendPublicProductsCatalog(req, res, publicProductsCatalogCache, true);
+    }
+
+    let completedEntry: PublicCatalogCacheEntry;
+    try {
+      completedEntry = await publicProductsCatalogBuilds.run(buildKey, async () => {
+        const buildStartedAt = Date.now();
 
     const { items } = await listProducts({ limit: 10000, offset: 0 });
     // A API pública só transmite produtos ativos (ativo = true)
@@ -798,18 +861,24 @@ router.get("/all", async (req, res) => {
       .filter((k): k is string => !!k);
     const uniqueKeys = Array.from(new Set(keysToSign));
 
-    await Promise.all(
-      uniqueKeys.map(async (key) => {
+    const signingStartedAt = Date.now();
+    let signingFailures = 0;
+    await mapWithConcurrency(
+      uniqueKeys,
+      PUBLIC_CATALOG_PRESIGN_CONCURRENCY,
+      async (key) => {
         try {
           const publicUrl = await storageGetSignedUrl(key);
           signedUrlMap.set(key, publicUrl);
         } catch {
+          signingFailures += 1;
           // O endpoint /manus-storage continua resolvendo a chave por redirect;
           // manter esse fallback evita perder a foto na API quando o presign falha.
           signedUrlMap.set(key, `/manus-storage/${key}`);
         }
-      })
+      },
     );
+    const signingDurationMs = Date.now() - signingStartedAt;
 
     // Mapear para o formato que o Configurador espera
     const formatted = activeItems.map((p) => {
@@ -1194,9 +1263,28 @@ router.get("/all", async (req, res) => {
     };
     const serializedPayload = JSON.stringify(catalogPayload);
     const cacheEntry = createPublicCatalogCacheEntry(sourceVersion ?? `uncached-${Date.now()}`, serializedPayload);
-    if (sourceVersion) publicProductsCatalogCache = cacheEntry;
-    return sendPublicProductsCatalog(req, res, cacheEntry);
+    console.info(
+      `[products/all] build complete pid=${process.pid} uptime=${Math.round(process.uptime())}s products=${formatted.length} keys=${uniqueKeys.length} signFailures=${signingFailures} signMs=${signingDurationMs} bodyBytes=${Buffer.byteLength(serializedPayload)} gzipBytes=${cacheEntry.gzipBody.byteLength} totalMs=${Date.now() - buildStartedAt}`,
+    );
+    return cacheEntry;
+      });
+    } catch (buildError) {
+      if (canServePublicCatalogFallback(publicProductsCatalogCache)) {
+        console.warn(`[products/all] serving safe fallback after build failure pid=${process.pid}`, buildError);
+        return sendPublicProductsCatalog(req, res, publicProductsCatalogCache, true);
+      }
+      throw buildError;
+    }
+
+    if (sourceVersion && completedEntry.sourceVersion === sourceVersion) {
+      publicProductsCatalogCache = completedEntry;
+    }
+    return sendPublicProductsCatalog(req, res, completedEntry);
   } catch (err) {
+    if (canServePublicCatalogFallback(publicProductsCatalogCache)) {
+      console.warn(`[products/all] serving safe fallback after transient failure pid=${process.pid}`, err);
+      return sendPublicProductsCatalog(req, res, publicProductsCatalogCache, true);
+    }
     console.error("[products/all]", err);
     return res.status(500).json({ error: "Erro ao buscar produtos" });
   }

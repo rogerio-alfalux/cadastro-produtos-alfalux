@@ -974,3 +974,11 @@
 - [x] Tratar respostas não JSON e indisponibilidades com mensagem clara e tentativa segura
 - [x] Prevenir reenvio concorrente e duplicidade de vínculo durante tentativas
 - [x] Validar os quatro tipos de documento, regressões, TypeScript e build antes do checkpoint
+
+## Correção v64.8 — Estabilidade do Catálogo Público
+
+- [x] Medir repetidamente disponibilidade, tempo, tamanho e integridade JSON do catálogo publicado
+- [x] Identificar truncamento, limites de resposta e causas de indisponibilidade intermitente
+- [x] Implementar correção compatível sem alterar o endpoint ou interromper usuários internos
+- [x] Validar catálogo completo, compressão, cache, documentos e comportamento do configurador
+- [x] Executar regressões, TypeScript e build antes do checkpoint
