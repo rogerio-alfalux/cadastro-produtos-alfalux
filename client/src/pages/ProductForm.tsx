@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { can } from "@shared/permissions";
 import { trpc } from "@/lib/trpc";
+import { uploadProductDocumentResilient } from "@/lib/documentUpload";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -1227,6 +1228,10 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
   };
 
   const handleDocumentUpload = async (tipo: ProductDocumentType, file: File) => {
+    if (uploadingDocument) {
+      toast.error("Aguarde a conclusão do envio atual antes de anexar outro documento.");
+      return;
+    }
     const ext = file.name.split(".").pop()?.toLowerCase() || "";
     const allowed: Record<ProductDocumentType, string[]> = {
       datasheet: ["pdf"],
@@ -1245,16 +1250,11 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
 
     setUploadingDocument(tipo);
     try {
-      const fd = new FormData();
-      fd.append("tipo", tipo);
-      fd.append("file", file);
-      const res = await fetch("/api/products/upload-document", { method: "POST", body: fd });
-      const data = await res.json();
-      if (!res.ok || !data.documento) throw new Error(data.error || "Erro ao enviar documento");
+      const data = await uploadProductDocumentResilient(tipo, file);
       setDocuments((prev) => ({ ...prev, [tipo]: data.documento as ProductDocument }));
       setDocumentViewUrls((prev) => ({
         ...prev,
-        [tipo]: data.documentoVisualizacao?.url || data.documento.url,
+        [tipo]: data.documentoVisualizacao.url,
       }));
       toast.success(`${DOCUMENT_CONFIG[tipo].label} enviado com sucesso!`);
     } catch (error) {
@@ -1653,7 +1653,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                     )}
                     <label className={cn(
                       "h-7 px-2.5 rounded border border-primary/40 text-[10px] font-semibold text-primary hover:bg-primary/10 inline-flex items-center justify-center cursor-pointer transition-colors",
-                      isUploading && "opacity-50 pointer-events-none"
+                      uploadingDocument && "opacity-50 pointer-events-none"
                     )}>
                       <Upload className="w-3 h-3 mr-1" />
                       {document ? "Substituir" : "Anexar"}
@@ -1661,7 +1661,7 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
                         type="file"
                         className="hidden"
                         accept={config.accept}
-                        disabled={isUploading}
+                        disabled={Boolean(uploadingDocument)}
                         onChange={(event) => {
                           const file = event.target.files?.[0];
                           if (file) void handleDocumentUpload(tipo, file);

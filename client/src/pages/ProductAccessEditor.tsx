@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { uploadProductDocumentResilient } from "@/lib/documentUpload";
 
 type DocumentType = "datasheet" | "fotometria" | "desenhoTecnico" | "manualInstalacao";
 type StoredDocument = { url: string; key: string; nome: string; mimeType: string };
@@ -100,18 +101,17 @@ export function ProductDocumentsEditor() {
   };
 
   const upload = async (type: DocumentType, file: File) => {
+    if (uploading) {
+      toast.error("Aguarde a conclusão do envio atual antes de anexar outro documento.");
+      return;
+    }
     setUploading(type);
     try {
-      const body = new FormData();
-      body.append("tipo", type);
-      body.append("file", file);
-      const response = await fetch("/api/products/upload-document", { method: "POST", body });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || "Falha no upload");
+      const payload = await uploadProductDocumentResilient(type, file);
       await persist({ ...documents, [type]: payload.documento }, `${DOCUMENTS[type].label} atualizado`);
       setDocumentViewUrls((current) => ({
         ...current,
-        [type]: payload.documentoVisualizacao?.url || payload.documento?.url,
+        [type]: payload.documentoVisualizacao.url,
       }));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Falha no upload");
@@ -133,9 +133,9 @@ export function ProductDocumentsEditor() {
         return <section key={type} className="alfalux-card p-5 flex flex-col min-h-56">
           <div className="flex items-start justify-between gap-3"><div><p className="font-semibold">{DOCUMENTS[type].label}</p><p className="text-xs text-muted-foreground mt-1">{DOCUMENTS[type].hint} · até 25 MB</p></div><span className="text-[10px] font-bold tracking-wider text-primary border border-primary/30 rounded px-2 py-1">{DOCUMENTS[type].badge}</span></div>
           <div className="mt-5 flex-1"><p className="text-sm break-all">{document?.nome || "Nenhum arquivo anexado"}</p></div>
-          <input ref={(element) => { refs.current[type] = element; }} type="file" className="hidden" accept={DOCUMENTS[type].accept} onChange={(event) => { const file = event.target.files?.[0]; if (file) void upload(type, file); }} />
+          <input ref={(element) => { refs.current[type] = element; }} type="file" className="hidden" accept={DOCUMENTS[type].accept} disabled={Boolean(uploading)} onChange={(event) => { const file = event.target.files?.[0]; if (file) void upload(type, file); }} />
           <div className="flex gap-2 mt-5">
-            <Button size="sm" className="flex-1" disabled={uploading === type || update.isPending} onClick={() => refs.current[type]?.click()}><Upload className="w-4 h-4 mr-2" />{document ? "Substituir" : "Anexar"}</Button>
+            <Button size="sm" className="flex-1" disabled={Boolean(uploading) || update.isPending} onClick={() => refs.current[type]?.click()}><Upload className="w-4 h-4 mr-2" />{uploading === type ? "ENVIANDO..." : document ? "Substituir" : "Anexar"}</Button>
             {document && <><Button size="icon" variant="outline" asChild><a href={`/api/products/${id}/document/${type}`} target="_blank" rel="noreferrer"><ExternalLink className="w-4 h-4" /></a></Button><Button size="icon" variant="outline" className="text-destructive" onClick={() => { const next = { ...documents }; delete next[type]; void persist(next, `${DOCUMENTS[type].label} removido`); }}><Trash2 className="w-4 h-4" /></Button></>}
           </div>
         </section>;

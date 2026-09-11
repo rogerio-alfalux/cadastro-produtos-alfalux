@@ -966,3 +966,11 @@
 - [x] Ativar compressão HTTP para respostas grandes da API
 - [x] Comparar profundamente payloads antes e depois, incluindo documentos, URLs e produtos ativos
 - [x] Criar regressões, medir resposta e validar TypeScript e build antes do checkpoint
+
+## Correção v64.7 — Upload Resiliente de Documentos
+
+- [x] Reproduzir e diagnosticar a indisponibilidade temporária no envio de DS, IES, DT e Manual
+- [x] Otimizar o fluxo compatível pelo servidor e confirmar o vínculo apenas após a conclusão do arquivo
+- [x] Tratar respostas não JSON e indisponibilidades com mensagem clara e tentativa segura
+- [x] Prevenir reenvio concorrente e duplicidade de vínculo durante tentativas
+- [x] Validar os quatro tipos de documento, regressões, TypeScript e build antes do checkpoint

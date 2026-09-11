@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { uploadProductDocumentResilient } from "@/lib/documentUpload";
+import { cn } from "@/lib/utils";
 
 type DocumentType = "datasheet" | "fotometria" | "desenhoTecnico" | "manualInstalacao";
 type ProductDocument = { url: string; key: string; nome: string; mimeType: string };
@@ -98,14 +100,13 @@ export default function BulkDocumentsPage() {
   const allTargetsSelected = audienceTargets.length > 0 && audienceTargets.every((target) => selectedTargetIds.includes(target.id));
   const uploadDocument = async (type: DocumentType, file: File | null) => {
     if (!file) return;
+    if (uploadingType) {
+      toast.error("Aguarde a conclusão do envio atual antes de anexar outro documento.");
+      return;
+    }
     setUploadingType(type);
     try {
-      const body = new FormData();
-      body.append("file", file);
-      body.append("tipo", type);
-      const response = await fetch("/api/products/upload-document", { method: "POST", body });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok || !payload.documento) throw new Error(payload.error || "Não foi possível enviar o documento.");
+      const payload = await uploadProductDocumentResilient(type, file);
       setUploadedDocuments((current) => ({ ...current, [type]: payload.documento }));
       setSelectedTypes((current) => current.includes(type) ? current : [...current, type]);
       toast.success(`${documentOptions.find((item) => item.type === type)?.label} atualizado e pronto para aplicação.`);
@@ -164,14 +165,15 @@ export default function BulkDocumentsPage() {
             <div className="mt-4 grid grid-cols-1 gap-3 min-[560px]:grid-cols-2">
               {documentOptions.map((document) => {
                 const uploaded = uploadedDocuments[document.type];
-                const uploading = uploadingType === document.type;
+              const uploading = uploadingType === document.type;
+              const uploadLocked = Boolean(uploadingType);
                 return (
                   <div key={document.type} className="min-w-0 rounded-lg border border-border/60 bg-card p-3.5">
                     <div className="flex min-w-0 items-start justify-between gap-2">
                       <span className="min-w-0 break-words text-xs font-semibold leading-5">{document.badge} · {document.label}</span>
                       {uploaded && <button type="button" onClick={() => setUploadedDocuments((current) => { const next = { ...current }; delete next[document.type]; return next; })} className="shrink-0 text-muted-foreground transition-colors hover:text-destructive" aria-label={`Remover ${document.label}`}><X className="h-4 w-4" /></button>}
                     </div>
-                    {uploaded ? <p className="mt-3 truncate text-xs text-emerald-400" title={uploaded.nome}>{uploaded.nome}</p> : <label className="mt-3 flex h-9 w-full cursor-pointer items-center justify-center rounded-md border border-primary/40 bg-primary/10 px-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/15">{uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>ENVIAR<input type="file" className="sr-only" accept={document.accept} onChange={(event) => { void uploadDocument(document.type, event.target.files?.[0] || null); event.currentTarget.value = ""; }} /></>}</label>}
+                    {uploaded ? <p className="mt-3 truncate text-xs text-emerald-400" title={uploaded.nome}>{uploaded.nome}</p> : <label className={cn("mt-3 flex h-9 w-full items-center justify-center rounded-md border border-primary/40 bg-primary/10 px-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/15", uploadLocked ? "cursor-not-allowed opacity-50" : "cursor-pointer")}>{uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>ENVIAR<input type="file" className="sr-only" disabled={uploadLocked} accept={document.accept} onChange={(event) => { void uploadDocument(document.type, event.target.files?.[0] || null); event.currentTarget.value = ""; }} /></>}</label>}
                   </div>
                 );
               })}

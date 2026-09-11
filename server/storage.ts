@@ -28,29 +28,51 @@ function appendHashSuffix(relKey: string): string {
   return `${relKey.slice(0, lastDot)}_${hash}${relKey.slice(lastDot)}`;
 }
 
-export async function storagePut(
-  relKey: string,
-  data: Buffer | Uint8Array | string,
-  contentType = "application/octet-stream",
-): Promise<{ key: string; url: string }> {
+function shouldRetryStorageRequest(status?: number): boolean {
+  return !status || status === 408 || status === 429 || status >= 500;
+}
+
+async function fetchStorageWithRetry(url: string | URL, init: RequestInit, attempts = 3): Promise<Response> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      const response = await fetch(url, init);
+      if (response.ok || !shouldRetryStorageRequest(response.status) || attempt === attempts - 1) return response;
+      await new Promise((resolve) => setTimeout(resolve, 350 * (attempt + 1)));
+    } catch (error) {
+      lastError = error;
+      if (attempt === attempts - 1) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 350 * (attempt + 1)));
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error("Storage request failed");
+}
+
+export async function storageCreateUploadUrl(relKey: string): Promise<{ key: string; uploadUrl: string }> {
   const { forgeUrl, forgeKey } = getForgeConfig();
   const key = appendHashSuffix(normalizeKey(relKey));
-
-  // 1. Get presigned PUT URL from Forge
   const presignUrl = new URL("v1/storage/presign/put", forgeUrl + "/");
   presignUrl.searchParams.set("path", key);
 
-  const presignResp = await fetch(presignUrl, {
+  const presignResp = await fetchStorageWithRetry(presignUrl, {
     headers: { Authorization: `Bearer ${forgeKey}` },
   });
-
   if (!presignResp.ok) {
     const msg = await presignResp.text().catch(() => presignResp.statusText);
     throw new Error(`Storage presign failed (${presignResp.status}): ${msg}`);
   }
 
-  const { url: s3Url } = (await presignResp.json()) as { url: string };
-  if (!s3Url) throw new Error("Forge returned empty presign URL");
+  const { url: uploadUrl } = (await presignResp.json()) as { url: string };
+  if (!uploadUrl) throw new Error("Forge returned empty presign URL");
+  return { key, uploadUrl };
+}
+
+export async function storagePut(
+  relKey: string,
+  data: Buffer | Uint8Array | string,
+  contentType = "application/octet-stream",
+): Promise<{ key: string; url: string }> {
+  const { key, uploadUrl } = await storageCreateUploadUrl(relKey);
 
   // 2. PUT file directly to S3
   const blob =
@@ -58,7 +80,7 @@ export async function storagePut(
       ? new Blob([data], { type: contentType })
       : new Blob([data as any], { type: contentType });
 
-  const uploadResp = await fetch(s3Url, {
+  const uploadResp = await fetchStorageWithRetry(uploadUrl, {
     method: "PUT",
     headers: { "Content-Type": contentType },
     body: blob,
@@ -83,7 +105,7 @@ export async function storageGetSignedUrl(relKey: string): Promise<string> {
   const getUrl = new URL("v1/storage/presign/get", forgeUrl + "/");
   getUrl.searchParams.set("path", key);
 
-  const resp = await fetch(getUrl, {
+  const resp = await fetchStorageWithRetry(getUrl, {
     headers: { Authorization: `Bearer ${forgeKey}` },
   });
 

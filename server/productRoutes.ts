@@ -83,6 +83,17 @@ const uploadDocument = multer({
   limits: { fileSize: 25 * 1024 * 1024 }, // 25MB
 });
 
+function handleDocumentMulter(req: express.Request, res: express.Response, next: express.NextFunction) {
+  uploadDocument.single("file")(req, res, (error: unknown) => {
+    if (!error) return next();
+    if (error instanceof multer.MulterError && error.code === "LIMIT_FILE_SIZE") {
+      return res.status(413).json({ error: "O documento deve ter no máximo 25 MB." });
+    }
+    const message = error instanceof Error ? error.message : "Não foi possível receber o documento.";
+    return res.status(400).json({ error: message });
+  });
+}
+
 const documentRules = {
   datasheet: { extensions: ["pdf"], label: "Datasheet" },
   fotometria: { extensions: ["ies"], label: "Fotometria IES" },
@@ -201,7 +212,7 @@ router.post("/upload-image", requireRestPermission("manageEntities"), uploadImag
 });
 
 // ─── Upload de documento ───────────────────────────────────────────────────────
-router.post("/upload-document", requireRestPermission("manageDocuments"), uploadDocument.single("file"), async (req, res) => {
+router.post("/upload-document", requireRestPermission("manageDocuments"), handleDocumentMulter, async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: "Nenhum arquivo enviado" });
 
@@ -221,20 +232,14 @@ router.post("/upload-document", requireRestPermission("manageDocuments"), upload
     const mimeType = req.file.mimetype || "application/octet-stream";
     const { key, url } = await storagePut(requestedKey, req.file.buffer, mimeType);
     const documento = { url, key, nome: originalName, mimeType };
-    let urlVisualizacao = url;
-    try {
-      urlVisualizacao = await storageGetSignedUrl(key);
-    } catch (signError) {
-      console.warn("[upload-document] Falha ao assinar URL de visualização; usando proxy privado", signError);
-    }
 
     return res.json({
       tipo,
       // "documento" é a referência durável que será salva no produto.
       documento,
-      // A cópia abaixo é transitória e permite abrir o arquivo imediatamente
-      // após o upload, antes mesmo de uma nova consulta do produto.
-      documentoVisualizacao: { ...documento, url: urlVisualizacao },
+      // A referência transitória usa o proxy privado. A assinatura é gerada
+      // sob demanda ao abrir documentos já vinculados ao produto.
+      documentoVisualizacao: documento,
     });
   } catch (err) {
     console.error("[upload-document]", err);
