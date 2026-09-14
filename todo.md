@@ -990,3 +990,11 @@
 - [x] Invalidar automaticamente a versão anterior após alterações sem mudar o contrato da API
 - [x] Validar atualização imediata de custo, resposta 304 quando nada mudou e preservação de documentos
 - [x] Executar regressões, TypeScript e build antes do checkpoint
+
+## Extensão v65 — Custos de Acessórios e Revenda nas APIs
+
+- [x] Auditar os campos atuais de custo e preço em `/api/acessorios/all` e `/api/revenda/all`
+- [x] Definir campos aditivos de custo compatíveis com acessórios, drivers/fontes e revenda
+- [x] Implementar a transmissão dos custos sem remover ou alterar os preços de venda existentes
+- [x] Validar valores reais, itens sem custo, contagens e contratos atuais das duas APIs
+- [x] Executar regressões, TypeScript e build antes do checkpoint

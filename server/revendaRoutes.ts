@@ -5,6 +5,7 @@ import { revendaProducts } from "../drizzle/schema";
 import { asc, eq } from "drizzle-orm";
 import { storagePut, storageGetSignedUrl } from "./storage";
 import { requireRestPermission } from "./authz";
+import { buildPublicRevendaFinancials } from "./publicFinancials";
 
 const router = express.Router();
 
@@ -104,14 +105,14 @@ router.get("/all", async (_req, res) => {
 
     // Gerar URLs assinadas para todas as imagens em paralelo
     const formattedPromises = items.map(async (p) => {
-      // Preço de venda: usa o valor já armazenado (calculado na importação)
-      // Se não houver precoVenda salvo mas houver custo, recalcula na hora
-      let precoVenda: number | null = null;
-      if (p.precoVenda != null) {
-        precoVenda = Number(p.precoVenda);
-      } else if (p.custo != null) {
-        precoVenda = calcularPrecoVenda(Number(p.custo), p.fornecedor);
-      }
+      // Mantém o preço de venda legado e acrescenta o custo necessário para
+      // o Configurador calcular margem e rentabilidade.
+      const financials = buildPublicRevendaFinancials(
+        p.custo,
+        p.precoVenda,
+        p.fornecedor,
+        calcularPrecoVenda,
+      );
 
       // Gerar URL assinada S3 pública para a imagem (funciona em qualquer origem)
       let fotoUrl: string | null = null;
@@ -133,7 +134,7 @@ router.get("/all", async (_req, res) => {
         descricao:  p.descricao,
         referencia: p.referencia ?? null,
         fornecedor: p.fornecedor ?? null,
-        precoVenda,
+        ...financials,
         fotoUrl,
       };
     });

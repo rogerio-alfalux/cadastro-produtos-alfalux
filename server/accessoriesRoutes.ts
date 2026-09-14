@@ -6,6 +6,7 @@ import { accessories, components as componentsTable } from "../drizzle/schema";
 import { asc, eq, inArray } from "drizzle-orm";
 import { storagePut, storageGetSignedUrl } from "./storage";
 import { requireRestPermission } from "./authz";
+import { buildPublicAccessoryFinancials } from "./publicFinancials";
 
 const router = express.Router();
 
@@ -139,8 +140,7 @@ router.get("/all", async (_req, res) => {
         produto:    a.produto ?? null,
         familia:    a.familia ?? null,
         dimensao:   a.dimensao ?? null,
-        precoVenda: a.precoVenda != null ? Number(a.precoVenda) : null,
-        custo:      a.custo != null ? Number(a.custo) : null,
+        ...buildPublicAccessoryFinancials(a.custo, a.precoVenda),
         observacoes: a.observacoes ?? null,
         fotoUrl,
       };
@@ -167,8 +167,7 @@ router.get("/all", async (_req, res) => {
         produto:    d.modelo,
         familia:    tipoToFamilia[d.tipo] ?? d.tipo,
         dimensao:   null,
-        precoVenda: null,
-        custo:      d.custo != null ? Number(d.custo) : null,
+        ...buildPublicAccessoryFinancials(d.custo, null),
         observacoes: d.observacao ?? null,
         fotoUrl:    driverFotoUrl,
       };
