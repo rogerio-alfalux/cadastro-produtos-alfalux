@@ -982,3 +982,11 @@
 - [x] Implementar correção compatível sem alterar o endpoint ou interromper usuários internos
 - [x] Validar catálogo completo, compressão, cache, documentos e comportamento do configurador
 - [x] Executar regressões, TypeScript e build antes do checkpoint
+
+## Correção v64.9 — Invalidação Automática do Catálogo
+
+- [x] Reproduzir uma alteração de custo e comparar banco, versão de origem, ETag e resposta do catálogo
+- [x] Confirmar se timestamps, cache do servidor ou cache HTTP permitem servir custo antigo
+- [x] Invalidar automaticamente a versão anterior após alterações sem mudar o contrato da API
+- [x] Validar atualização imediata de custo, resposta 304 quando nada mudou e preservação de documentos
+- [x] Executar regressões, TypeScript e build antes do checkpoint

@@ -5,6 +5,10 @@ import { gzipSync } from "node:zlib";
 // de segurança para nunca devolver uma URL próxima do vencimento.
 export const PUBLIC_CATALOG_CACHE_TTL_MS = 45 * 60 * 1000;
 export const PUBLIC_CATALOG_ETAG_WINDOW_MS = 40 * 60 * 1000;
+// O catálogo pode ser armazenado pelo cliente, mas nunca reutilizado sem
+// revalidar o ETag. Assim, qualquer alteração de custo ou produto aparece na
+// próxima leitura, enquanto respostas sem mudança continuam leves via 304.
+export const PUBLIC_CATALOG_CACHE_CONTROL = "public, no-cache, max-age=0, must-revalidate";
 
 export type PublicCatalogCacheEntry = {
   sourceVersion: string;

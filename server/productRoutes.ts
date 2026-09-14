@@ -13,6 +13,7 @@ import {
   acceptsGzipEncoding,
   canServePublicCatalogFallback,
   createKeyedSingleFlight,
+  PUBLIC_CATALOG_CACHE_CONTROL,
   createPublicCatalogCacheEntry,
   createPublicCatalogEtag,
   createPublicCatalogRepresentationVersion,
@@ -52,10 +53,8 @@ async function getPublicProductsSourceVersion(): Promise<string | null> {
 function setPublicProductsCatalogHeaders(res: express.Response, etag: string, isFallback = false) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET");
-  res.setHeader(
-    "Cache-Control",
-    isFallback ? "public, max-age=15, must-revalidate" : "public, max-age=60, must-revalidate",
-  );
+  res.setHeader("Cache-Control", PUBLIC_CATALOG_CACHE_CONTROL);
+  if (isFallback) res.setHeader("X-Catalog-Fallback", "1");
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("ETag", etag);
   res.setHeader("Vary", "Accept-Encoding");

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   PUBLIC_CATALOG_CACHE_TTL_MS,
+  PUBLIC_CATALOG_CACHE_CONTROL,
   PUBLIC_CATALOG_ETAG_WINDOW_MS,
   acceptsGzipEncoding,
   canServePublicCatalogFallback,
@@ -14,6 +15,13 @@ import {
 } from "./publicCatalogCache";
 
 describe("cache compatível do catálogo público", () => {
+  it("obriga toda leitura externa a revalidar o catálogo antes de reutilizá-lo", () => {
+    expect(PUBLIC_CATALOG_CACHE_CONTROL).toContain("no-cache");
+    expect(PUBLIC_CATALOG_CACHE_CONTROL).toContain("max-age=0");
+    expect(PUBLIC_CATALOG_CACHE_CONTROL).toContain("must-revalidate");
+    expect(PUBLIC_CATALOG_CACHE_CONTROL).not.toContain("max-age=60");
+  });
+
   it("mantém ETag semântico estável entre instâncias para a mesma versão das fontes", () => {
     expect(createPublicCatalogCacheEntry("v1", '{"updatedAt":"primeira"}', 100).etag)
       .toBe(createPublicCatalogCacheEntry("v1", '{"updatedAt":"segunda"}', 200).etag);
