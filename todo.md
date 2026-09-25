@@ -998,3 +998,24 @@
 - [x] Implementar a transmissão dos custos sem remover ou alterar os preços de venda existentes
 - [x] Validar valores reais, itens sem custo, contagens e contratos atuais das duas APIs
 - [x] Executar regressões, TypeScript e build antes do checkpoint
+
+## Exportação v65.1 — Dump Completo para Migração
+
+- [x] Gerar um único arquivo SQL com estrutura e dados completos das sete tabelas
+- [x] Usar `INSERT INTO` com lista explícita de colunas e sem limite de registros
+- [x] Validar presença das sete tabelas, integridade do arquivo e contagem exportada por tabela
+- [x] Entregar o dump para download com as contagens finais
+
+## Auditoria v65.2 — Corrente Programada do Driver na API
+
+- [x] Mapear o campo de corrente do banco até a resposta pública de `/api/products/all`
+- [x] Confirmar nome, tipo, formato e valores possíveis do campo transmitido
+- [x] Validar o JSON atual com ao menos um produto real
+- [x] Documentar ao Configurador como coletar e interpretar o dado
+
+## Correção v65.3 — Exclusão Persistente de Driver Extra
+
+- [x] Reproduzir o reaparecimento do driver extra após salvar e reabrir o produto
+- [x] Corrigir a serialização e persistência da lista vazia de drivers extras
+- [x] Garantir o mesmo comportamento para todos os seis tipos de driver
+- [x] Adicionar regressão e validar edição, reabertura, TypeScript e build

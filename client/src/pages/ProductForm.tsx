@@ -6,6 +6,7 @@ import { trpc } from "@/lib/trpc";
 import { uploadProductDocumentResilient } from "@/lib/documentUpload";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { serializeDriverExtras } from "@shared/driverExtraPersistence";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -1458,15 +1459,13 @@ export default function ProductForm({ editId, duplicarDeId, onSuccess }: Product
       delete payload.driverDimTriac220v;
     }
 
-    // Serializar drivers extras como JSON
-    const serializeExtra = (arr: DriverExtra[]) =>
-      arr.length > 0 ? JSON.stringify(arr.filter((d) => d.modelo.trim())) : undefined;
-    payload.driverOnoff220Extra = serializeExtra(driversExtra.onoff220);
-    payload.driverOnoffBivoltExtra = serializeExtra(driversExtra.onoffBivolt);
-    payload.driverDim110vExtra = serializeExtra(driversExtra.dim110v);
-    payload.driverDimDaliExtra = serializeExtra(driversExtra.dimDali);
-    payload.driverDimTriac110vExtra = serializeExtra(driversExtra.dimTriac110v);
-    payload.driverDimTriac220vExtra = serializeExtra(driversExtra.dimTriac220v);
+    // Sempre envia a coleção, inclusive `[]`, para persistir a remoção do último item.
+    payload.driverOnoff220Extra = serializeDriverExtras(driversExtra.onoff220);
+    payload.driverOnoffBivoltExtra = serializeDriverExtras(driversExtra.onoffBivolt);
+    payload.driverDim110vExtra = serializeDriverExtras(driversExtra.dim110v);
+    payload.driverDimDaliExtra = serializeDriverExtras(driversExtra.dimDali);
+    payload.driverDimTriac110vExtra = serializeDriverExtras(driversExtra.dimTriac110v);
+    payload.driverDimTriac220vExtra = serializeDriverExtras(driversExtra.dimTriac220v);
     // Serializar óticas extras como JSON
     const validOticasExtra = oticasExtra.filter((o) => o.modelo.trim());
     payload.oticaExtra = validOticasExtra.length > 0 ? JSON.stringify(validOticasExtra) : undefined;

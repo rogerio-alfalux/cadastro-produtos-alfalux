@@ -368,6 +368,31 @@ describe("products.update", () => {
     expect(callArgs?.moduloLedExtra).toEqual(extras);
   });
 
+  it("persists removal of the last extra driver for every driver type", async () => {
+    const { updateProduct } = await import("./db");
+    const caller = appRouter.createCaller(createCtx());
+    await caller.products.update({
+      id: 1,
+      data: {
+        driverOnoff220Extra: "[]",
+        driverOnoffBivoltExtra: "[]",
+        driverDim110vExtra: "[]",
+        driverDimDaliExtra: "[]",
+        driverDimTriac110vExtra: "[]",
+        driverDimTriac220vExtra: "[]",
+      },
+    });
+    const callArgs = (updateProduct as any).mock.calls.at(-1)?.[1];
+    expect(callArgs).toMatchObject({
+      driverOnoff220Extra: "[]",
+      driverOnoffBivoltExtra: "[]",
+      driverDim110vExtra: "[]",
+      driverDimDaliExtra: "[]",
+      driverDimTriac110vExtra: "[]",
+      driverDimTriac220vExtra: "[]",
+    });
+  });
+
   it("removes all product documents when the field is cleared", async () => {
     const { updateProduct } = await import("./db");
     const caller = appRouter.createCaller(createCtx());
